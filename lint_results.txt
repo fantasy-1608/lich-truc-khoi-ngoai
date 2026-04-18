@@ -1,0 +1,69 @@
+
+> lich-truc-khoi-ngoai-161225@0.0.0 lint
+> eslint . --ext ts,tsx --report-unused-disable-directives
+
+
+/Users/trunganh/CNTT/lịch-trực-khối-ngoại-161225/components/department/AssignmentPopover.tsx
+  57:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/trunganh/CNTT/lịch-trực-khối-ngoại-161225/components/department/AssignmentPopover.tsx:57:5
+  55 |
+  56 |   useEffect(() => {
+> 57 |     setIsVisible(true);
+     |     ^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  58 |     if (popoverRef.current) {
+  59 |       const popoverEl = popoverRef.current;
+  60 |       const targetRect = target.getBoundingClientRect();  react-hooks/set-state-in-effect
+
+/Users/trunganh/CNTT/lịch-trực-khối-ngoại-161225/components/department/DepartmentScheduleView.tsx
+  44:9  error  'doctorNames' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/trunganh/CNTT/lịch-trực-khối-ngoại-161225/components/department/StatsModal.tsx
+  34:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/trunganh/CNTT/lịch-trực-khối-ngoại-161225/components/department/StatsModal.tsx:34:5
+  32 |
+  33 |   useEffect(() => {
+> 34 |     setIsVisible(true);
+     |     ^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  35 |   }, []);
+  36 |
+  37 |   const handleClose = () => {  react-hooks/set-state-in-effect
+
+/Users/trunganh/CNTT/lịch-trực-khối-ngoại-161225/components/holiday/HolidayScheduleView.tsx
+  2:39  error  'HolidayCalendarDay' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/trunganh/CNTT/lịch-trực-khối-ngoại-161225/components/schedule/ResetPopover.tsx
+  15:11  error    'timer' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  35:19  warning  Delete `·`                                  prettier/prettier
+
+/Users/trunganh/CNTT/lịch-trực-khối-ngoại-161225/global.d.ts
+  17:9  warning  Delete `·`  prettier/prettier
+
+/Users/trunganh/CNTT/lịch-trực-khối-ngoại-161225/hooks/useScheduleData.ts
+  100:16  error    '_err' is defined but never used                                                                                                                                                                                                                                               @typescript-eslint/no-unused-vars
+  134:16  error    '_err' is defined but never used                                                                                                                                                                                                                                               @typescript-eslint/no-unused-vars
+  164:44  warning  Unexpected any. Specify a different type                                                                                                                                                                                                                                       @typescript-eslint/no-explicit-any
+  169:15  warning  Unexpected any. Specify a different type                                                                                                                                                                                                                                       @typescript-eslint/no-explicit-any
+  460:6   warning  Replace `tourOrder,·toursById,·doctorsById,·doctorOverrides,·tourOverrides,·holidaySchedule,·rotationStartDate` with `⏎······tourOrder,⏎······toursById,⏎······doctorsById,⏎······doctorOverrides,⏎······tourOverrides,⏎······holidaySchedule,⏎······rotationStartDate,⏎····`  prettier/prettier
+
+/Users/trunganh/CNTT/lịch-trực-khối-ngoại-161225/utils/export/common.ts
+   73:43   warning  Replace `⏎··htmlContent:·string,⏎··filename:·string,⏎` with `htmlContent:·string,·filename:·string`                                                                                                   prettier/prettier
+  148:31   warning  Replace `window·as·unknown·as·{·showSaveFilePicker:·(options:·unknown)·=>·Promise<any>·}` with `⏎··········window·as·unknown·as·{·showSaveFilePicker:·(options:·unknown)·=>·Promise<any>·}⏎········`  prettier/prettier
+  148:104  warning  Unexpected any. Specify a different type                                                                                                                                                              @typescript-eslint/no-explicit-any
+
+✖ 15 problems (7 errors, 8 warnings)
+  0 errors and 5 warnings potentially fixable with the `--fix` option.
+

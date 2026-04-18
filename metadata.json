@@ -1,0 +1,5 @@
+{
+  "name": "Lịch trực khối ngoại bản 1.2",
+  "description": "A rotating shift scheduler for hospital staff. It allows for easy visualization of a 4-tour rotating schedule and provides settings to customize doctor assignments and shift order.",
+  "requestFramePermissions": []
+}

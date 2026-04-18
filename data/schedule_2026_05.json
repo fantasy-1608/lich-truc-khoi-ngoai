@@ -1,0 +1,38 @@
+{
+  "tourOverrides": {
+    "2026-05-01": "tour-1",
+    "2026-05-02": "tour-3"
+  },
+  "doctorOverrides": {
+    "2026-05-24": [
+      "Bs. Tuấn",
+      "Bs. Thông",
+      "Bs. Mẫn",
+      "Bs. An"
+    ],
+    "2026-05-23": [
+      "Bs. Tòng",
+      "Bs. Loan",
+      "Bs. Tôn",
+      "Bs. Kiệt"
+    ],
+    "2026-05-27": [
+      "Bs. Tòng",
+      "Bs. Loan",
+      "Bs. Tôn",
+      "Bs. Kiệt"
+    ],
+    "2026-05-28": [
+      "Bs. Tuấn",
+      "Bs. Thông",
+      "Bs. Mẫn",
+      "Bs. An"
+    ],
+    "2026-05-31": [
+      "Bs. Tòng",
+      "Bs. Loan",
+      "Bs. Tôn",
+      "Bs. Kiệt"
+    ]
+  }
+}

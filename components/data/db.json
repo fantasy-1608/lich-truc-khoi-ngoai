@@ -1,0 +1,29 @@
+{
+  "d": [
+    ["doc-a", "Bs. Anh", 1],
+    ["doc-b", "Bs. Luận", 0],
+    ["doc-c", "Bs. Cảnh", 0],
+    ["doc-d", "Bs. Khánh", 1],
+    ["doc-e", "Bs. Tòng", 0],
+    ["doc-f", "Bs. Loan", 0],
+    ["doc-g", "Bs. Đức", 1],
+    ["doc-h", "Bs. Kiệt", 0],
+    ["doc-i", "Bs. Tiến", 0],
+    ["doc-j", "Bs. Thông", 0],
+    ["doc-k", "Bs. Tôn", 1],
+    ["doc-l", "Bs. Hiển", 0],
+    ["doc-m", "Bs. Tuấn", 0],
+    ["doc-n", "Bs. Linh", 0],
+    ["doc-o", "Bs. Mẫn", 1],
+    ["doc-p", "Bs. An", 0],
+    ["doc-q", "Bs. Hiền", 1],
+    ["doc-r", "Bs. Tân", 1]
+  ],
+  "t": [
+    ["tour-1", ["doc-a", "doc-b", "doc-c", "doc-d"]],
+    ["tour-2", ["doc-e", "doc-f", "doc-g", "doc-h"]],
+    ["tour-3", ["doc-i", "doc-j", "doc-k", "doc-l"]],
+    ["tour-4", ["doc-m", "doc-n", "doc-o", "doc-p"]]
+  ],
+  "o": ["tour-1", "tour-2", "tour-3", "tour-4"]
+}

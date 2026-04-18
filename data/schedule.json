@@ -1,0 +1,166 @@
+{
+  "doctors": [
+    {
+      "id": "doc-a",
+      "name": "Bs. Anh",
+      "isCtch": true
+    },
+    {
+      "id": "doc-b",
+      "name": "Bs. Luận",
+      "isCtch": false
+    },
+    {
+      "id": "doc-c",
+      "name": "Bs. Cảnh",
+      "isCtch": false
+    },
+    {
+      "id": "doc-d",
+      "name": "Bs. Khánh",
+      "isCtch": true
+    },
+    {
+      "id": "doc-e",
+      "name": "Bs. Tòng",
+      "isCtch": false
+    },
+    {
+      "id": "doc-f",
+      "name": "Bs. Loan",
+      "isCtch": false
+    },
+    {
+      "id": "doc-g",
+      "name": "Bs. Đức",
+      "isCtch": true
+    },
+    {
+      "id": "doc-h",
+      "name": "Bs. Kiệt",
+      "isCtch": false
+    },
+    {
+      "id": "doc-i",
+      "name": "Bs. Tiến",
+      "isCtch": false
+    },
+    {
+      "id": "doc-j",
+      "name": "Bs. Thông",
+      "isCtch": false
+    },
+    {
+      "id": "doc-k",
+      "name": "Bs. Tôn",
+      "isCtch": true
+    },
+    {
+      "id": "doc-l",
+      "name": "Bs. Hiển",
+      "isCtch": false
+    },
+    {
+      "id": "doc-m",
+      "name": "Bs. Tuấn",
+      "isCtch": false
+    },
+    {
+      "id": "doc-n",
+      "name": "Bs. Linh",
+      "isCtch": false
+    },
+    {
+      "id": "doc-o",
+      "name": "Bs. Mẫn",
+      "isCtch": true
+    },
+    {
+      "id": "doc-p",
+      "name": "Bs. An",
+      "isCtch": true
+    },
+    {
+      "id": "doc-q",
+      "name": "Bs. Hiền",
+      "isCtch": true
+    },
+    {
+      "id": "doc-r",
+      "name": "Bs. Tân",
+      "isCtch": true
+    },
+    {
+      "id": "doc-1765609766311-voy09n9kj",
+      "name": "Bs. Dung",
+      "isCtch": true
+    },
+    {
+      "id": "doc-1765609889359-cbtvbfrtr",
+      "name": "Bs. Phúc",
+      "isCtch": false
+    },
+    {
+      "id": "doc-1766047455006-gmimyglbf",
+      "name": "Bs. Thuận",
+      "isCtch": true
+    }
+  ],
+  "tours": [
+    {
+      "id": "tour-1",
+      "doctorIds": [
+        "doc-a",
+        "doc-b",
+        "doc-c",
+        "doc-d"
+      ]
+    },
+    {
+      "id": "tour-2",
+      "doctorIds": [
+        "doc-e",
+        "doc-f",
+        "doc-g",
+        "doc-h"
+      ]
+    },
+    {
+      "id": "tour-3",
+      "doctorIds": [
+        "doc-i",
+        "doc-j",
+        "doc-k",
+        "doc-l"
+      ]
+    },
+    {
+      "id": "tour-4",
+      "doctorIds": [
+        "doc-m",
+        "doc-n",
+        "doc-o",
+        "doc-p"
+      ]
+    }
+  ],
+  "tourOrder": [
+    "tour-1",
+    "tour-3",
+    "tour-2",
+    "tour-4"
+  ],
+  "tourOverrides": {},
+  "doctorOverrides": {},
+  "showPkdv": true,
+  "departmentAssignments": {},
+  "holidaySchedule": {
+    "startDate": null,
+    "endDate": null,
+    "holidayTourId": null,
+    "holidayInsertionIndex": null,
+    "doctorOverrides": {}
+  },
+  "rotationStartDate": "2025-11-01T00:00:00.000Z",
+  "lastSaved": null
+}
