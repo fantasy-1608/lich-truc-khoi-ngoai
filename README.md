@@ -2,7 +2,7 @@
 
 ## 🚀 Lệnh Nhanh
 
-- **Chạy chương trình:** `npm run dev`
+- **Chạy chương trình:** `pnpm run dev`
 - **Tắt chương trình:** Nhấn `Ctrl + C` trong cửa sổ lệnh.
 
 ---

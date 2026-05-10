@@ -5,7 +5,7 @@
 ### Bước 1: Xem hướng dẫn
 
 ```bash
-npm run export-help
+pnpm run export-help
 ```
 
 ### Bước 2: Lấy dữ liệu từ trình duyệt
@@ -24,7 +24,7 @@ copy(JSON.stringify(localStorage));
 ### Bước 3: Xuất dữ liệu
 
 ```bash
-npm run export-data
+pnpm run export-data
 ```
 
 Sau đó paste dữ liệu vừa copy và nhấn Enter.

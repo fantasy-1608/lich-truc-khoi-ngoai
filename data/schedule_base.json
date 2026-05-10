@@ -73,7 +73,7 @@
     {
       "id": "doc-p",
       "name": "Bs. An",
-      "isCtch": true
+      "isCtch": false
     },
     {
       "id": "doc-r",
@@ -91,14 +91,14 @@
       "isCtch": false
     },
     {
-      "id": "doc-1771918034522-c57zo9k3i",
-      "name": "Bs. Hiền",
-      "isCtch": true
-    },
-    {
       "id": "doc-1776521552900-7ix0wm02f",
       "name": "Bs. Thông",
       "isCtch": false
+    },
+    {
+      "id": "doc-1776647930212-7kuesf0tx",
+      "name": "Bs. Hiền",
+      "isCtch": true
     }
   ],
   "tours": [
@@ -107,7 +107,7 @@
       "doctorIds": [
         "doc-a",
         "doc-b",
-        "doc-1767400272875-fk6vmv74o",
+        "doc-c",
         "doc-d"
       ]
     },
@@ -133,8 +133,8 @@
       "id": "tour-4",
       "doctorIds": [
         "doc-m",
-        "doc-c",
-        "doc-k",
+        "doc-n",
+        "doc-o",
         "doc-p"
       ]
     }
@@ -147,7 +147,7 @@
   ],
   "showPkdv": true,
   "rotationStartDate": "2026-04-30",
-  "lastSaved": "2026-04-18T14:23:47.991Z",
+  "lastSaved": "2026-05-10T15:14:08.633Z",
   "holidaySchedule": {
     "startDate": null,
     "endDate": null,
