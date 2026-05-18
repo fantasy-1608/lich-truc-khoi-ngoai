@@ -99,6 +99,11 @@
       "id": "doc-1776647930212-7kuesf0tx",
       "name": "Bs. Hiền",
       "isCtch": true
+    },
+    {
+      "id": "doc-1779073461104-0vvbsx882",
+      "name": "Bs. Dung",
+      "isCtch": true
     }
   ],
   "tours": [
@@ -108,7 +113,7 @@
         "doc-a",
         "doc-b",
         "doc-c",
-        "doc-d"
+        "doc-k"
       ]
     },
     {
@@ -147,7 +152,7 @@
   ],
   "showPkdv": true,
   "rotationStartDate": "2026-04-30",
-  "lastSaved": "2026-05-10T15:14:08.633Z",
+  "lastSaved": "2026-05-18T03:11:42.307Z",
   "holidaySchedule": {
     "startDate": null,
     "endDate": null,
