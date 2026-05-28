@@ -1,4 +1,8 @@
 {
+  "tourOverrides": {
+    "2026-06-11": "tour-2",
+    "2026-06-12": "tour-1"
+  },
   "doctorOverrides": {
     "2026-06-04": [
       "Bs. Tòng",
@@ -18,23 +22,41 @@
       "Bs. Mẫn",
       "Bs. An"
     ],
-    "2026-06-14": [
-      "Bs. Tiến",
-      "Bs. Tân",
-      "Bs. Phúc",
-      "Bs. Hiển"
-    ],
-    "2026-06-22": [
-      "Bs. Tiến",
-      "Bs. Tân",
-      "Bs. Phúc",
-      "Bs. Hiển"
-    ],
     "2026-06-03": [
       "Bs. Anh",
       "Bs. Luận",
       "Bs. Phúc",
       "Bs. Cảnh"
+    ],
+    "2026-06-02": [
+      "Bs. Tiến",
+      "Bs. Tân",
+      "Bs. Hiển",
+      "Bs. Minh"
+    ],
+    "2026-06-12": [
+      "Bs. Anh",
+      "Bs. Luận",
+      "Bs. Phúc",
+      "Bs. Dung"
+    ],
+    "2026-06-19": [
+      "Bs. Anh",
+      "Bs. Luận",
+      "Bs. Cảnh",
+      "Bs. Dung"
+    ],
+    "2026-06-27": [
+      "Bs. Anh",
+      "Bs. Luận",
+      "Bs. Cảnh",
+      "Bs. Phúc"
+    ],
+    "2026-06-23": [
+      "Bs. Anh",
+      "Bs. Luận",
+      "Bs. Cảnh",
+      "Bs. Dung"
     ]
   }
 }
