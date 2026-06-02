@@ -12,6 +12,12 @@ import ToastContainer from './components/common/ToastContainer';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import LoginView from './components/auth/LoginView';
 import { editorEmail, isSupabaseConfigured } from './lib/supabase';
+import {
+  clearScheduleEditorEmail,
+  hasScheduleEditorEmail,
+  setScheduleEditorEmail,
+  verifyScheduleEditorEmail,
+} from './services/scheduleStorage';
 
 const App: React.FC = () => {
   const [view, setView] = useState<View>(View.SCHEDULE);
@@ -19,10 +25,11 @@ const App: React.FC = () => {
   const [, startTransition] = useTransition();
   const [contentVisible, setContentVisible] = useState(true);
   const [showEditLogin, setShowEditLogin] = useState(false);
+  const [hasEditorAccess, setHasEditorAccess] = useState(hasScheduleEditorEmail());
 
   const { toasts, showToast, hideToast } = useToast();
   const auth = useSupabaseAuth();
-  const canWrite = !isSupabaseConfigured || Boolean(auth.session);
+  const canWrite = !isSupabaseConfigured || Boolean(auth.session) || hasEditorAccess;
 
   const scheduleData = useScheduleData({
     onError: (message) => showToast(message, 'error'),
@@ -52,14 +59,22 @@ const App: React.FC = () => {
   const handleSignOut = async () => {
     try {
       await auth.signOut();
+      clearScheduleEditorEmail();
+      setHasEditorAccess(false);
       setShowEditLogin(false);
     } catch {
       showToast('Không thể đăng xuất. Vui lòng thử lại.', 'error');
     }
   };
 
-  const handleSignIn = async (email: string, password: string) => {
-    await auth.signIn(email, password);
+  const handleEmailOnlySignIn = async (email: string) => {
+    const isEditor = await verifyScheduleEditorEmail(email);
+    if (!isEditor) {
+      throw new Error('Invalid editor email');
+    }
+
+    setScheduleEditorEmail(email);
+    setHasEditorAccess(true);
     setShowEditLogin(false);
     showToast('Đã mở chế độ chỉnh sửa.', 'success');
   };
@@ -176,7 +191,8 @@ const App: React.FC = () => {
             <LoginView
               mode="dialog"
               defaultEmail={editorEmail}
-              onSignIn={handleSignIn}
+              onSignIn={auth.signIn}
+              onEmailOnlySignIn={handleEmailOnlySignIn}
               onCancel={() => setShowEditLogin(false)}
             />
           </div>

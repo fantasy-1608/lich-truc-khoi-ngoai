@@ -3,6 +3,9 @@ import { DepartmentAssignments, Doctor, HolidayScheduleData, Tour } from '../typ
 
 const BASE_FILENAME = 'schedule_base.json';
 const BASE_ID = 'default';
+const EDITOR_EMAIL_STORAGE_KEY = 'schedule-editor-email';
+
+let editorEmail = sessionStorage.getItem(EDITOR_EMAIL_STORAGE_KEY) || '';
 
 export interface ScheduleBaseStorageData {
   doctors?: Doctor[];
@@ -27,6 +30,29 @@ const monthFromFilename = (filename: string): string => {
     throw new Error(`Invalid schedule month filename: ${filename}`);
   }
   return `${match[1]}-${match[2]}`;
+};
+
+export const setScheduleEditorEmail = (email: string): void => {
+  editorEmail = email.trim();
+  sessionStorage.setItem(EDITOR_EMAIL_STORAGE_KEY, editorEmail);
+};
+
+export const clearScheduleEditorEmail = (): void => {
+  editorEmail = '';
+  sessionStorage.removeItem(EDITOR_EMAIL_STORAGE_KEY);
+};
+
+export const hasScheduleEditorEmail = (): boolean => Boolean(editorEmail);
+
+export const verifyScheduleEditorEmail = async (email: string): Promise<boolean> => {
+  if (!supabase) return true;
+
+  const { data, error } = await supabase.rpc('is_schedule_editor', {
+    input_email: email.trim(),
+  });
+
+  if (error) throw error;
+  return data === true;
 };
 
 const fetchLocalJson = async <T>(filename: string): Promise<T | null> => {
@@ -67,9 +93,9 @@ export const saveBaseScheduleData = async (data: ScheduleBaseStorageData): Promi
     return;
   }
 
-  const { error } = await supabase.from('schedule_base').upsert({
-    id: BASE_ID,
-    data,
+  const { error } = await supabase.rpc('save_schedule_base_by_email', {
+    input_email: editorEmail,
+    input_data: data,
   });
 
   if (error) throw error;
@@ -103,9 +129,10 @@ export const saveMonthScheduleData = async (
   }
 
   const month = monthFromFilename(filename);
-  const { error } = await supabase.from('schedule_months').upsert({
-    month,
-    data,
+  const { error } = await supabase.rpc('save_schedule_month_by_email', {
+    input_email: editorEmail,
+    input_month: month,
+    input_data: data,
   });
 
   if (error) throw error;
