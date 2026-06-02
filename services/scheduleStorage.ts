@@ -5,7 +5,8 @@ const BASE_FILENAME = 'schedule_base.json';
 const BASE_ID = 'default';
 const EDITOR_EMAIL_STORAGE_KEY = 'schedule-editor-email';
 
-let editorEmail = sessionStorage.getItem(EDITOR_EMAIL_STORAGE_KEY) || '';
+let editorEmail = '';
+sessionStorage.removeItem(EDITOR_EMAIL_STORAGE_KEY);
 
 export interface ScheduleBaseStorageData {
   doctors?: Doctor[];
@@ -34,15 +35,12 @@ const monthFromFilename = (filename: string): string => {
 
 export const setScheduleEditorEmail = (email: string): void => {
   editorEmail = email.trim();
-  sessionStorage.setItem(EDITOR_EMAIL_STORAGE_KEY, editorEmail);
 };
 
 export const clearScheduleEditorEmail = (): void => {
   editorEmail = '';
   sessionStorage.removeItem(EDITOR_EMAIL_STORAGE_KEY);
 };
-
-export const hasScheduleEditorEmail = (): boolean => Boolean(editorEmail);
 
 export const verifyScheduleEditorEmail = async (email: string): Promise<boolean> => {
   if (!supabase) return true;

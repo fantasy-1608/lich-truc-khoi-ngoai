@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useTransition } from 'react';
+import React, { useState, useTransition } from 'react';
 import { View } from './types';
 import ScheduleView from './components/schedule/ScheduleView';
 import SettingsView from './components/settings/SettingsView';
@@ -14,7 +14,6 @@ import LoginView from './components/auth/LoginView';
 import { editorEmail, isSupabaseConfigured } from './lib/supabase';
 import {
   clearScheduleEditorEmail,
-  hasScheduleEditorEmail,
   setScheduleEditorEmail,
   verifyScheduleEditorEmail,
 } from './services/scheduleStorage';
@@ -25,7 +24,7 @@ const App: React.FC = () => {
   const [, startTransition] = useTransition();
   const [contentVisible, setContentVisible] = useState(true);
   const [showEditLogin, setShowEditLogin] = useState(false);
-  const [hasEditorAccess, setHasEditorAccess] = useState(hasScheduleEditorEmail());
+  const [hasEditorAccess, setHasEditorAccess] = useState(false);
 
   const { toasts, showToast, hideToast } = useToast();
   const auth = useSupabaseAuth();
@@ -64,29 +63,6 @@ const App: React.FC = () => {
 
     setShowEditLogin(true);
   };
-
-  useEffect(() => {
-    const sessionEmail = auth.session?.user.email;
-    if (!sessionEmail || hasEditorAccess) return;
-
-    let isActive = true;
-    verifyScheduleEditorEmail(sessionEmail)
-      .then((isEditor) => {
-        if (!isActive || !isEditor) return;
-        setScheduleEditorEmail(sessionEmail);
-        setHasEditorAccess(true);
-      })
-      .catch(() => {
-        if (isActive) {
-          clearScheduleEditorEmail();
-          setHasEditorAccess(false);
-        }
-      });
-
-    return () => {
-      isActive = false;
-    };
-  }, [auth.session?.user.email, hasEditorAccess]);
 
   const handleSignOut = async () => {
     try {
