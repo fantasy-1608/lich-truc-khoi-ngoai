@@ -4,6 +4,7 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabasePublishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabasePublishableKey);
+export const editorEmail = import.meta.env.VITE_EDITOR_EMAIL;
 
 export const supabase: SupabaseClient | null = isSupabaseConfigured
   ? createClient(supabaseUrl, supabasePublishableKey)

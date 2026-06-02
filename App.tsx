@@ -11,21 +11,22 @@ import Header from './components/layout/Header';
 import ToastContainer from './components/common/ToastContainer';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import LoginView from './components/auth/LoginView';
-import { isSupabaseConfigured } from './lib/supabase';
+import { editorEmail, isSupabaseConfigured } from './lib/supabase';
 
 const App: React.FC = () => {
   const [view, setView] = useState<View>(View.SCHEDULE);
   const [lastScheduleView, setLastScheduleView] = useState<View>(View.SCHEDULE);
   const [, startTransition] = useTransition();
   const [contentVisible, setContentVisible] = useState(true);
+  const [showEditLogin, setShowEditLogin] = useState(false);
 
   const { toasts, showToast, hideToast } = useToast();
   const auth = useSupabaseAuth();
-  const canLoadSchedule = !isSupabaseConfigured || Boolean(auth.session);
+  const canWrite = !isSupabaseConfigured || Boolean(auth.session);
 
   const scheduleData = useScheduleData({
     onError: (message) => showToast(message, 'error'),
-    enabled: canLoadSchedule,
+    canWrite,
   });
 
   const changeView = (newView: View) => {
@@ -48,24 +49,19 @@ const App: React.FC = () => {
     }
   };
 
-  if (isSupabaseConfigured && !auth.isReady) {
-    return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 flex items-center justify-center">
-        <p className="text-sm text-slate-500 dark:text-slate-400">Đang kiểm tra đăng nhập...</p>
-      </div>
-    );
-  }
-
-  if (isSupabaseConfigured && !auth.session) {
-    return <LoginView onSignIn={auth.signIn} />;
-  }
-
   const handleSignOut = async () => {
     try {
       await auth.signOut();
+      setShowEditLogin(false);
     } catch {
       showToast('Không thể đăng xuất. Vui lòng thử lại.', 'error');
     }
+  };
+
+  const handleSignIn = async (email: string, password: string) => {
+    await auth.signIn(email, password);
+    setShowEditLogin(false);
+    showToast('Đã mở chế độ chỉnh sửa.', 'success');
   };
 
   return (
@@ -77,13 +73,26 @@ const App: React.FC = () => {
           className={`container mx-auto p-4 sm:p-6 lg:p-8 transition-opacity duration-150 ${contentVisible ? 'opacity-100' : 'opacity-0'}`}
         >
           {isSupabaseConfigured && (
-            <div className="mb-4 flex justify-end">
-              <button
-                onClick={handleSignOut}
-                className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-              >
-                Đăng xuất
-              </button>
+            <div className="mb-4 flex flex-wrap items-center justify-end gap-3">
+              <span className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-500 dark:text-slate-400">
+                {canWrite ? 'Đang chỉnh sửa' : 'Chỉ xem'}
+              </span>
+              {canWrite ? (
+                <button
+                  onClick={handleSignOut}
+                  className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                >
+                  Khóa chỉnh sửa
+                </button>
+              ) : (
+                <button
+                  onClick={() => setShowEditLogin(true)}
+                  disabled={!auth.isReady}
+                  className="px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                >
+                  Chỉnh sửa
+                </button>
+              )}
             </div>
           )}
 
@@ -162,6 +171,16 @@ const App: React.FC = () => {
         </main>
 
         <ToastContainer toasts={toasts} onDismiss={hideToast} />
+        {showEditLogin && (
+          <div className="fixed inset-0 z-[80] bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <LoginView
+              mode="dialog"
+              defaultEmail={editorEmail}
+              onSignIn={handleSignIn}
+              onCancel={() => setShowEditLogin(false)}
+            />
+          </div>
+        )}
       </div>
     </ErrorBoundary>
   );

@@ -8,6 +8,7 @@ declare module 'jspdf';
 interface ImportMetaEnv {
   readonly VITE_SUPABASE_URL?: string;
   readonly VITE_SUPABASE_PUBLISHABLE_KEY?: string;
+  readonly VITE_EDITOR_EMAIL?: string;
 }
 
 interface ImportMeta {

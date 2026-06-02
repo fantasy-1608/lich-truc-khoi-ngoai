@@ -66,10 +66,11 @@ interface UseScheduleDataOptions {
   onError?: (message: string) => void;
   onSaveSuccess?: () => void;
   enabled?: boolean;
+  canWrite?: boolean;
 }
 
 export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
-  const { onError, onSaveSuccess, enabled = true } = options;
+  const { onError, onSaveSuccess, enabled = true, canWrite = true } = options;
 
   const [doctors, setDoctors] = useState<Doctor[]>(DEFAULT_DATA.doctors);
   const [tours, setTours] = useState<Tour[]>(DEFAULT_DATA.tours);
@@ -91,6 +92,12 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
   const modifiedMonthsRef = useRef<Set<string>>(new Set()); // Track months that need saving
 
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const ensureCanWrite = useCallback(() => {
+    if (canWrite) return true;
+    onError?.('Bạn đang ở chế độ chỉ xem. Hãy đăng nhập để chỉnh sửa lịch.');
+    return false;
+  }, [canWrite, onError]);
 
   // Helper to get storage key for a month
   const getMonthKey = (date: Date) => {
@@ -276,7 +283,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
 
   // Auto-save when data changes (debounced 1 second)
   useEffect(() => {
-    if (!enabled || !isLoaded) return; // Don't save before initial load
+    if (!enabled || !isLoaded || !canWrite) return; // Don't save before initial load
 
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
@@ -299,6 +306,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
     holidaySchedule,
     isLoaded,
     enabled,
+    canWrite,
     saveData,
   ]);
 
@@ -485,6 +493,8 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
 
   const handleSwapTours = useCallback(
     (date1: Date, date2: Date) => {
+      if (!ensureCanWrite()) return;
+
       const getEffectiveTourId = (date: Date): string | undefined => {
         const dateString = getDateString(date);
         if (tourOverrides[dateString]) return tourOverrides[dateString];
@@ -521,7 +531,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
 
       setTourOverrides((current) => ({ ...current, [date1Str]: tourId2, [date2Str]: tourId1 }));
     },
-    [tourOverrides, tourOrder, rotationStartDate],
+    [tourOverrides, tourOrder, rotationStartDate, ensureCanWrite],
   );
 
   const handleSwapDoctors = useCallback(
@@ -529,6 +539,8 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
       selection1: { date: Date; doctorIndex: number },
       selection2: { date: Date; doctorIndex: number },
     ) => {
+      if (!ensureCanWrite()) return;
+
       const date1Str = getDateString(selection1.date);
       const date2Str = getDateString(selection2.date);
 
@@ -551,11 +563,13 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
         [date2Str]: newDoctors2,
       }));
     },
-    [getDoctorsForDate],
+    [getDoctorsForDate, ensureCanWrite],
   );
 
   const handleReplaceDoctor = useCallback(
     (selection: { date: Date; doctorIndex: number }, newDoctorName: string) => {
+      if (!ensureCanWrite()) return;
+
       const dateStr = getDateString(selection.date);
       const doctorsOnDate = getDoctorsForDate(selection.date);
       if (!doctorsOnDate) return;
@@ -563,10 +577,12 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
       newDoctors[selection.doctorIndex] = newDoctorName;
       setDoctorOverrides((current) => ({ ...current, [dateStr]: newDoctors }));
     },
-    [getDoctorsForDate],
+    [getDoctorsForDate, ensureCanWrite],
   );
 
   const handleResetOverrides = useCallback((date: Date) => {
+    if (!ensureCanWrite()) return;
+
     const dateStr = getDateString(date);
     const monthKey = `schedule_${dateStr.substring(0, 4)}_${dateStr.substring(5, 7)}.json`;
     modifiedMonthsRef.current.add(monthKey); // Mark month as modified
@@ -581,10 +597,12 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
       delete next[dateStr];
       return next;
     });
-  }, []);
+  }, [ensureCanWrite]);
 
   const handleUpdateDoctorInTour = useCallback(
     (tourId: string, doctorIndex: number, newDoctorId: string) => {
+      if (!ensureCanWrite()) return;
+
       setTours((current) =>
         current.map((t) =>
           t.id === tourId
@@ -593,13 +611,24 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
         ),
       );
     },
-    [],
+    [ensureCanWrite],
   );
 
-  const handleReorderTours = useCallback((newOrder: string[]) => setTourOrder(newOrder), []);
-  const handleTogglePkdvVisibility = useCallback(() => setShowPkdv((current) => !current), []);
+  const handleReorderTours = useCallback(
+    (newOrder: string[]) => {
+      if (!ensureCanWrite()) return;
+      setTourOrder(newOrder);
+    },
+    [ensureCanWrite],
+  );
+  const handleTogglePkdvVisibility = useCallback(() => {
+    if (!ensureCanWrite()) return;
+    setShowPkdv((current) => !current);
+  }, [ensureCanWrite]);
 
   const handleAddDoctor = useCallback((name: string, isCtch: boolean) => {
+    if (!ensureCanWrite()) return;
+
     if (name.trim()) {
       const newDoctor: Doctor = {
         id: `doc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -608,9 +637,11 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
       };
       setDoctors((current) => [...current, newDoctor]);
     }
-  }, []);
+  }, [ensureCanWrite]);
 
   const handleRemoveDoctor = useCallback((id: string) => {
+    if (!ensureCanWrite()) return;
+
     setDoctors((current) => current.filter((d) => d.id !== id));
     setTours((current) =>
       current.map((t) => ({
@@ -618,10 +649,12 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
         doctorIds: t.doctorIds.map((docId) => (docId === id ? '' : docId)),
       })),
     );
-  }, []);
+  }, [ensureCanWrite]);
 
   const handleUpdateDoctor = useCallback(
     (id: string, updatedDoctor: Partial<Omit<Doctor, 'id'>>) => {
+      if (!ensureCanWrite()) return;
+
       setDoctors((current) =>
         current.map((d) => {
           if (d.id === id) {
@@ -635,25 +668,31 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
         }),
       );
     },
-    [],
+    [ensureCanWrite],
   );
 
   const handleAddDoctorToTour = useCallback((tourId: string) => {
+    if (!ensureCanWrite()) return;
+
     setTours((current) =>
       current.map((t) => (t.id === tourId ? { ...t, doctorIds: [...t.doctorIds, ''] } : t)),
     );
-  }, []);
+  }, [ensureCanWrite]);
 
   const handleRemoveDoctorFromTour = useCallback((tourId: string, doctorIndex: number) => {
+    if (!ensureCanWrite()) return;
+
     setTours((current) =>
       current.map((t) =>
         t.id === tourId ? { ...t, doctorIds: t.doctorIds.filter((_, i) => i !== doctorIndex) } : t,
       ),
     );
-  }, []);
+  }, [ensureCanWrite]);
 
   const handleUpdateDepartmentAssignments = useCallback(
     (date: Date, role: DepartmentRole, doctors: string[]) => {
+      if (!ensureCanWrite()) return;
+
       const dateStr = getDateString(date);
       console.log(`[useScheduleData] Updating ${role} on ${dateStr}:`, doctors);
       setDepartmentAssignments((current) => {
@@ -671,10 +710,12 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
         return updated;
       });
     },
-    [],
+    [ensureCanWrite],
   );
 
   const handleImportData = useCallback((data: ImportData, onSuccess?: () => void) => {
+    if (!ensureCanWrite()) return;
+
     if (data.doctors) setDoctors(data.doctors);
     if (data.tours) setTours(data.tours);
     if (data.tourOrder) setTourOrder(data.tourOrder);
@@ -686,10 +727,12 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
     if (onSuccess) {
       onSuccess();
     }
-  }, []);
+  }, [ensureCanWrite]);
 
   // Holiday Schedule Handlers
   const handleSetHolidayPeriod = useCallback((startDate: string | null, endDate: string | null) => {
+    if (!ensureCanWrite()) return;
+
     setHolidaySchedule((current) => ({
       ...current,
       startDate,
@@ -697,9 +740,11 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
       // Reset overrides when period changes
       doctorOverrides: {},
     }));
-  }, []);
+  }, [ensureCanWrite]);
 
   const handleUpdateHolidayDoctors = useCallback((dateStr: string, doctors: string[]) => {
+    if (!ensureCanWrite()) return;
+
     // Max 6 doctors
     const limitedDoctors = doctors.slice(0, 6);
     setHolidaySchedule((current) => ({
@@ -709,23 +754,29 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
         [dateStr]: limitedDoctors,
       },
     }));
-  }, []);
+  }, [ensureCanWrite]);
 
   const handleSetHolidayTour = useCallback((tourId: string | undefined) => {
+    if (!ensureCanWrite()) return;
+
     setHolidaySchedule((current) => ({
       ...current,
       holidayTourId: tourId,
     }));
-  }, []);
+  }, [ensureCanWrite]);
 
   const handleSetHolidayInsertionIndex = useCallback((index: number) => {
+    if (!ensureCanWrite()) return;
+
     setHolidaySchedule((current) => ({
       ...current,
       holidayInsertionIndex: index,
     }));
-  }, []);
+  }, [ensureCanWrite]);
 
   const handleResetHolidayDay = useCallback((dateStr: string) => {
+    if (!ensureCanWrite()) return;
+
     setHolidaySchedule((current) => {
       const nextOverrides = { ...current.doctorOverrides };
       delete nextOverrides[dateStr];
@@ -734,10 +785,12 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
         doctorOverrides: nextOverrides,
       };
     });
-  }, []);
+  }, [ensureCanWrite]);
 
   const handleSetRotationStartDate = useCallback(
     (newDateStr: string | null) => {
+      if (!ensureCanWrite()) return;
+
       if (!newDateStr) {
         setRotationStartDate(null);
         return;
@@ -790,7 +843,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
 
       setRotationStartDate(newDateStr);
     },
-    [rotationStartDate, tourOverrides, tourOrder],
+    [rotationStartDate, tourOverrides, tourOrder, ensureCanWrite],
   );
 
   return {
