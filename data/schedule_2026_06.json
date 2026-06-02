@@ -58,5 +58,205 @@
       "Bs. Cảnh",
       "Bs. Dung"
     ]
+  },
+  "departmentAssignments": {
+    "2026-06-01": {
+      "ungTruc": [
+        "Bs. Tân"
+      ],
+      "pkdk": [
+        "Bs. Anh",
+        "Bs. Hiền"
+      ]
+    },
+    "2026-06-02": {
+      "ungTruc": [
+        "Bs. Anh"
+      ],
+      "pkdk": [
+        "Bs. Hiền",
+        "Bs. Tôn"
+      ]
+    },
+    "2026-06-03": {
+      "ungTruc": [
+        "Bs. Tôn"
+      ],
+      "pkdk": [
+        "Bs. Mẫn",
+        "Bs. Hiền"
+      ]
+    },
+    "2026-06-04": {
+      "ungTruc": [
+        "Bs. Mẫn"
+      ],
+      "pkdk": [
+        "Bs. Hiền",
+        "Bs. Tân"
+      ]
+    },
+    "2026-06-05": {
+      "ungTruc": [
+        "Bs. Tân"
+      ],
+      "pkdk": [
+        "Bs. Hiền",
+        "Bs. Anh"
+      ]
+    },
+    "2026-06-08": {
+      "pkdk": [
+        "Bs. Tân",
+        "Bs. Tôn"
+      ],
+      "ungTruc": [
+        "Bs. Mẫn"
+      ]
+    },
+    "2026-06-09": {
+      "ungTruc": [
+        "Bs. Tân"
+      ],
+      "pkdk": [
+        "Bs. Hiền",
+        "Bs. Anh"
+      ]
+    },
+    "2026-06-10": {
+      "ungTruc": [
+        "Bs. Đức"
+      ],
+      "pkdk": [
+        "Bs. Tôn",
+        "Bs. Hiền"
+      ]
+    },
+    "2026-06-11": {
+      "ungTruc": [
+        "Bs. Dung"
+      ],
+      "pkdk": [
+        "Bs. Mẫn",
+        "Bs. Hiền"
+      ]
+    },
+    "2026-06-12": {
+      "ungTruc": [
+        "Bs. Mẫn"
+      ],
+      "pkdk": [
+        "Bs. Tôn",
+        "Bs. Tân"
+      ]
+    },
+    "2026-06-15": {
+      "ungTruc": [
+        "Bs. Đức"
+      ],
+      "pkdk": [
+        "Bs. Mẫn",
+        "Bs. Hiền"
+      ]
+    },
+    "2026-06-16": {
+      "pkdk": [
+        "Bs. Tân",
+        "Bs. Tôn"
+      ],
+      "ungTruc": [
+        "Bs. Mẫn"
+      ]
+    },
+    "2026-06-17": {
+      "pkdk": [
+        "Bs. Hiền",
+        "Bs. Dung"
+      ],
+      "ungTruc": [
+        "Bs. Tân"
+      ]
+    },
+    "2026-06-18": {
+      "pkdk": [
+        "Bs. Đức",
+        "Bs. Tôn"
+      ],
+      "ungTruc": [
+        "Bs. Dung"
+      ]
+    },
+    "2026-06-19": {
+      "pkdk": [
+        "Bs. Mẫn",
+        "Bs. Hiền"
+      ],
+      "ungTruc": [
+        "Bs. Đức"
+      ]
+    },
+    "2026-06-22": {
+      "pkdk": [
+        "Bs. Đức",
+        "Bs. Tôn"
+      ],
+      "ungTruc": [
+        "Bs. Dung"
+      ]
+    },
+    "2026-06-23": {
+      "pkdk": [
+        "Bs. Hiền",
+        "Bs. Mẫn"
+      ],
+      "ungTruc": [
+        "Bs. Đức"
+      ]
+    },
+    "2026-06-24": {
+      "pkdk": [
+        "Bs. Tôn",
+        "Bs. Tân"
+      ],
+      "ungTruc": [
+        "Bs. Mẫn"
+      ]
+    },
+    "2026-06-25": {
+      "pkdk": [
+        "Bs. Hiền",
+        "Bs. Dung"
+      ],
+      "ungTruc": [
+        "Bs. Tân"
+      ]
+    },
+    "2026-06-26": {
+      "pkdk": [
+        "Bs. Đức",
+        "Bs. Tôn"
+      ],
+      "ungTruc": [
+        "Bs. Dung"
+      ]
+    },
+    "2026-06-29": {
+      "pkdk": [
+        "Bs. Anh",
+        "Bs. Hiền"
+      ],
+      "ungTruc": [
+        "Bs. Tân"
+      ]
+    },
+    "2026-06-30": {
+      "pkdk": [
+        "Bs. Đức",
+        "Bs. Tôn"
+      ],
+      "ungTruc": [
+        "Bs. Dung"
+      ]
+    }
   }
 }

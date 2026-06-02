@@ -16,11 +16,6 @@
       "isCtch": false
     },
     {
-      "id": "doc-d",
-      "name": "Bs. Khánh",
-      "isCtch": true
-    },
-    {
       "id": "doc-e",
       "name": "Bs. Tòng",
       "isCtch": false
@@ -150,9 +145,9 @@
     "tour-1",
     "tour-2"
   ],
-  "showPkdv": true,
+  "showPkdv": false,
   "rotationStartDate": "2026-04-30",
-  "lastSaved": "2026-05-20T01:13:32.141Z",
+  "lastSaved": "2026-05-29T14:19:30.764Z",
   "holidaySchedule": {
     "startDate": null,
     "endDate": null,

@@ -10,6 +10,12 @@ import {
 } from '../types';
 import { INITIAL_DOCTORS, INITIAL_TOURS, INITIAL_TOUR_ORDER } from '../components/data';
 import { START_DATE } from '../constants';
+import {
+  loadBaseScheduleData,
+  loadMonthScheduleData,
+  saveBaseScheduleData,
+  saveMonthScheduleData,
+} from '../services/scheduleStorage';
 
 // Helper to get date string in YYYY-MM-DD format using local time components
 const getDateString = (date: Date): string => {
@@ -59,10 +65,11 @@ const DEFAULT_DATA: ScheduleData = {
 interface UseScheduleDataOptions {
   onError?: (message: string) => void;
   onSaveSuccess?: () => void;
+  enabled?: boolean;
 }
 
 export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
-  const { onError, onSaveSuccess } = options;
+  const { onError, onSaveSuccess, enabled = true } = options;
 
   const [doctors, setDoctors] = useState<Doctor[]>(DEFAULT_DATA.doctors);
   const [tours, setTours] = useState<Tour[]>(DEFAULT_DATA.tours);
@@ -94,16 +101,20 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
 
   // Load Base Data on mount
   useEffect(() => {
+    if (!enabled) {
+      setIsLoaded(false);
+      return;
+    }
+
     const loadBaseData = async () => {
       try {
-        const res = await fetch('/api/storage/schedule_base.json');
-        if (res.ok) {
-          const data: ScheduleData = await res.json();
+        const data = await loadBaseScheduleData();
+        if (data) {
           if (data.doctors?.length > 0) setDoctors(data.doctors);
           if (data.tours?.length > 0) setTours(data.tours);
           if (data.tourOrder?.length > 0) setTourOrder(data.tourOrder);
           if (typeof data.showPkdv === 'boolean') setShowPkdv(data.showPkdv);
-          if (data.rotationStartDate) setRotationStartDate(data.rotationStartDate);
+          if (typeof data.rotationStartDate === 'string') setRotationStartDate(data.rotationStartDate);
           if (data.holidaySchedule) setHolidaySchedule(data.holidaySchedule);
           // Don't overwrite overrides from base, only global settings
         }
@@ -114,18 +125,19 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
       }
     };
     loadBaseData();
-  }, []);
+  }, [enabled]);
 
   // Load Monthly Data when currentViewDate changes
   useEffect(() => {
+    if (!enabled) return;
+
     const loadMonthlyData = async () => {
       const filename = getMonthKey(currentViewDate);
       if (loadedMonthsRef.current.has(filename)) return; // Already loaded
 
       try {
-        const res = await fetch(`/api/storage/${filename}`);
-        if (res.ok) {
-          const data = await res.json();
+        const data = await loadMonthScheduleData(filename);
+        if (data) {
           // Merge overrides
           setTourOverrides((prev) => ({ ...prev, ...data.tourOverrides }));
           setDoctorOverrides((prev) => ({ ...prev, ...data.doctorOverrides }));
@@ -146,7 +158,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
       }
     };
     loadMonthlyData();
-  }, [currentViewDate]);
+  }, [currentViewDate, enabled]);
 
   // Save data to file (debounced) - INTELLIGENT SAVE
   const saveData = useCallback(async () => {
@@ -162,11 +174,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
 
     try {
       // Save Base
-      await fetch('/api/storage/schedule_base.json', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(baseData, null, 2),
-      });
+      await saveBaseScheduleData(baseData);
 
       // 2. Save Monthly Data (Overrides)
       // We need to group overrides by month to save to correct files
@@ -223,29 +231,17 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
       // Plan: Keep Holiday in Base for now as it's rare and usually single active event.
       // Updated Base Data to include holidaySchedule
       const baseDataWithHoliday = { ...baseData, holidaySchedule };
-      await fetch('/api/storage/schedule_base.json', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(baseDataWithHoliday, null, 2),
-      });
+      await saveBaseScheduleData(baseDataWithHoliday);
 
       for (const [filename, content] of Object.entries(changesByMonth)) {
-        await fetch(`/api/storage/${filename}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(content, null, 2),
-        });
+        await saveMonthScheduleData(filename, content);
       }
 
       // Also save any months that were modified but now have no overrides
       for (const filename of modifiedMonthsRef.current) {
         if (!changesByMonth[filename]) {
           // This month was modified but has no remaining overrides, save empty object
-          await fetch(`/api/storage/${filename}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({}, null, 2),
-          });
+          await saveMonthScheduleData(filename, {});
         }
       }
       modifiedMonthsRef.current.clear(); // Clear after successful save
@@ -280,7 +276,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
 
   // Auto-save when data changes (debounced 1 second)
   useEffect(() => {
-    if (!isLoaded) return; // Don't save before initial load
+    if (!enabled || !isLoaded) return; // Don't save before initial load
 
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
@@ -302,6 +298,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
     departmentAssignments,
     holidaySchedule,
     isLoaded,
+    enabled,
     saveData,
   ]);
 
