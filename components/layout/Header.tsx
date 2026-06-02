@@ -2,12 +2,17 @@ import React from 'react';
 import { View } from '../../types';
 import { GearIcon } from '../icons/GearIcon';
 import { CalendarIcon } from '../icons/CalendarIcon';
+import { LockIcon } from '../icons/LockIcon';
+import { UnlockIcon } from '../icons/UnlockIcon';
 import ThemeToggle from '../common/ThemeToggle';
 
 interface HeaderProps {
   view: View;
   onViewChange: (view: View) => void;
   onToggleSettings: () => void;
+  showEditLock?: boolean;
+  canEdit?: boolean;
+  onToggleEditLock?: () => void;
 }
 
 const TAB_CONFIG = [
@@ -21,7 +26,14 @@ const TAB_CONFIG = [
   { id: View.HOLIDAY_SCHEDULE, label: 'Lễ tết', width: 72, ariaLabel: 'Xem lịch trực Lễ Tết' },
 ];
 
-const Header: React.FC<HeaderProps> = ({ view, onViewChange, onToggleSettings }) => {
+const Header: React.FC<HeaderProps> = ({
+  view,
+  onViewChange,
+  onToggleSettings,
+  showEditLock = false,
+  canEdit = false,
+  onToggleEditLock,
+}) => {
   const activeIndex = TAB_CONFIG.findIndex((tab) => tab.id === view);
   const activeTab = TAB_CONFIG[activeIndex] || TAB_CONFIG[0];
 
@@ -79,6 +91,21 @@ const Header: React.FC<HeaderProps> = ({ view, onViewChange, onToggleSettings })
           </div>
           <nav aria-label="Điều hướng cài đặt" className="flex items-center gap-2">
             <ThemeToggle />
+            {showEditLock && onToggleEditLock && (
+              <button
+                onClick={onToggleEditLock}
+                className={`p-2.5 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 ${
+                  canEdit
+                    ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/30'
+                    : 'text-slate-500 dark:text-slate-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-600 dark:hover:text-indigo-400'
+                }`}
+                aria-label={canEdit ? 'Khóa chỉnh sửa' : 'Mở khóa chỉnh sửa'}
+                aria-pressed={canEdit}
+                title={canEdit ? 'Khóa chỉnh sửa' : 'Mở khóa chỉnh sửa'}
+              >
+                {canEdit ? <UnlockIcon className="h-5 w-5" /> : <LockIcon className="h-5 w-5" />}
+              </button>
+            )}
             <button
               onClick={onToggleSettings}
               className="p-2.5 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"

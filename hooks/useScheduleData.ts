@@ -256,7 +256,11 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
       onSaveSuccess?.();
     } catch (error) {
       console.error('Failed to save:', error);
-      onError?.('Không thể lưu dữ liệu. Vui lòng thử lại.');
+      onError?.(
+        error instanceof Error && error.message === 'Missing editor email'
+          ? 'Lịch đang khóa. Bấm biểu tượng ổ khóa và nhập email để chỉnh sửa.'
+          : 'Không thể lưu dữ liệu. Vui lòng thử lại.',
+      );
     }
   }, [
     doctors,

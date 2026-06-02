@@ -93,6 +93,10 @@ export const saveBaseScheduleData = async (data: ScheduleBaseStorageData): Promi
     return;
   }
 
+  if (!editorEmail) {
+    throw new Error('Missing editor email');
+  }
+
   const { error } = await supabase.rpc('save_schedule_base_by_email', {
     input_email: editorEmail,
     input_data: data,
@@ -126,6 +130,10 @@ export const saveMonthScheduleData = async (
   if (!supabase) {
     await saveLocalJson(filename, data);
     return;
+  }
+
+  if (!editorEmail) {
+    throw new Error('Missing editor email');
   }
 
   const month = monthFromFilename(filename);

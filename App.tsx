@@ -1,4 +1,4 @@
-import React, { useState, useTransition } from 'react';
+import React, { useEffect, useState, useTransition } from 'react';
 import { View } from './types';
 import ScheduleView from './components/schedule/ScheduleView';
 import SettingsView from './components/settings/SettingsView';
@@ -29,7 +29,7 @@ const App: React.FC = () => {
 
   const { toasts, showToast, hideToast } = useToast();
   const auth = useSupabaseAuth();
-  const canWrite = !isSupabaseConfigured || Boolean(auth.session) || hasEditorAccess;
+  const canWrite = !isSupabaseConfigured || hasEditorAccess;
 
   const scheduleData = useScheduleData({
     onError: (message) => showToast(message, 'error'),
@@ -55,6 +55,38 @@ const App: React.FC = () => {
       changeView(View.SETTINGS);
     }
   };
+
+  const handleToggleEditLock = () => {
+    if (canWrite) {
+      void handleSignOut();
+      return;
+    }
+
+    setShowEditLogin(true);
+  };
+
+  useEffect(() => {
+    const sessionEmail = auth.session?.user.email;
+    if (!sessionEmail || hasEditorAccess) return;
+
+    let isActive = true;
+    verifyScheduleEditorEmail(sessionEmail)
+      .then((isEditor) => {
+        if (!isActive || !isEditor) return;
+        setScheduleEditorEmail(sessionEmail);
+        setHasEditorAccess(true);
+      })
+      .catch(() => {
+        if (isActive) {
+          clearScheduleEditorEmail();
+          setHasEditorAccess(false);
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [auth.session?.user.email, hasEditorAccess]);
 
   const handleSignOut = async () => {
     try {
@@ -82,7 +114,14 @@ const App: React.FC = () => {
   return (
     <ErrorBoundary>
       <div className="min-h-screen font-sans bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 transition-colors duration-300">
-        <Header view={view} onViewChange={changeView} onToggleSettings={handleToggleSettings} />
+        <Header
+          view={view}
+          onViewChange={changeView}
+          onToggleSettings={handleToggleSettings}
+          showEditLock={isSupabaseConfigured}
+          canEdit={canWrite}
+          onToggleEditLock={handleToggleEditLock}
+        />
 
         <main
           className={`container mx-auto p-4 sm:p-6 lg:p-8 transition-opacity duration-150 ${contentVisible ? 'opacity-100' : 'opacity-0'}`}
@@ -92,22 +131,13 @@ const App: React.FC = () => {
               <span className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-500 dark:text-slate-400">
                 {canWrite ? 'Đang chỉnh sửa' : 'Chỉ xem'}
               </span>
-              {canWrite ? (
-                <button
-                  onClick={handleSignOut}
-                  className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                >
-                  Khóa chỉnh sửa
-                </button>
-              ) : (
-                <button
-                  onClick={() => setShowEditLogin(true)}
-                  disabled={!auth.isReady}
-                  className="px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-                >
-                  Chỉnh sửa
-                </button>
-              )}
+              <button
+                onClick={handleToggleEditLock}
+                disabled={!canWrite && !auth.isReady}
+                className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+              >
+                {canWrite ? 'Khóa chỉnh sửa' : 'Mở khóa'}
+              </button>
             </div>
           )}
 
