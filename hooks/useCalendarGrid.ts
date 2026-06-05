@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Doctor, Tour, ScheduleCalendarDay } from '../types';
+import { Doctor, Tour, ScheduleCalendarDay, ScheduleSnapshotEntry } from '../types';
 import { START_DATE } from '../constants';
 
 export const useCalendarGrid = (
@@ -11,6 +11,7 @@ export const useCalendarGrid = (
   tourOverrides: Record<string, string>,
   getDoctorsForDate: (date: Date) => string[] | undefined,
   rotationStartDate: string | null,
+  scheduleSnapshots: Record<string, ScheduleSnapshotEntry> = {},
 ) => {
   return useMemo(() => {
     const today = new Date();
@@ -59,11 +60,21 @@ export const useCalendarGrid = (
       // We still want to show the tour name if possible
       // Logic for tour name (main tour)
       let tourId: string | undefined;
+      let tourName: string | undefined;
       const hasTourOverride = !!tourOverrides[dateString];
+      const hasDoctorOverride = !!doctorOverrides[dateString];
+      const snapshot = scheduleSnapshots[dateString];
       if (hasTourOverride) {
         tourId = tourOverrides[dateString];
+      } else if (hasDoctorOverride) {
+        tourName = doctors?.[0];
+      } else if (snapshot) {
+        tourId = snapshot.tourId;
+        tourName = snapshot.tourName || snapshot.doctors[0];
       } else {
-        const rotationStartDateParsed = rotationStartDate ? new Date(rotationStartDate) : START_DATE;
+        const rotationStartDateParsed = rotationStartDate
+          ? new Date(rotationStartDate)
+          : START_DATE;
         const startDateRaw = date < rotationStartDateParsed ? START_DATE : rotationStartDateParsed;
         const startDate = new Date(
           startDateRaw.getFullYear(),
@@ -78,18 +89,17 @@ export const useCalendarGrid = (
         }
       }
 
-      let tourName: string | undefined;
-      if (tourId === 'reinforcement') {
-        tourName = 'trực tăng cường';
-      } else if (doctors && doctors.length > 0) {
-        tourName = doctors[0];
-      } else {
-        const tour = tourId ? toursById[tourId] : undefined;
-        const firstDoctorId = tour?.doctorIds[0];
-        tourName = firstDoctorId ? doctorsById[firstDoctorId]?.name : undefined;
+      if (!tourName) {
+        if (tourId === 'reinforcement') {
+          tourName = 'trực tăng cường';
+        } else if (doctors && doctors.length > 0) {
+          tourName = doctors[0];
+        } else {
+          const tour = tourId ? toursById[tourId] : undefined;
+          const firstDoctorId = tour?.doctorIds[0];
+          tourName = firstDoctorId ? doctorsById[firstDoctorId]?.name : undefined;
+        }
       }
-
-      const hasDoctorOverride = !!doctorOverrides[dateString];
 
       days.push({
         date,
@@ -127,5 +137,6 @@ export const useCalendarGrid = (
     tourOverrides,
     getDoctorsForDate,
     rotationStartDate,
+    scheduleSnapshots,
   ]);
 };

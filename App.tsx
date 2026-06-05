@@ -123,6 +123,7 @@ const App: React.FC = () => {
               tourOrder={scheduleData.tourOrder}
               tourOverrides={scheduleData.tourOverrides}
               doctorOverrides={scheduleData.doctorOverrides}
+              scheduleSnapshots={scheduleData.scheduleSnapshots}
               onSwapTours={scheduleData.handleSwapTours}
               onSwapDoctors={scheduleData.handleSwapDoctors}
               allDoctors={scheduleData.doctors}
@@ -182,6 +183,7 @@ const App: React.FC = () => {
                 tourOrder: scheduleData.tourOrder,
                 tourOverrides: scheduleData.tourOverrides,
                 doctorOverrides: scheduleData.doctorOverrides,
+                scheduleSnapshots: scheduleData.scheduleSnapshots,
                 showPkdv: scheduleData.showPkdv,
                 departmentAssignments: scheduleData.departmentAssignments,
               }}

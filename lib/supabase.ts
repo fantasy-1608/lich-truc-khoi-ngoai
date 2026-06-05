@@ -7,5 +7,5 @@ export const isSupabaseConfigured = Boolean(supabaseUrl && supabasePublishableKe
 export const editorEmail = import.meta.env.VITE_EDITOR_EMAIL;
 
 export const supabase: SupabaseClient | null = isSupabaseConfigured
-  ? createClient(supabaseUrl, supabasePublishableKey)
+  ? createClient(supabaseUrl as string, supabasePublishableKey as string)
   : null;

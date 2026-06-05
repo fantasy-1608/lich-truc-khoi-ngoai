@@ -7,6 +7,7 @@ import {
   DepartmentAssignments,
   ImportData,
   HolidayScheduleData,
+  ScheduleSnapshotEntry,
 } from '../types';
 import { INITIAL_DOCTORS, INITIAL_TOURS, INITIAL_TOUR_ORDER } from '../components/data';
 import { START_DATE } from '../constants';
@@ -25,6 +26,11 @@ const getDateString = (date: Date): string => {
   return `${year}-${month}-${day}`;
 };
 
+const parseLocalDateString = (dateString: string): Date => {
+  const [year, month, day] = dateString.split('-').map(Number);
+  return new Date(year, month - 1, day);
+};
+
 // Storage file path (via Vite API)
 // STORAGE_URL removed as it was unused
 
@@ -34,6 +40,7 @@ interface ScheduleData {
   tourOrder: string[];
   tourOverrides: Record<string, string>;
   doctorOverrides: Record<string, string[]>;
+  scheduleSnapshots: Record<string, ScheduleSnapshotEntry>;
   showPkdv: boolean;
   departmentAssignments: Record<string, Partial<DepartmentAssignments>>;
   holidaySchedule: HolidayScheduleData;
@@ -55,6 +62,7 @@ const DEFAULT_DATA: ScheduleData = {
   tourOrder: INITIAL_TOUR_ORDER,
   tourOverrides: {},
   doctorOverrides: {},
+  scheduleSnapshots: {},
   showPkdv: true,
   departmentAssignments: {},
   holidaySchedule: DEFAULT_HOLIDAY_SCHEDULE,
@@ -77,6 +85,9 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
   const [tourOrder, setTourOrder] = useState<string[]>(DEFAULT_DATA.tourOrder);
   const [tourOverrides, setTourOverrides] = useState<Record<string, string>>({});
   const [doctorOverrides, setDoctorOverrides] = useState<Record<string, string[]>>({});
+  const [scheduleSnapshots, setScheduleSnapshots] = useState<Record<string, ScheduleSnapshotEntry>>(
+    {},
+  );
   const [showPkdv, setShowPkdv] = useState<boolean>(true);
   const [departmentAssignments, setDepartmentAssignments] = useState<
     Record<string, Partial<DepartmentAssignments>>
@@ -117,11 +128,14 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
       try {
         const data = await loadBaseScheduleData();
         if (data) {
-          if (data.doctors?.length > 0) setDoctors(data.doctors);
-          if (data.tours?.length > 0) setTours(data.tours);
-          if (data.tourOrder?.length > 0) setTourOrder(data.tourOrder);
+          if (Array.isArray(data.doctors) && data.doctors.length > 0) setDoctors(data.doctors);
+          if (Array.isArray(data.tours) && data.tours.length > 0) setTours(data.tours);
+          if (Array.isArray(data.tourOrder) && data.tourOrder.length > 0) {
+            setTourOrder(data.tourOrder);
+          }
           if (typeof data.showPkdv === 'boolean') setShowPkdv(data.showPkdv);
-          if (typeof data.rotationStartDate === 'string') setRotationStartDate(data.rotationStartDate);
+          if (typeof data.rotationStartDate === 'string')
+            setRotationStartDate(data.rotationStartDate);
           if (data.holidaySchedule) setHolidaySchedule(data.holidaySchedule);
           // Don't overwrite overrides from base, only global settings
         }
@@ -148,6 +162,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
           // Merge overrides
           setTourOverrides((prev) => ({ ...prev, ...data.tourOverrides }));
           setDoctorOverrides((prev) => ({ ...prev, ...data.doctorOverrides }));
+          setScheduleSnapshots((prev) => ({ ...prev, ...data.scheduleSnapshots }));
           setDepartmentAssignments((prev) => ({ ...prev, ...data.departmentAssignments }));
           // Merge holiday if exists (might need better strategy for multi-month holidays)
           if (data.holidaySchedule) {
@@ -192,7 +207,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
       const addToPartition = (
         dateStr: string,
         data: any,
-        type: 'tourOverrides' | 'doctorOverrides' | 'departmentAssignments',
+        type: 'tourOverrides' | 'doctorOverrides' | 'scheduleSnapshots' | 'departmentAssignments',
       ) => {
         // Parse dateStr (YYYY-MM-DD) directly to avoid timezone shifts
         const parts = dateStr.split('-');
@@ -209,6 +224,9 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
 
       Object.entries(tourOverrides).forEach(([k, v]) => addToPartition(k, v, 'tourOverrides'));
       Object.entries(doctorOverrides).forEach(([k, v]) => addToPartition(k, v, 'doctorOverrides'));
+      Object.entries(scheduleSnapshots).forEach(([k, v]) =>
+        addToPartition(k, v, 'scheduleSnapshots'),
+      );
       Object.entries(departmentAssignments).forEach(([k, v]) =>
         addToPartition(k, v, 'departmentAssignments'),
       );
@@ -268,6 +286,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
     tourOrder,
     tourOverrides,
     doctorOverrides,
+    scheduleSnapshots,
     showPkdv,
     departmentAssignments,
     holidaySchedule,
@@ -305,6 +324,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
     tourOrder,
     tourOverrides,
     doctorOverrides,
+    scheduleSnapshots,
     showPkdv,
     departmentAssignments,
     holidaySchedule,
@@ -357,6 +377,11 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
         const tourId = tourOverrides[dateString];
         const tour = tourId ? toursById[tourId] : undefined;
         return tour?.doctorIds.map((id) => doctorsById[id]?.name).filter(Boolean) as string[];
+      }
+
+      // 4. Priority: Frozen monthly snapshot
+      if (scheduleSnapshots[dateString]) {
+        return scheduleSnapshots[dateString].doctors;
       }
 
       // Define effective start date for calculations
@@ -492,7 +517,16 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
 
       return undefined;
     },
-    [tourOrder, toursById, doctorsById, doctorOverrides, tourOverrides, holidaySchedule, rotationStartDate],
+    [
+      tourOrder,
+      toursById,
+      doctorsById,
+      doctorOverrides,
+      tourOverrides,
+      scheduleSnapshots,
+      holidaySchedule,
+      rotationStartDate,
+    ],
   );
 
   const handleSwapTours = useCallback(
@@ -502,6 +536,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
       const getEffectiveTourId = (date: Date): string | undefined => {
         const dateString = getDateString(date);
         if (tourOverrides[dateString]) return tourOverrides[dateString];
+        if (scheduleSnapshots[dateString]?.tourId) return scheduleSnapshots[dateString].tourId;
 
         // Parse rotationStartDate as local date (YYYY-MM-DD format)
         let startDate: Date;
@@ -535,7 +570,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
 
       setTourOverrides((current) => ({ ...current, [date1Str]: tourId2, [date2Str]: tourId1 }));
     },
-    [tourOverrides, tourOrder, rotationStartDate, ensureCanWrite],
+    [tourOverrides, scheduleSnapshots, tourOrder, rotationStartDate, ensureCanWrite],
   );
 
   const handleSwapDoctors = useCallback(
@@ -584,24 +619,27 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
     [getDoctorsForDate, ensureCanWrite],
   );
 
-  const handleResetOverrides = useCallback((date: Date) => {
-    if (!ensureCanWrite()) return;
+  const handleResetOverrides = useCallback(
+    (date: Date) => {
+      if (!ensureCanWrite()) return;
 
-    const dateStr = getDateString(date);
-    const monthKey = `schedule_${dateStr.substring(0, 4)}_${dateStr.substring(5, 7)}.json`;
-    modifiedMonthsRef.current.add(monthKey); // Mark month as modified
+      const dateStr = getDateString(date);
+      const monthKey = `schedule_${dateStr.substring(0, 4)}_${dateStr.substring(5, 7)}.json`;
+      modifiedMonthsRef.current.add(monthKey); // Mark month as modified
 
-    setTourOverrides((current) => {
-      const next = { ...current };
-      delete next[dateStr];
-      return next;
-    });
-    setDoctorOverrides((current) => {
-      const next = { ...current };
-      delete next[dateStr];
-      return next;
-    });
-  }, [ensureCanWrite]);
+      setTourOverrides((current) => {
+        const next = { ...current };
+        delete next[dateStr];
+        return next;
+      });
+      setDoctorOverrides((current) => {
+        const next = { ...current };
+        delete next[dateStr];
+        return next;
+      });
+    },
+    [ensureCanWrite],
+  );
 
   const handleUpdateDoctorInTour = useCallback(
     (tourId: string, doctorIndex: number, newDoctorId: string) => {
@@ -618,42 +656,128 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
     [ensureCanWrite],
   );
 
+  const getStandardTourIdForDate = useCallback(
+    (date: Date): string | undefined => {
+      const startDate = rotationStartDate
+        ? parseLocalDateString(rotationStartDate)
+        : new Date(START_DATE);
+      startDate.setHours(0, 0, 0, 0);
+
+      const checkDate = new Date(date);
+      checkDate.setHours(0, 0, 0, 0);
+
+      const diffTime = checkDate.getTime() - startDate.getTime();
+      if (diffTime < 0 || tourOrder.length === 0) return undefined;
+
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      return tourOrder[diffDays % tourOrder.length];
+    },
+    [rotationStartDate, tourOrder],
+  );
+
+  const freezeScheduleBefore = useCallback(
+    (exclusiveEndDate: Date) => {
+      const startDate = rotationStartDate
+        ? parseLocalDateString(rotationStartDate)
+        : new Date(START_DATE);
+      startDate.setHours(0, 0, 0, 0);
+
+      const boundaryDate = new Date(
+        exclusiveEndDate.getFullYear(),
+        exclusiveEndDate.getMonth(),
+        exclusiveEndDate.getDate(),
+      );
+      boundaryDate.setHours(0, 0, 0, 0);
+
+      if (boundaryDate <= startDate) return;
+
+      const snapshotsToAdd: Record<string, ScheduleSnapshotEntry> = {};
+      const iterDate = new Date(startDate);
+
+      while (iterDate < boundaryDate) {
+        const dateStr = getDateString(iterDate);
+
+        if (!scheduleSnapshots[dateStr]) {
+          const doctorsForDate = getDoctorsForDate(iterDate);
+          if (doctorsForDate && doctorsForDate.length > 0) {
+            const tourId = tourOverrides[dateStr] || getStandardTourIdForDate(iterDate);
+            snapshotsToAdd[dateStr] = {
+              doctors: doctorsForDate,
+              tourId,
+              tourName: doctorsForDate[0],
+            };
+          }
+        }
+
+        iterDate.setDate(iterDate.getDate() + 1);
+      }
+
+      if (Object.keys(snapshotsToAdd).length > 0) {
+        setScheduleSnapshots((current) => ({ ...current, ...snapshotsToAdd }));
+      }
+    },
+    [
+      rotationStartDate,
+      scheduleSnapshots,
+      tourOverrides,
+      getDoctorsForDate,
+      getStandardTourIdForDate,
+    ],
+  );
+
   const handleReorderTours = useCallback(
     (newOrder: string[]) => {
       if (!ensureCanWrite()) return;
+      const isSameOrder =
+        newOrder.length === tourOrder.length &&
+        newOrder.every((tourId, index) => tourId === tourOrder[index]);
+      if (isSameOrder) return;
+
+      const currentMonthStart = new Date(
+        currentViewDate.getFullYear(),
+        currentViewDate.getMonth(),
+        1,
+      );
+      freezeScheduleBefore(currentMonthStart);
       setTourOrder(newOrder);
     },
-    [ensureCanWrite],
+    [currentViewDate, ensureCanWrite, freezeScheduleBefore, tourOrder],
   );
   const handleTogglePkdvVisibility = useCallback(() => {
     if (!ensureCanWrite()) return;
     setShowPkdv((current) => !current);
   }, [ensureCanWrite]);
 
-  const handleAddDoctor = useCallback((name: string, isCtch: boolean) => {
-    if (!ensureCanWrite()) return;
+  const handleAddDoctor = useCallback(
+    (name: string, isCtch: boolean) => {
+      if (!ensureCanWrite()) return;
 
-    if (name.trim()) {
-      const newDoctor: Doctor = {
-        id: `doc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        name: name.trim(),
-        isCtch,
-      };
-      setDoctors((current) => [...current, newDoctor]);
-    }
-  }, [ensureCanWrite]);
+      if (name.trim()) {
+        const newDoctor: Doctor = {
+          id: `doc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          name: name.trim(),
+          isCtch,
+        };
+        setDoctors((current) => [...current, newDoctor]);
+      }
+    },
+    [ensureCanWrite],
+  );
 
-  const handleRemoveDoctor = useCallback((id: string) => {
-    if (!ensureCanWrite()) return;
+  const handleRemoveDoctor = useCallback(
+    (id: string) => {
+      if (!ensureCanWrite()) return;
 
-    setDoctors((current) => current.filter((d) => d.id !== id));
-    setTours((current) =>
-      current.map((t) => ({
-        ...t,
-        doctorIds: t.doctorIds.map((docId) => (docId === id ? '' : docId)),
-      })),
-    );
-  }, [ensureCanWrite]);
+      setDoctors((current) => current.filter((d) => d.id !== id));
+      setTours((current) =>
+        current.map((t) => ({
+          ...t,
+          doctorIds: t.doctorIds.map((docId) => (docId === id ? '' : docId)),
+        })),
+      );
+    },
+    [ensureCanWrite],
+  );
 
   const handleUpdateDoctor = useCallback(
     (id: string, updatedDoctor: Partial<Omit<Doctor, 'id'>>) => {
@@ -675,23 +799,31 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
     [ensureCanWrite],
   );
 
-  const handleAddDoctorToTour = useCallback((tourId: string) => {
-    if (!ensureCanWrite()) return;
+  const handleAddDoctorToTour = useCallback(
+    (tourId: string) => {
+      if (!ensureCanWrite()) return;
 
-    setTours((current) =>
-      current.map((t) => (t.id === tourId ? { ...t, doctorIds: [...t.doctorIds, ''] } : t)),
-    );
-  }, [ensureCanWrite]);
+      setTours((current) =>
+        current.map((t) => (t.id === tourId ? { ...t, doctorIds: [...t.doctorIds, ''] } : t)),
+      );
+    },
+    [ensureCanWrite],
+  );
 
-  const handleRemoveDoctorFromTour = useCallback((tourId: string, doctorIndex: number) => {
-    if (!ensureCanWrite()) return;
+  const handleRemoveDoctorFromTour = useCallback(
+    (tourId: string, doctorIndex: number) => {
+      if (!ensureCanWrite()) return;
 
-    setTours((current) =>
-      current.map((t) =>
-        t.id === tourId ? { ...t, doctorIds: t.doctorIds.filter((_, i) => i !== doctorIndex) } : t,
-      ),
-    );
-  }, [ensureCanWrite]);
+      setTours((current) =>
+        current.map((t) =>
+          t.id === tourId
+            ? { ...t, doctorIds: t.doctorIds.filter((_, i) => i !== doctorIndex) }
+            : t,
+        ),
+      );
+    },
+    [ensureCanWrite],
+  );
 
   const handleUpdateDepartmentAssignments = useCallback(
     (date: Date, role: DepartmentRole, doctors: string[]) => {
@@ -717,79 +849,98 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
     [ensureCanWrite],
   );
 
-  const handleImportData = useCallback((data: ImportData, onSuccess?: () => void) => {
-    if (!ensureCanWrite()) return;
+  const handleImportData = useCallback(
+    (data: ImportData, onSuccess?: () => void) => {
+      if (!ensureCanWrite()) return;
 
-    if (data.doctors) setDoctors(data.doctors);
-    if (data.tours) setTours(data.tours);
-    if (data.tourOrder) setTourOrder(data.tourOrder);
-    if (data.tourOverrides) setTourOverrides(data.tourOverrides);
-    if (data.doctorOverrides) setDoctorOverrides(data.doctorOverrides);
-    if (typeof data.showPkdv === 'boolean') setShowPkdv(data.showPkdv);
-    if (data.departmentAssignments) setDepartmentAssignments(data.departmentAssignments);
-    if (data.holidaySchedule) setHolidaySchedule(data.holidaySchedule);
-    if (onSuccess) {
-      onSuccess();
-    }
-  }, [ensureCanWrite]);
+      if (data.doctors) setDoctors(data.doctors);
+      if (data.tours) setTours(data.tours);
+      if (data.tourOrder) setTourOrder(data.tourOrder);
+      if (data.tourOverrides) setTourOverrides(data.tourOverrides);
+      if (data.doctorOverrides) setDoctorOverrides(data.doctorOverrides);
+      if (data.scheduleSnapshots) setScheduleSnapshots(data.scheduleSnapshots);
+      if (typeof data.showPkdv === 'boolean') setShowPkdv(data.showPkdv);
+      if (data.departmentAssignments) setDepartmentAssignments(data.departmentAssignments);
+      if (data.holidaySchedule) setHolidaySchedule(data.holidaySchedule);
+      if (onSuccess) {
+        onSuccess();
+      }
+    },
+    [ensureCanWrite],
+  );
 
   // Holiday Schedule Handlers
-  const handleSetHolidayPeriod = useCallback((startDate: string | null, endDate: string | null) => {
-    if (!ensureCanWrite()) return;
+  const handleSetHolidayPeriod = useCallback(
+    (startDate: string | null, endDate: string | null) => {
+      if (!ensureCanWrite()) return;
 
-    setHolidaySchedule((current) => ({
-      ...current,
-      startDate,
-      endDate,
-      // Reset overrides when period changes
-      doctorOverrides: {},
-    }));
-  }, [ensureCanWrite]);
-
-  const handleUpdateHolidayDoctors = useCallback((dateStr: string, doctors: string[]) => {
-    if (!ensureCanWrite()) return;
-
-    // Max 6 doctors
-    const limitedDoctors = doctors.slice(0, 6);
-    setHolidaySchedule((current) => ({
-      ...current,
-      doctorOverrides: {
-        ...current.doctorOverrides,
-        [dateStr]: limitedDoctors,
-      },
-    }));
-  }, [ensureCanWrite]);
-
-  const handleSetHolidayTour = useCallback((tourId: string | undefined) => {
-    if (!ensureCanWrite()) return;
-
-    setHolidaySchedule((current) => ({
-      ...current,
-      holidayTourId: tourId,
-    }));
-  }, [ensureCanWrite]);
-
-  const handleSetHolidayInsertionIndex = useCallback((index: number) => {
-    if (!ensureCanWrite()) return;
-
-    setHolidaySchedule((current) => ({
-      ...current,
-      holidayInsertionIndex: index,
-    }));
-  }, [ensureCanWrite]);
-
-  const handleResetHolidayDay = useCallback((dateStr: string) => {
-    if (!ensureCanWrite()) return;
-
-    setHolidaySchedule((current) => {
-      const nextOverrides = { ...current.doctorOverrides };
-      delete nextOverrides[dateStr];
-      return {
+      setHolidaySchedule((current) => ({
         ...current,
-        doctorOverrides: nextOverrides,
-      };
-    });
-  }, [ensureCanWrite]);
+        startDate,
+        endDate,
+        // Reset overrides when period changes
+        doctorOverrides: {},
+      }));
+    },
+    [ensureCanWrite],
+  );
+
+  const handleUpdateHolidayDoctors = useCallback(
+    (dateStr: string, doctors: string[]) => {
+      if (!ensureCanWrite()) return;
+
+      // Max 6 doctors
+      const limitedDoctors = doctors.slice(0, 6);
+      setHolidaySchedule((current) => ({
+        ...current,
+        doctorOverrides: {
+          ...current.doctorOverrides,
+          [dateStr]: limitedDoctors,
+        },
+      }));
+    },
+    [ensureCanWrite],
+  );
+
+  const handleSetHolidayTour = useCallback(
+    (tourId: string | undefined) => {
+      if (!ensureCanWrite()) return;
+
+      setHolidaySchedule((current) => ({
+        ...current,
+        holidayTourId: tourId,
+      }));
+    },
+    [ensureCanWrite],
+  );
+
+  const handleSetHolidayInsertionIndex = useCallback(
+    (index: number) => {
+      if (!ensureCanWrite()) return;
+
+      setHolidaySchedule((current) => ({
+        ...current,
+        holidayInsertionIndex: index,
+      }));
+    },
+    [ensureCanWrite],
+  );
+
+  const handleResetHolidayDay = useCallback(
+    (dateStr: string) => {
+      if (!ensureCanWrite()) return;
+
+      setHolidaySchedule((current) => {
+        const nextOverrides = { ...current.doctorOverrides };
+        delete nextOverrides[dateStr];
+        return {
+          ...current,
+          doctorOverrides: nextOverrides,
+        };
+      });
+    },
+    [ensureCanWrite],
+  );
 
   const handleSetRotationStartDate = useCallback(
     (newDateStr: string | null) => {
@@ -856,6 +1007,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
     tourOrder,
     tourOverrides,
     doctorOverrides,
+    scheduleSnapshots,
     showPkdv,
     departmentAssignments,
     holidaySchedule,

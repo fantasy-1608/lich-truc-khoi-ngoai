@@ -1,5 +1,11 @@
 import { supabase } from '../lib/supabase';
-import { DepartmentAssignments, Doctor, HolidayScheduleData, Tour } from '../types';
+import {
+  DepartmentAssignments,
+  Doctor,
+  HolidayScheduleData,
+  ScheduleSnapshotEntry,
+  Tour,
+} from '../types';
 
 const BASE_FILENAME = 'schedule_base.json';
 const BASE_ID = 'default';
@@ -21,6 +27,7 @@ export interface ScheduleBaseStorageData {
 export interface ScheduleMonthStorageData {
   tourOverrides?: Record<string, string>;
   doctorOverrides?: Record<string, string[]>;
+  scheduleSnapshots?: Record<string, ScheduleSnapshotEntry>;
   departmentAssignments?: Record<string, Partial<DepartmentAssignments>>;
   holidaySchedule?: HolidayScheduleData;
 }

@@ -37,6 +37,12 @@ export interface ScheduleCalendarDay extends CalendarDay {
   isModified: boolean;
 }
 
+export interface ScheduleSnapshotEntry {
+  doctors: string[];
+  tourId?: string;
+  tourName?: string;
+}
+
 export interface HolidayCalendarDay extends CalendarDay {
   doctors: string[];
   originalDoctors: string[]; // Từ lịch khối ngoại
@@ -70,6 +76,7 @@ export interface ImportData {
   tourOrder?: string[];
   tourOverrides?: Record<string, string>;
   doctorOverrides?: Record<string, string[]>;
+  scheduleSnapshots?: Record<string, ScheduleSnapshotEntry>;
   showPkdv?: boolean;
   departmentAssignments?: Record<string, Partial<DepartmentAssignments>>;
   holidaySchedule?: HolidayScheduleData;

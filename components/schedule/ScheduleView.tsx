@@ -1,6 +1,14 @@
 import React, { useState, useRef } from 'react';
 import { getNextMonthDate } from '../../utils/date';
-import { Tour, SelectedDoctor, ResetPopoverState, ScheduleCalendarDay, Doctor, HolidayScheduleData } from '../../types';
+import {
+  Tour,
+  SelectedDoctor,
+  ResetPopoverState,
+  ScheduleCalendarDay,
+  Doctor,
+  HolidayScheduleData,
+  ScheduleSnapshotEntry,
+} from '../../types';
 import { useCalendarGrid } from '../../hooks/useCalendarGrid';
 import ScheduleHeader from './ScheduleHeader';
 import ScheduleDayCell from './ScheduleDayCell';
@@ -13,6 +21,7 @@ interface ScheduleViewProps {
   tourOrder: string[];
   tourOverrides: Record<string, string>;
   doctorOverrides: Record<string, string[]>;
+  scheduleSnapshots: Record<string, ScheduleSnapshotEntry>;
   allDoctors: Doctor[];
   doctorsById: Record<string, Doctor>;
   toursById: Record<string, Tour>;
@@ -34,6 +43,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
     tourOrder,
     tourOverrides,
     doctorOverrides,
+    scheduleSnapshots,
     onSwapTours,
     onSwapDoctors,
     allDoctors,
@@ -86,6 +96,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
     tourOverrides,
     getDoctorsForDate,
     rotationStartDate,
+    scheduleSnapshots,
   );
 
   const handleTourClick = (day: ScheduleCalendarDay) => {

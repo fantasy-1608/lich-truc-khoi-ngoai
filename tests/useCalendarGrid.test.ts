@@ -238,6 +238,39 @@ describe('useCalendarGrid', () => {
       expect(nov1?.isModified).toBe(true);
     });
 
+    it('should keep frozen monthly snapshots when tour order changes', () => {
+      const currentDate = new Date(2025, 10, 1);
+      const snapshotDate = getDateString(new Date(2025, 10, 1));
+      const changedTourOrder = ['tour-2', 'tour-1'];
+      const frozenDoctors = ['Dr. Frozen A', 'Dr. Frozen B'];
+
+      const { result } = renderHook(() =>
+        useCalendarGrid(
+          currentDate,
+          testDoctorsById,
+          testToursById,
+          changedTourOrder,
+          {},
+          {},
+          () => frozenDoctors,
+          null,
+          {
+            [snapshotDate]: {
+              doctors: frozenDoctors,
+              tourId: 'tour-1',
+              tourName: 'Dr. Frozen A',
+            },
+          },
+        ),
+      );
+
+      const nov1 = result.current.find((day) => day.isCurrentMonth && day.date.getDate() === 1);
+
+      expect(nov1?.doctors).toEqual(frozenDoctors);
+      expect(nov1?.tourName).toBe('Dr. Frozen A');
+      expect(nov1?.isModified).toBe(false);
+    });
+
     it('should mark modified days correctly', () => {
       const currentDate = new Date(2025, 10, 1);
 
