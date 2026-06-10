@@ -1,6 +1,11 @@
 import { useMemo } from 'react';
 import { HolidayCalendarDay, HolidayScheduleData } from '../types';
 
+const parseLocalDateString = (dateString: string): Date => {
+  const [year, month, day] = dateString.split('-').map(Number);
+  return new Date(year, month - 1, day);
+};
+
 export const useHolidayCalendarGrid = (
   holidaySchedule: HolidayScheduleData,
   getDoctorsForDate: (date: Date) => string[] | undefined,
@@ -10,8 +15,8 @@ export const useHolidayCalendarGrid = (
       return [];
     }
 
-    const startDate = new Date(holidaySchedule.startDate);
-    const endDate = new Date(holidaySchedule.endDate);
+    const startDate = parseLocalDateString(holidaySchedule.startDate);
+    const endDate = parseLocalDateString(holidaySchedule.endDate);
     startDate.setHours(0, 0, 0, 0);
     endDate.setHours(0, 0, 0, 0);
 

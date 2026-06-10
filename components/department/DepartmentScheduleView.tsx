@@ -78,9 +78,10 @@ const DepartmentScheduleView: React.FC<DepartmentScheduleViewProps> = (props) =>
   };
 
   const weekDays = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ Nhật'];
+  const currentMonthDays = calendarGrid.filter((day) => day.isCurrentMonth);
 
   return (
-    <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-lg shadow-lg mt-20">
+    <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-lg shadow-lg mt-32 sm:mt-20">
       <DepartmentHeader
         currentDate={currentDate}
         onPrevMonth={() =>
@@ -101,7 +102,7 @@ const DepartmentScheduleView: React.FC<DepartmentScheduleViewProps> = (props) =>
         }
       />
 
-      <div>
+      <div className="hidden sm:block">
         <div className="grid grid-cols-7 gap-1 sm:gap-2">
           {weekDays.map((day) => (
             <div
@@ -132,6 +133,21 @@ const DepartmentScheduleView: React.FC<DepartmentScheduleViewProps> = (props) =>
             />
           ))}
         </div>
+      </div>
+
+      <div className="sm:hidden space-y-3">
+        {currentMonthDays.map((day, index) => (
+          <DepartmentDayCell
+            key={index}
+            day={day}
+            assignments={departmentAssignments[getDateString(day.date)]}
+            onCallDoctors={getDoctorsForDate(day.date)}
+            showPkdv={showPkdv}
+            onOpenEditor={handleOpenEditor}
+            isHoliday={isHolidayDate(day.date)}
+            variant="list"
+          />
+        ))}
       </div>
       {isStatsModalOpen && (
         <StatsModal

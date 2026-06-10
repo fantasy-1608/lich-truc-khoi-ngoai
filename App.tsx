@@ -7,6 +7,7 @@ import HolidayScheduleView from './components/holiday/HolidayScheduleView';
 import { useScheduleData } from './hooks/useScheduleData';
 import { useToast } from './hooks/useToast';
 import { useSupabaseAuth } from './hooks/useSupabaseAuth';
+import { useShiftRequests } from './hooks/useShiftRequests';
 import Header from './components/layout/Header';
 import ToastContainer from './components/common/ToastContainer';
 import ErrorBoundary from './components/common/ErrorBoundary';
@@ -17,6 +18,10 @@ import {
   setScheduleEditorEmail,
   verifyScheduleEditorEmail,
 } from './services/scheduleStorage';
+import {
+  clearShiftRequestEditorEmail,
+  setShiftRequestEditorEmail,
+} from './services/shiftRequestStorage';
 
 const App: React.FC = () => {
   const [view, setView] = useState<View>(View.SCHEDULE);
@@ -34,6 +39,11 @@ const App: React.FC = () => {
     onError: (message) => showToast(message, 'error'),
     canWrite,
   });
+  const shiftRequests = useShiftRequests({
+    canManage: canWrite,
+    onError: (message) => showToast(message, 'error'),
+    onSuccess: (message) => showToast(message, 'success'),
+  });
 
   const changeView = (newView: View) => {
     if (view === newView) return;
@@ -42,6 +52,7 @@ const App: React.FC = () => {
       startTransition(() => {
         setView(newView);
       });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       setContentVisible(true);
     }, 150);
   };
@@ -68,6 +79,7 @@ const App: React.FC = () => {
     try {
       await auth.signOut();
       clearScheduleEditorEmail();
+      clearShiftRequestEditorEmail();
       setHasEditorAccess(false);
       setShowEditLogin(false);
     } catch {
@@ -82,6 +94,7 @@ const App: React.FC = () => {
     }
 
     setScheduleEditorEmail(email);
+    setShiftRequestEditorEmail(email);
     setHasEditorAccess(true);
     setShowEditLogin(false);
     showToast('Đã mở chế độ chỉnh sửa.', 'success');
@@ -103,7 +116,7 @@ const App: React.FC = () => {
           className={`container mx-auto p-4 sm:p-6 lg:p-8 transition-opacity duration-150 ${contentVisible ? 'opacity-100' : 'opacity-0'}`}
         >
           {isSupabaseConfigured && (
-            <div className="mb-4 flex flex-wrap items-center justify-end gap-3">
+            <div className="mb-4 hidden flex-wrap items-center justify-end gap-3 sm:flex">
               <span className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-500 dark:text-slate-400">
                 {canWrite ? 'Đang chỉnh sửa' : 'Chỉ xem'}
               </span>
@@ -135,6 +148,12 @@ const App: React.FC = () => {
               rotationStartDate={scheduleData.rotationStartDate}
               onViewDateChange={scheduleData.handleSetViewDate}
               holidaySchedule={scheduleData.holidaySchedule}
+              canManageShiftRequests={canWrite}
+              shiftRequests={shiftRequests.requests}
+              shiftRequestsLoading={shiftRequests.isLoading}
+              pendingRequestCountsByDate={shiftRequests.pendingCountsByDate}
+              onSubmitShiftRequest={shiftRequests.submitRequest}
+              onUpdateShiftRequestReview={shiftRequests.updateReview}
             />
           )}
           {view === View.DEPARTMENT_SCHEDULE && (
@@ -158,6 +177,7 @@ const App: React.FC = () => {
               onSetHolidayInsertionIndex={scheduleData.handleSetHolidayInsertionIndex}
               onUpdateHolidayDoctors={scheduleData.handleUpdateHolidayDoctors}
               onResetHolidayDay={scheduleData.handleResetHolidayDay}
+              canEdit={canWrite}
             />
           )}
           {view === View.SETTINGS && (

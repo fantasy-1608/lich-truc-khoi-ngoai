@@ -31,7 +31,7 @@ const SettingsView: React.FC<SettingsViewProps> = (props) => {
   const { onDone, showToast, ...restProps } = props;
 
   return (
-    <div className="max-w-7xl mx-auto mt-20 pb-12">
+    <div className="max-w-7xl mx-auto mt-32 sm:mt-20 pb-12">
       <div className="flex justify-between items-center mb-8 px-4">
         <div>
           <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">

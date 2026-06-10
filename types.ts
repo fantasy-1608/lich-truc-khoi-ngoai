@@ -43,6 +43,39 @@ export interface ScheduleSnapshotEntry {
   tourName?: string;
 }
 
+export type ShiftRequestType = 'off' | 'swap' | 'note';
+export type ShiftRequestStatus = 'pending' | 'in_review' | 'resolved' | 'rejected';
+
+export interface ShiftRequest {
+  id: string;
+  date: string; // YYYY-MM-DD
+  requestType: ShiftRequestType;
+  requesterDoctorName: string;
+  targetDate?: string | null; // YYYY-MM-DD
+  targetDoctorName?: string | null;
+  message: string;
+  contact?: string | null;
+  status: ShiftRequestStatus;
+  reviewNote?: string | null;
+  createdAt: string;
+  reviewedAt?: string | null;
+}
+
+export interface ShiftRequestCount {
+  date: string;
+  pendingCount: number;
+}
+
+export interface ShiftRequestDraft {
+  date: string;
+  requestType: ShiftRequestType;
+  requesterDoctorName: string;
+  targetDate?: string | null;
+  targetDoctorName?: string | null;
+  message: string;
+  contact?: string | null;
+}
+
 export interface HolidayCalendarDay extends CalendarDay {
   doctors: string[];
   originalDoctors: string[]; // Từ lịch khối ngoại

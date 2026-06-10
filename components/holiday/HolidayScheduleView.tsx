@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { HolidayScheduleData, Doctor, Tour } from '../../types';
 import { useHolidayCalendarGrid } from '../../hooks/useHolidayCalendarGrid';
 import { RefreshIcon } from '../icons/RefreshIcon';
@@ -14,6 +14,11 @@ const getDateString = (date: Date): string => {
   return `${year}-${month}-${day}`;
 };
 
+const parseLocalDateString = (dateString: string): Date => {
+  const [year, month, day] = dateString.split('-').map(Number);
+  return new Date(year, month - 1, day);
+};
+
 interface HolidayScheduleViewProps {
   holidaySchedule: HolidayScheduleData;
   allDoctors: Doctor[];
@@ -24,6 +29,7 @@ interface HolidayScheduleViewProps {
   onSetHolidayInsertionIndex: (index: number) => void;
   onUpdateHolidayDoctors: (dateStr: string, doctors: string[]) => void;
   onResetHolidayDay: (dateStr: string) => void;
+  canEdit?: boolean;
 }
 
 const HolidayScheduleView: React.FC<HolidayScheduleViewProps> = ({
@@ -36,6 +42,7 @@ const HolidayScheduleView: React.FC<HolidayScheduleViewProps> = ({
   onSetHolidayInsertionIndex,
   onUpdateHolidayDoctors,
   onResetHolidayDay,
+  canEdit = true,
 }) => {
   const [startDateInput, setStartDateInput] = useState(holidaySchedule.startDate || '');
   const [endDateInput, setEndDateInput] = useState(holidaySchedule.endDate || '');
@@ -43,8 +50,19 @@ const HolidayScheduleView: React.FC<HolidayScheduleViewProps> = ({
 
   const calendarGrid = useHolidayCalendarGrid(holidaySchedule, getDoctorsForDate);
 
+  useEffect(() => {
+    setStartDateInput(holidaySchedule.startDate || '');
+    setEndDateInput(holidaySchedule.endDate || '');
+  }, [holidaySchedule.startDate, holidaySchedule.endDate]);
+
   const handleApplyPeriod = useCallback(() => {
+    if (!canEdit) return;
+
     if (startDateInput && endDateInput) {
+      if (!holidaySchedule.holidayTourId) {
+        alert('Vui lòng chọn tua trực lễ trước khi áp dụng kỳ nghỉ.');
+        return;
+      }
       // Validate dates
       if (new Date(startDateInput) > new Date(endDateInput)) {
         alert('Lỗi: Ngày bắt đầu phải nhỏ hơn hoặc bằng ngày kết thúc!');
@@ -63,33 +81,40 @@ const HolidayScheduleView: React.FC<HolidayScheduleViewProps> = ({
       }
       onSetHolidayPeriod(startDateInput, endDateInput);
     }
-  }, [startDateInput, endDateInput, onSetHolidayPeriod]);
+  }, [canEdit, startDateInput, endDateInput, holidaySchedule.holidayTourId, onSetHolidayPeriod]);
 
   const handleClearPeriod = useCallback(() => {
+    if (!canEdit) return;
+
     setStartDateInput('');
     setEndDateInput('');
+    setSelectedDay(null);
     onSetHolidayPeriod(null, null);
-  }, [onSetHolidayPeriod]);
+  }, [canEdit, onSetHolidayPeriod]);
 
   const handleAddDoctor = useCallback(
     (dateStr: string, doctorName: string) => {
+      if (!canEdit) return;
+
       const currentDoctors =
-        holidaySchedule.doctorOverrides[dateStr] || getDoctorsForDate(new Date(dateStr)) || [];
+        holidaySchedule.doctorOverrides[dateStr] || getDoctorsForDate(parseLocalDateString(dateStr)) || [];
       if (currentDoctors.length >= 6) return;
       if (currentDoctors.includes(doctorName)) return;
       onUpdateHolidayDoctors(dateStr, [...currentDoctors, doctorName]);
     },
-    [holidaySchedule.doctorOverrides, getDoctorsForDate, onUpdateHolidayDoctors],
+    [canEdit, holidaySchedule.doctorOverrides, getDoctorsForDate, onUpdateHolidayDoctors],
   );
 
   const handleRemoveDoctor = useCallback(
     (dateStr: string, doctorIndex: number) => {
+      if (!canEdit) return;
+
       const currentDoctors =
-        holidaySchedule.doctorOverrides[dateStr] || getDoctorsForDate(new Date(dateStr)) || [];
+        holidaySchedule.doctorOverrides[dateStr] || getDoctorsForDate(parseLocalDateString(dateStr)) || [];
       const newDoctors = currentDoctors.filter((_, i) => i !== doctorIndex);
       onUpdateHolidayDoctors(dateStr, newDoctors);
     },
-    [holidaySchedule.doctorOverrides, getDoctorsForDate, onUpdateHolidayDoctors],
+    [canEdit, holidaySchedule.doctorOverrides, getDoctorsForDate, onUpdateHolidayDoctors],
   );
 
   const handleExportPDF = useCallback(async () => {
@@ -115,7 +140,7 @@ const HolidayScheduleView: React.FC<HolidayScheduleViewProps> = ({
   };
 
   return (
-    <div className="glass-card rounded-3xl p-6 sm:p-8 mt-20">
+    <div className="glass-card rounded-3xl p-6 sm:p-8 mt-32 sm:mt-20">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
@@ -154,6 +179,11 @@ const HolidayScheduleView: React.FC<HolidayScheduleViewProps> = ({
           <span>📅</span>
           <span>Chọn kỳ nghỉ lễ</span>
         </h3>
+        {!canEdit && (
+          <p className="mb-4 rounded-xl border border-slate-200 bg-white/70 px-3 py-2 text-sm font-medium text-slate-500 dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-400">
+            Đang ở chế độ chỉ xem. Mở khóa chỉnh sửa để đổi kỳ nghỉ, tua lễ hoặc danh sách bác sĩ.
+          </p>
+        )}
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2">
             <label className="text-sm font-medium text-slate-600 dark:text-slate-400">
@@ -163,7 +193,8 @@ const HolidayScheduleView: React.FC<HolidayScheduleViewProps> = ({
               type="date"
               value={startDateInput}
               onChange={(e) => setStartDateInput(e.target.value)}
-              className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:outline-none shadow-sm"
+              disabled={!canEdit}
+              className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:outline-none shadow-sm disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 dark:disabled:bg-slate-800"
             />
           </div>
           <div className="flex items-center gap-2">
@@ -174,13 +205,14 @@ const HolidayScheduleView: React.FC<HolidayScheduleViewProps> = ({
               type="date"
               value={endDateInput}
               onChange={(e) => setEndDateInput(e.target.value)}
-              className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:outline-none shadow-sm"
+              disabled={!canEdit}
+              className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:outline-none shadow-sm disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 dark:disabled:bg-slate-800"
             />
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={handleApplyPeriod}
-              disabled={!startDateInput || !endDateInput}
+              disabled={!canEdit || !startDateInput || !endDateInput || !holidaySchedule.holidayTourId}
               className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white rounded-xl font-medium transition-all shadow-lg shadow-indigo-500/25 disabled:shadow-none"
             >
               Áp dụng
@@ -188,7 +220,8 @@ const HolidayScheduleView: React.FC<HolidayScheduleViewProps> = ({
             {holidaySchedule.startDate && (
               <button
                 onClick={handleClearPeriod}
-                className="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl font-medium transition-all"
+                disabled={!canEdit}
+                className="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl font-medium transition-all disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Xóa
               </button>
@@ -206,7 +239,8 @@ const HolidayScheduleView: React.FC<HolidayScheduleViewProps> = ({
             <select
               value={holidaySchedule.holidayTourId || ''}
               onChange={(e) => onSetHolidayTour(e.target.value || undefined)}
-              className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none shadow-sm min-w-[200px]"
+              disabled={!canEdit}
+              className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none shadow-sm min-w-[200px] disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 dark:disabled:bg-slate-800"
             >
               <option value="">-- Chọn tua lễ (Tua 5) --</option>
               <option value="reinforcement">Tua trực tăng cường</option>
@@ -220,7 +254,8 @@ const HolidayScheduleView: React.FC<HolidayScheduleViewProps> = ({
             <select
               value={holidaySchedule.holidayInsertionIndex ?? tours.length}
               onChange={(e) => onSetHolidayInsertionIndex(Number(e.target.value))}
-              className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none shadow-sm min-w-[200px]"
+              disabled={!canEdit}
+              className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none shadow-sm min-w-[200px] disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 dark:disabled:bg-slate-800"
             >
               <option value={0}>Vị trí đầu tiên (Trước Tua 1)</option>
               {tours.map((_, index) => (
@@ -249,8 +284,10 @@ const HolidayScheduleView: React.FC<HolidayScheduleViewProps> = ({
             return (
               <div
                 key={dateStr}
-                onClick={() => setSelectedDay(isSelected ? null : dateStr)}
-                className={`relative p-4 rounded-2xl border-2 transition-all cursor-pointer ${isSelected
+                onClick={() => {
+                  if (canEdit) setSelectedDay(isSelected ? null : dateStr);
+                }}
+                className={`relative p-4 rounded-2xl border-2 transition-all ${canEdit ? 'cursor-pointer' : 'cursor-default'} ${isSelected
                   ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 shadow-lg shadow-indigo-500/20'
                   : day.isModified
                     ? 'border-amber-400 bg-amber-50 dark:bg-amber-900/20'
@@ -282,7 +319,7 @@ const HolidayScheduleView: React.FC<HolidayScheduleViewProps> = ({
                     </span>
                   </div>
                   <div className="flex items-center gap-1">
-                    {day.isModified && (
+                    {day.isModified && canEdit && (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -311,7 +348,7 @@ const HolidayScheduleView: React.FC<HolidayScheduleViewProps> = ({
                         {i + 1}
                       </span>
                       <span className="truncate flex-1">{doc}</span>
-                      {isSelected && (
+                      {isSelected && canEdit && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -326,7 +363,7 @@ const HolidayScheduleView: React.FC<HolidayScheduleViewProps> = ({
                   ))}
 
                   {/* Add doctor dropdown - only when selected */}
-                  {day.doctors.length < 6 && isSelected && (
+                  {day.doctors.length < 6 && isSelected && canEdit && (
                     <select
                       className="w-full mt-2 px-3 py-2 text-sm rounded-lg border border-indigo-300 dark:border-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                       onChange={(e) => {
@@ -371,11 +408,12 @@ const HolidayScheduleView: React.FC<HolidayScheduleViewProps> = ({
       )}
 
       {/* Instructions */}
-      {calendarGrid.length > 0 && (
+     {calendarGrid.length > 0 && (
         <div className="mt-6 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
           <p className="text-sm text-slate-600 dark:text-slate-400 text-center">
-            💡 <strong>Hướng dẫn:</strong> Click vào ô ngày để thêm/xóa bác sĩ trực • Tối đa 6 bác
-            sĩ/ngày •
+            💡 <strong>Hướng dẫn:</strong>{' '}
+            {canEdit ? 'Click vào ô ngày để thêm/xóa bác sĩ trực' : 'Mở khóa để chỉnh bác sĩ trực'}{' '}
+            • Tối đa 6 bác sĩ/ngày •
             <span className="inline-flex items-center gap-1 ml-1">
               <span className="w-3 h-3 rounded-full bg-amber-400"></span> Đã chỉnh sửa
             </span>

@@ -16,13 +16,24 @@ interface RoleAssignmentProps {
   label: string;
   assignments: Partial<DepartmentAssignments> | undefined;
   onEdit: (e: React.MouseEvent) => void;
+  variant?: 'grid' | 'list';
 }
 
-const RoleAssignment: React.FC<RoleAssignmentProps> = ({ role, label, assignments, onEdit }) => {
+const RoleAssignment: React.FC<RoleAssignmentProps> = ({
+  role,
+  label,
+  assignments,
+  onEdit,
+  variant = 'grid',
+}) => {
   const doctors = assignments?.[role] || [];
+  const isList = variant === 'list';
+
   return (
-    <li className="flex items-start group min-h-[24px]">
-      <span className="font-semibold text-slate-500 dark:text-slate-400 w-14 shrink-0">
+    <li className={`flex group min-h-[24px] ${isList ? 'items-center' : 'items-start'}`}>
+      <span
+        className={`shrink-0 font-semibold text-slate-500 dark:text-slate-400 ${isList ? 'w-24' : 'w-14'}`}
+      >
         {label}:
       </span>
       <div className="flex-grow flex items-center flex-wrap gap-1">
@@ -58,6 +69,7 @@ interface DepartmentDayCellProps {
   showPkdv: boolean;
   onOpenEditor: (e: React.MouseEvent, date: Date, role: DepartmentRole) => void;
   isHoliday?: boolean;
+  variant?: 'grid' | 'list';
 }
 
 const DepartmentDayCell: React.FC<DepartmentDayCellProps> = ({
@@ -67,8 +79,108 @@ const DepartmentDayCell: React.FC<DepartmentDayCellProps> = ({
   showPkdv,
   onOpenEditor,
   isHoliday = false,
+  variant = 'grid',
 }) => {
   const isBeforeStartDate = day.date.getTime() < START_DATE.getTime();
+  const isList = variant === 'list';
+  const formattedDate = day.date.toLocaleDateString('vi-VN', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  });
+
+  if (isList && (!day.isCurrentMonth || isBeforeStartDate)) {
+    return null;
+  }
+
+  if (isList) {
+    return (
+      <article
+        className={`
+          rounded-2xl border bg-white p-4 shadow-sm transition-all-app dark:bg-slate-800
+          ${day.isWeekend ? 'border-indigo-100 bg-indigo-50/50 dark:border-indigo-900/50 dark:bg-indigo-900/20' : 'border-slate-200 dark:border-slate-700'}
+          ${day.isToday ? 'ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-slate-900' : ''}
+          ${isHoliday ? 'ring-2 ring-rose-400 ring-offset-2 dark:ring-offset-slate-900' : ''}
+        `}
+        id={`department-day-${getDateString(day.date)}`}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="text-sm font-bold capitalize text-slate-800 dark:text-slate-100">
+              {formattedDate}
+            </h3>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {day.isWeekend && (
+                <span className="rounded-full bg-indigo-100 px-2.5 py-1 text-xs font-semibold text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-200">
+                  Cuối tuần
+                </span>
+              )}
+              {isHoliday && (
+                <span className="rounded-full bg-rose-100 px-2.5 py-1 text-xs font-semibold text-rose-700 dark:bg-rose-900/50 dark:text-rose-200">
+                  Lễ
+                </span>
+              )}
+            </div>
+          </div>
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-sm font-bold text-slate-600 dark:bg-slate-700 dark:text-slate-200">
+            {day.date.getDate()}
+          </span>
+        </div>
+
+        <div className="mt-4 space-y-4 text-sm">
+          {onCallDoctors && (
+            <section>
+              <h4 className="mb-2 font-bold text-slate-600 dark:text-slate-300">Trực chính</h4>
+              <div className="grid grid-cols-2 gap-2">
+                {onCallDoctors.map((doctor, docIndex) => (
+                  <div
+                    key={docIndex}
+                    className="flex min-h-10 items-center gap-2 rounded-lg border border-slate-100 bg-white px-3 text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                  >
+                    <span className="text-xs font-semibold text-slate-400">{docIndex + 1}</span>
+                    <span className="truncate font-medium" title={doctor}>
+                      {doctor}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {!day.isWeekend && (
+            <section>
+              <h4 className="mb-2 font-bold text-slate-600 dark:text-slate-300">Hoạt động khoa</h4>
+              <ul className="space-y-2">
+                <RoleAssignment
+                  role="ungTruc"
+                  label="Ứng trực"
+                  assignments={assignments}
+                  onEdit={(e) => onOpenEditor(e, day.date, 'ungTruc')}
+                  variant="list"
+                />
+                <RoleAssignment
+                  role="pkdk"
+                  label="PKĐK"
+                  assignments={assignments}
+                  onEdit={(e) => onOpenEditor(e, day.date, 'pkdk')}
+                  variant="list"
+                />
+                {showPkdv && (
+                  <RoleAssignment
+                    role="pkdv"
+                    label="PKDV"
+                    assignments={assignments}
+                    onEdit={(e) => onOpenEditor(e, day.date, 'pkdv')}
+                    variant="list"
+                  />
+                )}
+              </ul>
+            </section>
+          )}
+        </div>
+      </article>
+    );
+  }
 
   return (
     <div

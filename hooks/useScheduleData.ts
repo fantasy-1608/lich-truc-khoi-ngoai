@@ -386,7 +386,9 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
 
       // Define effective start date for calculations
       // If date is before rotationStartDate, fall back to START_DATE
-      const rotationStartDateParsed = rotationStartDate ? new Date(rotationStartDate) : START_DATE;
+      const rotationStartDateParsed = rotationStartDate
+        ? parseLocalDateString(rotationStartDate)
+        : START_DATE;
       const startDateRaw = date < rotationStartDateParsed ? START_DATE : rotationStartDateParsed;
       const startDate = new Date(
         startDateRaw.getFullYear(),
@@ -395,8 +397,10 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
       );
 
       // Check for Holiday Schedule
-      const holidayStart = holidaySchedule.startDate ? new Date(holidaySchedule.startDate) : null;
-      const holidayEnd = holidaySchedule.endDate ? new Date(holidaySchedule.endDate) : null;
+      const holidayStart = holidaySchedule.startDate
+        ? parseLocalDateString(holidaySchedule.startDate)
+        : null;
+      const holidayEnd = holidaySchedule.endDate ? parseLocalDateString(holidaySchedule.endDate) : null;
       const holidayTourId = holidaySchedule.holidayTourId;
 
       if (holidayStart && holidayEnd && holidayTourId) {
@@ -419,10 +423,11 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
         }
 
         // Create the 5-tour list with custom insertion
-        const insertionIndex =
+        const rawInsertionIndex =
           holidaySchedule.holidayInsertionIndex !== undefined
             ? holidaySchedule.holidayInsertionIndex
             : tourOrder.length; // Default to end
+        const insertionIndex = Math.max(0, Math.min(rawInsertionIndex, tourOrder.length));
 
         const holidayTourOrder = [...tourOrder];
         holidayTourOrder.splice(insertionIndex, 0, holidayTourId);

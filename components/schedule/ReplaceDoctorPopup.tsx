@@ -69,10 +69,10 @@ const ReplaceDoctorPopup: React.FC<ReplaceDoctorPopupProps> = ({
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="drawer-backdrop fixed inset-0 z-50 flex items-end sm:items-stretch sm:justify-end bg-slate-950/45 backdrop-blur-[2px]">
       <div
         ref={popupRef}
-        className="relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md mx-4 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300"
+        className="drawer-panel relative bg-white dark:bg-slate-800 shadow-2xl w-full sm:w-[420px] lg:w-[480px] max-h-[92vh] sm:max-h-none sm:h-full overflow-y-auto rounded-t-2xl sm:rounded-none sm:rounded-l-2xl border border-slate-200 dark:border-slate-700"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-700">
