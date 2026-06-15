@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo, useState } from 'react';
 import { ScheduleCalendarDay, SelectedDoctor } from '../../types';
 import { RefreshIcon } from '../icons/RefreshIcon';
 import { START_DATE } from '../../constants';
@@ -33,6 +33,7 @@ const ScheduleDayCell: React.FC<ScheduleDayCellProps> = ({
   isHoliday = false,
   variant = 'grid',
 }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
   const isBeforeStartDate = day.date.getTime() < START_DATE.getTime();
   const isSelectedTour = selectedTourDate?.getTime() === day.date.getTime();
 
@@ -55,38 +56,137 @@ const ScheduleDayCell: React.FC<ScheduleDayCellProps> = ({
     return (
       <article
         className={`
-          rounded-xl border bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 p-3 shadow-sm
+          rounded-xl border bg-white/90 dark:bg-slate-800/80 border-slate-200/80 dark:border-slate-700/70 p-3 shadow-sm
           ${day.isToday ? 'ring-2 ring-indigo-500 ring-offset-2 dark:ring-offset-slate-900' : ''}
           ${isHoliday ? 'ring-2 ring-rose-400 ring-offset-1' : ''}
         `}
       >
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-sm font-bold text-slate-900 dark:text-white">{dateLabel}</p>
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+          <button
+            type="button"
+            onClick={() => setIsExpanded((current) => !current)}
+            className="min-w-0 rounded-lg text-left focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900"
+            aria-expanded={isExpanded}
+            aria-label={`${isExpanded ? 'Thu gọn' : 'Mở chi tiết'} ${dateLabel}`}
+          >
+            <span className="flex min-w-0 items-center gap-2">
+              <span className="truncate text-[15px] font-bold text-slate-900 dark:text-white">
+                {dateLabel}
+              </span>
+              {day.isToday && (
+                <span className="shrink-0 rounded-full bg-indigo-600 px-2 py-0.5 text-[10px] font-bold text-white">
+                  Hôm nay
+                </span>
+              )}
+              {isHoliday && (
+                <span className="shrink-0 rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold text-rose-600 dark:bg-rose-900/40 dark:text-rose-300">
+                  Lễ
+                </span>
+              )}
+            </span>
+
+            <span className="mt-1 flex min-w-0 items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+              <span
+                className={`shrink-0 rounded-md border px-2 py-0.5 font-bold ${
+                  isSelectedTour
+                    ? 'border-violet-300 bg-violet-100 text-violet-700 dark:border-violet-700 dark:bg-violet-900/40 dark:text-violet-300'
+                    : 'border-indigo-100 bg-indigo-50 text-indigo-700 dark:border-indigo-800/50 dark:bg-indigo-900/30 dark:text-indigo-300'
+                }`}
+              >
+                Tua {day.tourName}
+              </span>
+              <span className="truncate">
+                {day.doctors
+                  .map((doctor, index) => `${index + 1} ${doctor.replace(/^Bs\.\s*/i, '')}`)
+                  .join(' · ')}
+              </span>
+            </span>
+          </button>
+
+          <div className="flex shrink-0 items-center gap-1.5">
+            {day.isModified && (
+              <button
+                className="grid h-9 w-9 place-items-center rounded-full bg-amber-100 text-amber-600 transition-colors hover:bg-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                aria-label={`Khôi phục lịch gốc cho ngày ${day.date.getDate()}`}
+                title="Lịch đã được thay đổi. Nhấp để tùy chỉnh."
+                onClick={(e) => onResetIconClick(e, day.date)}
+              >
+                <RefreshIcon className="h-4 w-4" />
+              </button>
+            )}
+            {pendingRequestCount > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (canManageRequests) onViewRequestsClick(day);
+                }}
+                className={`grid h-9 min-w-9 place-items-center rounded-full border px-2 text-xs font-bold ${
+                  canManageRequests
+                    ? 'border-amber-500 bg-amber-500 text-white'
+                    : 'border-amber-200 bg-amber-100 text-amber-700'
+                }`}
+                aria-label={
+                  canManageRequests
+                    ? `Xem ${pendingRequestCount} yêu cầu chờ cho ngày ${day.date.getDate()}`
+                    : `Có ${pendingRequestCount} yêu cầu chờ cho ngày ${day.date.getDate()}. Mở khóa để xem chi tiết.`
+                }
+              >
+                {pendingRequestCount}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => onRequestClick(day)}
+              className="grid h-9 w-9 place-items-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 transition-colors hover:bg-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-300 dark:hover:bg-emerald-900/35"
+              aria-label={`Gửi yêu cầu trực cho ngày ${day.date.getDate()}`}
+              title="Gửi yêu cầu đổi/nghỉ trực"
+            >
+              <PlusIcon className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+
+        {isExpanded && (
+          <div className="mt-3 border-t border-slate-200/70 pt-3 dark:border-slate-700/60">
             <button
               type="button"
               onClick={() => onTourClick(day)}
-              className={`mt-1 inline-flex items-center px-2 py-1 rounded-md text-xs font-bold border transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+              className={`mb-2 inline-flex items-center rounded-md border px-2 py-1 text-xs font-bold transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
                 isSelectedTour
-                  ? 'bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 border-violet-300 dark:border-violet-700'
-                  : 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border-indigo-100 dark:border-indigo-800/50'
+                  ? 'border-violet-300 bg-violet-100 text-violet-700 dark:border-violet-700 dark:bg-violet-900/40 dark:text-violet-300'
+                  : 'border-indigo-100 bg-indigo-50 text-indigo-700 dark:border-indigo-800/50 dark:bg-indigo-900/30 dark:text-indigo-300'
               }`}
               aria-label={`Tua ${day.tourName}. Nhấn để chọn hoán đổi cả tua`}
             >
               Tua {day.tourName}
             </button>
-          </div>
 
-          <div className="flex flex-col items-end gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={() => onRequestClick(day)}
-              className="inline-flex items-center gap-1 min-h-9 px-3 rounded-full border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 font-semibold text-xs hover:bg-emerald-100 dark:hover:bg-emerald-900/35 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              aria-label={`Gửi yêu cầu trực cho ngày ${day.date.getDate()}`}
-            >
-              <PlusIcon className="h-3.5 w-3.5" />
-              Yêu cầu
-            </button>
+            <div className="grid grid-cols-2 gap-2" aria-label="Danh sách bác sĩ trực">
+              {day.doctors.map((doctor, docIndex) => {
+                const isSelected =
+                  selectedDoctor?.date.getTime() === day.date.getTime() &&
+                  selectedDoctor.doctorIndex === docIndex;
+                return (
+                  <button
+                    key={docIndex}
+                    type="button"
+                    onClick={() => onDoctorClick(day, docIndex, doctor)}
+                    className={`relative min-h-10 rounded-lg border py-2 pl-8 pr-2 text-left text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                      isSelected
+                        ? 'border-green-200 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-900/20 dark:text-green-300'
+                        : 'border-slate-100 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200'
+                    }`}
+                    aria-label={`${doctor}, bác sĩ số ${docIndex + 1}. Nhấn để chọn hoán đổi`}
+                  >
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
+                      {docIndex + 1}
+                    </span>
+                    <span className="block truncate font-medium">{doctor}</span>
+                  </button>
+                );
+              })}
+            </div>
+
             {pendingRequestCount > 0 && (
               <button
                 type="button"
@@ -108,33 +208,7 @@ const ScheduleDayCell: React.FC<ScheduleDayCellProps> = ({
               </button>
             )}
           </div>
-        </div>
-
-        <div className="mt-3 grid grid-cols-2 gap-2" aria-label="Danh sách bác sĩ trực">
-          {day.doctors.map((doctor, docIndex) => {
-            const isSelected =
-              selectedDoctor?.date.getTime() === day.date.getTime() &&
-              selectedDoctor.doctorIndex === docIndex;
-            return (
-              <button
-                key={docIndex}
-                type="button"
-                onClick={() => onDoctorClick(day, docIndex, doctor)}
-                className={`relative min-h-10 pl-8 pr-2 py-2 rounded-lg text-left text-sm border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
-                  isSelected
-                    ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-300'
-                    : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-700 text-slate-700 dark:text-slate-200'
-                }`}
-                aria-label={`${doctor}, bác sĩ số ${docIndex + 1}. Nhấn để chọn hoán đổi`}
-              >
-                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
-                  {docIndex + 1}
-                </span>
-                <span className="block truncate font-medium">{doctor}</span>
-              </button>
-            );
-          })}
-        </div>
+        )}
       </article>
     );
   }

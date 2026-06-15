@@ -1,4 +1,4 @@
-import React, { useState, useTransition } from 'react';
+import React, { useEffect, useState, useTransition } from 'react';
 import { View } from './types';
 import ScheduleView from './components/schedule/ScheduleView';
 import SettingsView from './components/settings/SettingsView';
@@ -29,6 +29,8 @@ const App: React.FC = () => {
   const [, startTransition] = useTransition();
   const [contentVisible, setContentVisible] = useState(true);
   const [showEditLogin, setShowEditLogin] = useState(false);
+  const [showMobileEditNotice, setShowMobileEditNotice] = useState(false);
+  const [isMobilePortrait, setIsMobilePortrait] = useState(false);
   const [hasEditorAccess, setHasEditorAccess] = useState(false);
 
   const { toasts, showToast, hideToast } = useToast();
@@ -44,6 +46,18 @@ const App: React.FC = () => {
     onError: (message) => showToast(message, 'error'),
     onSuccess: (message) => showToast(message, 'success'),
   });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const mediaQuery = window.matchMedia('(max-width: 639px) and (orientation: portrait)');
+    const syncMobilePortrait = () => setIsMobilePortrait(mediaQuery.matches);
+
+    syncMobilePortrait();
+    mediaQuery.addEventListener('change', syncMobilePortrait);
+
+    return () => mediaQuery.removeEventListener('change', syncMobilePortrait);
+  }, []);
 
   const changeView = (newView: View) => {
     if (view === newView) return;
@@ -72,6 +86,13 @@ const App: React.FC = () => {
       return;
     }
 
+    if (isMobilePortrait) {
+      setShowMobileEditNotice(true);
+      setShowEditLogin(false);
+      return;
+    }
+
+    setShowMobileEditNotice(false);
     setShowEditLogin(true);
   };
 
@@ -82,6 +103,7 @@ const App: React.FC = () => {
       clearShiftRequestEditorEmail();
       setHasEditorAccess(false);
       setShowEditLogin(false);
+      setShowMobileEditNotice(false);
     } catch {
       showToast('Không thể đăng xuất. Vui lòng thử lại.', 'error');
     }
@@ -97,6 +119,7 @@ const App: React.FC = () => {
     setShiftRequestEditorEmail(email);
     setHasEditorAccess(true);
     setShowEditLogin(false);
+    setShowMobileEditNotice(false);
     showToast('Đã mở chế độ chỉnh sửa.', 'success');
   };
 
@@ -149,6 +172,9 @@ const App: React.FC = () => {
               onViewDateChange={scheduleData.handleSetViewDate}
               holidaySchedule={scheduleData.holidaySchedule}
               canManageShiftRequests={canWrite}
+              canEdit={canWrite}
+              isMobilePortrait={isMobilePortrait}
+              showMobileEditNotice={showMobileEditNotice}
               shiftRequests={shiftRequests.requests}
               shiftRequestsLoading={shiftRequests.isLoading}
               pendingRequestCountsByDate={shiftRequests.pendingCountsByDate}

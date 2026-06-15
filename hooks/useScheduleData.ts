@@ -190,6 +190,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
       tours,
       tourOrder,
       showPkdv,
+      holidaySchedule,
       rotationStartDate,
       lastSaved: new Date().toISOString(),
     };
@@ -250,13 +251,6 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
       // If we NEVER loaded March, `tourOverrides` has no March data. Writing empty March file?
       // `addToPartition` iterates keys of `tourOverrides`. If no keys for March, no March file entry created.
       // So we only write files for months we have data for. SAFE.
-
-      // Also save holiday schedule if it falls in a month?
-      // Holiday schedule spans days. Maybe keep in separate file or just base?
-      // Plan: Keep Holiday in Base for now as it's rare and usually single active event.
-      // Updated Base Data to include holidaySchedule
-      const baseDataWithHoliday = { ...baseData, holidaySchedule };
-      await saveBaseScheduleData(baseDataWithHoliday);
 
       for (const [filename, content] of Object.entries(changesByMonth)) {
         await saveMonthScheduleData(filename, content);

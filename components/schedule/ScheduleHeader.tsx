@@ -35,15 +35,15 @@ const ScheduleHeader: React.FC<ScheduleHeaderProps> = ({
   };
 
   return (
-    <div className="flex items-center justify-between mb-4">
+    <div className="mb-3 grid grid-cols-[44px_1fr_88px] items-center sm:mb-4">
       <button
         onClick={onPrevMonth}
-        className="p-2 rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transform hover:scale-105 transition-all-app"
+        className="inline-flex h-11 w-11 items-center justify-center rounded-full text-slate-600 transition-all-app hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700 sm:h-10 sm:w-10 sm:hover:scale-105"
         aria-label="Previous month"
       >
-        <ArrowLeftIcon className="w-6 h-6" />
+        <ArrowLeftIcon className="h-6 w-6" />
       </button>
-      <div className="text-center">
+      <div className="min-w-0 text-center">
         <h2 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-200">
           {`Tháng ${currentDate.getMonth() + 1}, ${currentDate.getFullYear()}`}
         </h2>
@@ -77,18 +77,18 @@ const ScheduleHeader: React.FC<ScheduleHeaderProps> = ({
           </div>
         )}
       </div>
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center justify-end gap-1">
         <button
           onClick={onNextMonth}
-          className="p-2 rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transform hover:scale-105 transition-all-app"
+          className="inline-flex h-11 w-11 items-center justify-center rounded-full text-slate-600 transition-all-app hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700 sm:h-10 sm:w-10 sm:hover:scale-105"
           aria-label="Next month"
         >
-          <ArrowRightIcon className="w-6 h-6" />
+          <ArrowRightIcon className="h-6 w-6" />
         </button>
         <button
           onClick={handlePDFExport}
           disabled={isExporting}
-          className="p-2 rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transform hover:scale-105 transition-all-app disabled:opacity-50 disabled:cursor-wait"
+          className="inline-flex h-11 w-11 items-center justify-center rounded-full text-slate-600 transition-all-app hover:bg-slate-100 disabled:cursor-wait disabled:opacity-50 dark:text-slate-300 dark:hover:bg-slate-700 sm:h-10 sm:w-10 sm:hover:scale-105"
           aria-label="Export to PDF"
           title="Xuất ra file PDF"
         >
