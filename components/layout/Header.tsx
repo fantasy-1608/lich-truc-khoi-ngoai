@@ -64,7 +64,7 @@ const Header: React.FC<HeaderProps> = ({
       className="fixed top-4 left-0 right-0 z-50 px-4 sm:px-6 lg:px-8 pointer-events-none"
       role="banner"
     >
-      <div className="container mx-auto">
+      <div className="mx-auto w-full max-w-[1800px]">
         <div className="glass rounded-2xl px-3 py-2.5 pointer-events-auto sm:px-6 sm:py-3">
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-4 sm:gap-8">

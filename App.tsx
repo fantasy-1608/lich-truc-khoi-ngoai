@@ -136,7 +136,7 @@ const App: React.FC = () => {
         />
 
         <main
-          className={`container mx-auto p-4 sm:p-6 lg:p-8 transition-opacity duration-150 ${contentVisible ? 'opacity-100' : 'opacity-0'}`}
+          className={`mx-auto w-full max-w-[1800px] p-4 sm:p-6 lg:p-8 transition-opacity duration-150 ${contentVisible ? 'opacity-100' : 'opacity-0'}`}
         >
           {isSupabaseConfigured && (
             <div className="mb-4 hidden flex-wrap items-center justify-end gap-3 sm:flex">

@@ -12,10 +12,14 @@ import {
 import { INITIAL_DOCTORS, INITIAL_TOURS, INITIAL_TOUR_ORDER } from '../components/data';
 import { START_DATE } from '../constants';
 import {
+  ScheduleConflictError,
+  ScheduleBaseStorageData,
+  ScheduleMonthStorageData,
   loadBaseScheduleData,
   loadMonthScheduleData,
   saveBaseScheduleData,
   saveMonthScheduleData,
+  subscribeToScheduleChanges,
 } from '../services/scheduleStorage';
 
 // Helper to get date string in YYYY-MM-DD format using local time components
@@ -30,6 +34,19 @@ const parseLocalDateString = (dateString: string): Date => {
   const [year, month, day] = dateString.split('-').map(Number);
   return new Date(year, month - 1, day);
 };
+
+const getMonthKeyFromDateString = (dateString: string): string =>
+  `schedule_${dateString.substring(0, 4)}_${dateString.substring(5, 7)}.json`;
+
+const isDateStringInMonthFilename = (dateString: string, filename: string): boolean =>
+  getMonthKeyFromDateString(dateString) === filename;
+
+const withoutMonthEntries = <T>(entries: Record<string, T>, filename: string): Record<string, T> =>
+  Object.fromEntries(
+    Object.entries(entries).filter(
+      ([dateString]) => !isDateStringInMonthFilename(dateString, filename),
+    ),
+  );
 
 // Storage file path (via Vite API)
 // STORAGE_URL removed as it was unused
@@ -101,6 +118,10 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
   const [currentViewDate, setCurrentViewDate] = useState<Date>(getNextMonthDate());
   const loadedMonthsRef = useRef<Set<string>>(new Set());
   const modifiedMonthsRef = useRef<Set<string>>(new Set()); // Track months that need saving
+  const baseModifiedRef = useRef(false);
+  const baseUpdatedAtRef = useRef<string | null>(null);
+  const monthUpdatedAtRef = useRef<Record<string, string | null>>({});
+  const skipNextAutoSaveRef = useRef(false);
 
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -117,6 +138,57 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
     return `schedule_${year}_${month}.json`;
   };
 
+  const markBaseModified = useCallback(() => {
+    baseModifiedRef.current = true;
+  }, []);
+
+  const markMonthModified = useCallback((dateString: string) => {
+    modifiedMonthsRef.current.add(getMonthKeyFromDateString(dateString));
+  }, []);
+
+  const markMonthsModifiedFromRecord = useCallback(
+    (record?: Record<string, unknown>) => {
+      if (!record) return;
+      Object.keys(record).forEach((dateString) => markMonthModified(dateString));
+    },
+    [markMonthModified],
+  );
+
+  const applyBaseData = useCallback((data: ScheduleBaseStorageData | null) => {
+    if (!data) return;
+    if (Array.isArray(data.doctors) && data.doctors.length > 0) setDoctors(data.doctors);
+    if (Array.isArray(data.tours) && data.tours.length > 0) setTours(data.tours);
+    if (Array.isArray(data.tourOrder) && data.tourOrder.length > 0) {
+      setTourOrder(data.tourOrder);
+    }
+    if (typeof data.showPkdv === 'boolean') setShowPkdv(data.showPkdv);
+    if (typeof data.rotationStartDate === 'string') setRotationStartDate(data.rotationStartDate);
+    if (data.holidaySchedule) setHolidaySchedule(data.holidaySchedule);
+  }, []);
+
+  const applyMonthData = useCallback((filename: string, data: ScheduleMonthStorageData | null) => {
+    setTourOverrides((prev) => ({
+      ...withoutMonthEntries(prev, filename),
+      ...(data?.tourOverrides ?? {}),
+    }));
+    setDoctorOverrides((prev) => ({
+      ...withoutMonthEntries(prev, filename),
+      ...(data?.doctorOverrides ?? {}),
+    }));
+    setScheduleSnapshots((prev) => ({
+      ...withoutMonthEntries(prev, filename),
+      ...(data?.scheduleSnapshots ?? {}),
+    }));
+    setDepartmentAssignments((prev) => ({
+      ...withoutMonthEntries(prev, filename),
+      ...(data?.departmentAssignments ?? {}),
+    }));
+
+    if (data?.holidaySchedule?.startDate) {
+      setHolidaySchedule(data.holidaySchedule);
+    }
+  }, []);
+
   // Load Base Data on mount
   useEffect(() => {
     if (!enabled) {
@@ -126,19 +198,10 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
 
     const loadBaseData = async () => {
       try {
-        const data = await loadBaseScheduleData();
-        if (data) {
-          if (Array.isArray(data.doctors) && data.doctors.length > 0) setDoctors(data.doctors);
-          if (Array.isArray(data.tours) && data.tours.length > 0) setTours(data.tours);
-          if (Array.isArray(data.tourOrder) && data.tourOrder.length > 0) {
-            setTourOrder(data.tourOrder);
-          }
-          if (typeof data.showPkdv === 'boolean') setShowPkdv(data.showPkdv);
-          if (typeof data.rotationStartDate === 'string')
-            setRotationStartDate(data.rotationStartDate);
-          if (data.holidaySchedule) setHolidaySchedule(data.holidaySchedule);
-          // Don't overwrite overrides from base, only global settings
-        }
+        const record = await loadBaseScheduleData();
+        baseUpdatedAtRef.current = record.updatedAt;
+        applyBaseData(record.data);
+        // Don't overwrite overrides from base, only global settings
       } catch {
         console.log('No base data found, using defaults');
       } finally {
@@ -146,7 +209,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
       }
     };
     loadBaseData();
-  }, [enabled]);
+  }, [applyBaseData, enabled]);
 
   // Load Monthly Data when currentViewDate changes
   useEffect(() => {
@@ -157,33 +220,62 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
       if (loadedMonthsRef.current.has(filename)) return; // Already loaded
 
       try {
-        const data = await loadMonthScheduleData(filename);
-        if (data) {
-          // Merge overrides
-          setTourOverrides((prev) => ({ ...prev, ...data.tourOverrides }));
-          setDoctorOverrides((prev) => ({ ...prev, ...data.doctorOverrides }));
-          setScheduleSnapshots((prev) => ({ ...prev, ...data.scheduleSnapshots }));
-          setDepartmentAssignments((prev) => ({ ...prev, ...data.departmentAssignments }));
-          // Merge holiday if exists (might need better strategy for multi-month holidays)
-          if (data.holidaySchedule) {
-            // For now, simple merge/replace if dates match or are relevant
-            // Ideally holiday data should perhaps be in base or its own file if it spans months?
-            // Or just load it and let latest wins? Let's check dates.
-            if (data.holidaySchedule.startDate) {
-              setHolidaySchedule(data.holidaySchedule);
-            }
-          }
-          loadedMonthsRef.current.add(filename);
-        }
+        const record = await loadMonthScheduleData(filename);
+        monthUpdatedAtRef.current[filename] = record.updatedAt;
+        applyMonthData(filename, record.data);
+        loadedMonthsRef.current.add(filename);
       } catch {
         // File might not exist yet, that's fine
       }
     };
     loadMonthlyData();
-  }, [currentViewDate, enabled]);
+  }, [applyMonthData, currentViewDate, enabled]);
+
+  useEffect(() => {
+    if (!enabled || !isLoaded) return;
+
+    const filename = getMonthKey(currentViewDate);
+    const channel = subscribeToScheduleChanges({
+      currentMonthFilename: filename,
+      onBaseChange: (record) => {
+        if (record.updatedAt && record.updatedAt === baseUpdatedAtRef.current) return;
+        if (baseModifiedRef.current) return;
+
+        skipNextAutoSaveRef.current = true;
+        baseUpdatedAtRef.current = record.updatedAt;
+        baseModifiedRef.current = false;
+        applyBaseData(record.data);
+        onSaveSuccess?.();
+      },
+      onMonthChange: (changedFilename, record) => {
+        if (record.updatedAt && record.updatedAt === monthUpdatedAtRef.current[changedFilename]) {
+          return;
+        }
+        if (modifiedMonthsRef.current.has(changedFilename)) return;
+
+        skipNextAutoSaveRef.current = true;
+        monthUpdatedAtRef.current[changedFilename] = record.updatedAt;
+        modifiedMonthsRef.current.delete(changedFilename);
+        loadedMonthsRef.current.add(changedFilename);
+        applyMonthData(changedFilename, record.data);
+        onSaveSuccess?.();
+      },
+    });
+
+    return () => {
+      if (channel) {
+        void channel.unsubscribe();
+      }
+    };
+  }, [applyBaseData, applyMonthData, currentViewDate, enabled, isLoaded, onSaveSuccess]);
 
   // Save data to file (debounced) - INTELLIGENT SAVE
   const saveData = useCallback(async () => {
+    const dirtyMonths = Array.from(modifiedMonthsRef.current);
+    const shouldSaveBase = baseModifiedRef.current;
+    if (!shouldSaveBase && dirtyMonths.length === 0) return;
+    let conflictFilename: string | null = null;
+
     // 1. Save Base Data (Global Settings)
     const baseData: Partial<ScheduleData> = {
       doctors,
@@ -197,84 +289,73 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
 
     try {
       // Save Base
-      await saveBaseScheduleData(baseData);
+      if (shouldSaveBase) {
+        conflictFilename = null;
+        const updatedAt = await saveBaseScheduleData(baseData, baseUpdatedAtRef.current);
+        baseUpdatedAtRef.current = updatedAt;
+        baseModifiedRef.current = false;
+      }
 
       // 2. Save Monthly Data (Overrides)
-      // We need to group overrides by month to save to correct files
-      // Use map to partition data
-      const changesByMonth: Record<string, any> = {};
+      for (const filename of dirtyMonths) {
+        conflictFilename = filename;
+        const content: ScheduleMonthStorageData = {};
 
-      // Helper to partition
-      const addToPartition = (
-        dateStr: string,
-        data: any,
-        type: 'tourOverrides' | 'doctorOverrides' | 'scheduleSnapshots' | 'departmentAssignments',
-      ) => {
-        // Parse dateStr (YYYY-MM-DD) directly to avoid timezone shifts
-        const parts = dateStr.split('-');
-        if (parts.length !== 3) return;
-        const year = parts[0];
-        const month = parts[1];
-        const filename = `schedule_${year}_${month}.json`;
+        const addMonthEntries = <T>(
+          source: Record<string, T>,
+          key: keyof ScheduleMonthStorageData,
+        ) => {
+          const entries = Object.entries(source).filter(([dateString]) =>
+            isDateStringInMonthFilename(dateString, filename),
+          );
+          if (entries.length > 0) {
+            (content as Record<string, unknown>)[key] = Object.fromEntries(entries);
+          }
+        };
 
-        if (!changesByMonth[filename]) changesByMonth[filename] = {};
-        if (!changesByMonth[filename][type]) changesByMonth[filename][type] = {};
+        addMonthEntries(tourOverrides, 'tourOverrides');
+        addMonthEntries(doctorOverrides, 'doctorOverrides');
+        addMonthEntries(scheduleSnapshots, 'scheduleSnapshots');
+        addMonthEntries(departmentAssignments, 'departmentAssignments');
 
-        changesByMonth[filename][type][dateStr] = data;
-      };
-
-      Object.entries(tourOverrides).forEach(([k, v]) => addToPartition(k, v, 'tourOverrides'));
-      Object.entries(doctorOverrides).forEach(([k, v]) => addToPartition(k, v, 'doctorOverrides'));
-      Object.entries(scheduleSnapshots).forEach(([k, v]) =>
-        addToPartition(k, v, 'scheduleSnapshots'),
-      );
-      Object.entries(departmentAssignments).forEach(([k, v]) =>
-        addToPartition(k, v, 'departmentAssignments'),
-      );
-
-      // Save each month file
-      // NOTE: This approach rewrites the file with ONLY the current in-memory overrides for that month.
-      // Since we load the file on view, in-memory should be complete for that month.
-      // However, if we haven't viewed a month, we might overwrite it with partial data if we aren't careful?
-      // Wait: 'tourOverrides' state contains ALL loaded overrides.
-      // If we haven't loaded Jan 2026, tourOverrides won't have Jan 2026 data.
-      // So saving Jan 2026 file based on empty state would be BAD if we just overwrote.
-      // We must only save if we have changes or merge?
-      // BETTER STRATEGY: only save the 'currentViewDate' month file?
-      // Or: Only save partitions that we have touched?
-      // Safe approach: For each month partition in our `changesByMonth`, we SHOULD first read the file, merge, then write?
-      // OR: Assume `tourOverrides` accumulates everything we've seen.
-      // If we simply write `changesByMonth['schedule_2026_01.json']`, we might lose data if `tourOverrides` doesn't have it?
-      // `tourOverrides` ONLY has what we loaded.
-      // If we visited Jan, loaded valid data. Then went to Feb. Jan data is still in `tourOverrides`.
-      // So writing Jan file from `tourOverrides` is safe provided we loaded it.
-      // If we NEVER loaded March, `tourOverrides` has no March data. Writing empty March file?
-      // `addToPartition` iterates keys of `tourOverrides`. If no keys for March, no March file entry created.
-      // So we only write files for months we have data for. SAFE.
-
-      for (const [filename, content] of Object.entries(changesByMonth)) {
-        await saveMonthScheduleData(filename, content);
+        const updatedAt = await saveMonthScheduleData(
+          filename,
+          content,
+          monthUpdatedAtRef.current[filename] ?? null,
+        );
+        monthUpdatedAtRef.current[filename] = updatedAt;
+        modifiedMonthsRef.current.delete(filename);
       }
-
-      // Also save any months that were modified but now have no overrides
-      for (const filename of modifiedMonthsRef.current) {
-        if (!changesByMonth[filename]) {
-          // This month was modified but has no remaining overrides, save empty object
-          await saveMonthScheduleData(filename, {});
-        }
-      }
-      modifiedMonthsRef.current.clear(); // Clear after successful save
 
       onSaveSuccess?.();
     } catch (error) {
       console.error('Failed to save:', error);
       onError?.(
-        error instanceof Error && error.message === 'Missing editor email'
-          ? 'Lịch đang khóa. Bấm biểu tượng ổ khóa và nhập email để chỉnh sửa.'
-          : 'Không thể lưu dữ liệu. Vui lòng thử lại.',
+        error instanceof ScheduleConflictError
+          ? 'Dữ liệu đã được cập nhật từ máy khác. Ứng dụng sẽ tải bản mới nhất để tránh ghi đè.'
+          : error instanceof Error && error.message === 'Missing editor email'
+            ? 'Lịch đang khóa. Bấm biểu tượng ổ khóa và nhập email để chỉnh sửa.'
+            : 'Không thể lưu dữ liệu. Vui lòng thử lại.',
       );
+
+      if (error instanceof ScheduleConflictError) {
+        const filename = conflictFilename ?? getMonthKey(currentViewDate);
+        const [baseRecord, monthRecord] = await Promise.all([
+          loadBaseScheduleData(),
+          loadMonthScheduleData(filename),
+        ]);
+        skipNextAutoSaveRef.current = true;
+        baseUpdatedAtRef.current = baseRecord.updatedAt;
+        monthUpdatedAtRef.current[filename] = monthRecord.updatedAt;
+        baseModifiedRef.current = false;
+        modifiedMonthsRef.current.delete(filename);
+        applyBaseData(baseRecord.data);
+        applyMonthData(filename, monthRecord.data);
+      }
     }
   }, [
+    applyBaseData,
+    applyMonthData,
     doctors,
     tours,
     tourOrder,
@@ -285,6 +366,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
     departmentAssignments,
     holidaySchedule,
     rotationStartDate,
+    currentViewDate,
     onError,
     onSaveSuccess,
   ]);
@@ -301,6 +383,10 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
   // Auto-save when data changes (debounced 1 second)
   useEffect(() => {
     if (!enabled || !isLoaded || !canWrite) return; // Don't save before initial load
+    if (skipNextAutoSaveRef.current) {
+      skipNextAutoSaveRef.current = false;
+      return;
+    }
 
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
@@ -394,7 +480,9 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
       const holidayStart = holidaySchedule.startDate
         ? parseLocalDateString(holidaySchedule.startDate)
         : null;
-      const holidayEnd = holidaySchedule.endDate ? parseLocalDateString(holidaySchedule.endDate) : null;
+      const holidayEnd = holidaySchedule.endDate
+        ? parseLocalDateString(holidaySchedule.endDate)
+        : null;
       const holidayTourId = holidaySchedule.holidayTourId;
 
       if (holidayStart && holidayEnd && holidayTourId) {
@@ -567,9 +655,18 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
         return;
       }
 
+      markMonthModified(date1Str);
+      markMonthModified(date2Str);
       setTourOverrides((current) => ({ ...current, [date1Str]: tourId2, [date2Str]: tourId1 }));
     },
-    [tourOverrides, scheduleSnapshots, tourOrder, rotationStartDate, ensureCanWrite],
+    [
+      tourOverrides,
+      scheduleSnapshots,
+      tourOrder,
+      rotationStartDate,
+      ensureCanWrite,
+      markMonthModified,
+    ],
   );
 
   const handleSwapDoctors = useCallback(
@@ -595,13 +692,15 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
         newDoctors1[selection1.doctorIndex],
       ];
 
+      markMonthModified(date1Str);
+      markMonthModified(date2Str);
       setDoctorOverrides((current) => ({
         ...current,
         [date1Str]: newDoctors1,
         [date2Str]: newDoctors2,
       }));
     },
-    [getDoctorsForDate, ensureCanWrite],
+    [getDoctorsForDate, ensureCanWrite, markMonthModified],
   );
 
   const handleReplaceDoctor = useCallback(
@@ -613,9 +712,10 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
       if (!doctorsOnDate) return;
       const newDoctors = [...doctorsOnDate];
       newDoctors[selection.doctorIndex] = newDoctorName;
+      markMonthModified(dateStr);
       setDoctorOverrides((current) => ({ ...current, [dateStr]: newDoctors }));
     },
-    [getDoctorsForDate, ensureCanWrite],
+    [getDoctorsForDate, ensureCanWrite, markMonthModified],
   );
 
   const handleResetOverrides = useCallback(
@@ -623,8 +723,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
       if (!ensureCanWrite()) return;
 
       const dateStr = getDateString(date);
-      const monthKey = `schedule_${dateStr.substring(0, 4)}_${dateStr.substring(5, 7)}.json`;
-      modifiedMonthsRef.current.add(monthKey); // Mark month as modified
+      markMonthModified(dateStr);
 
       setTourOverrides((current) => {
         const next = { ...current };
@@ -637,13 +736,14 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
         return next;
       });
     },
-    [ensureCanWrite],
+    [ensureCanWrite, markMonthModified],
   );
 
   const handleUpdateDoctorInTour = useCallback(
     (tourId: string, doctorIndex: number, newDoctorId: string) => {
       if (!ensureCanWrite()) return;
 
+      markBaseModified();
       setTours((current) =>
         current.map((t) =>
           t.id === tourId
@@ -652,7 +752,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
         ),
       );
     },
-    [ensureCanWrite],
+    [ensureCanWrite, markBaseModified],
   );
 
   const getStandardTourIdForDate = useCallback(
@@ -712,6 +812,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
       }
 
       if (Object.keys(snapshotsToAdd).length > 0) {
+        markMonthsModifiedFromRecord(snapshotsToAdd);
         setScheduleSnapshots((current) => ({ ...current, ...snapshotsToAdd }));
       }
     },
@@ -721,6 +822,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
       tourOverrides,
       getDoctorsForDate,
       getStandardTourIdForDate,
+      markMonthsModifiedFromRecord,
     ],
   );
 
@@ -738,14 +840,16 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
         1,
       );
       freezeScheduleBefore(currentMonthStart);
+      markBaseModified();
       setTourOrder(newOrder);
     },
-    [currentViewDate, ensureCanWrite, freezeScheduleBefore, tourOrder],
+    [currentViewDate, ensureCanWrite, freezeScheduleBefore, markBaseModified, tourOrder],
   );
   const handleTogglePkdvVisibility = useCallback(() => {
     if (!ensureCanWrite()) return;
+    markBaseModified();
     setShowPkdv((current) => !current);
-  }, [ensureCanWrite]);
+  }, [ensureCanWrite, markBaseModified]);
 
   const handleAddDoctor = useCallback(
     (name: string, isCtch: boolean) => {
@@ -757,16 +861,18 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
           name: name.trim(),
           isCtch,
         };
+        markBaseModified();
         setDoctors((current) => [...current, newDoctor]);
       }
     },
-    [ensureCanWrite],
+    [ensureCanWrite, markBaseModified],
   );
 
   const handleRemoveDoctor = useCallback(
     (id: string) => {
       if (!ensureCanWrite()) return;
 
+      markBaseModified();
       setDoctors((current) => current.filter((d) => d.id !== id));
       setTours((current) =>
         current.map((t) => ({
@@ -775,13 +881,14 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
         })),
       );
     },
-    [ensureCanWrite],
+    [ensureCanWrite, markBaseModified],
   );
 
   const handleUpdateDoctor = useCallback(
     (id: string, updatedDoctor: Partial<Omit<Doctor, 'id'>>) => {
       if (!ensureCanWrite()) return;
 
+      markBaseModified();
       setDoctors((current) =>
         current.map((d) => {
           if (d.id === id) {
@@ -795,24 +902,26 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
         }),
       );
     },
-    [ensureCanWrite],
+    [ensureCanWrite, markBaseModified],
   );
 
   const handleAddDoctorToTour = useCallback(
     (tourId: string) => {
       if (!ensureCanWrite()) return;
 
+      markBaseModified();
       setTours((current) =>
         current.map((t) => (t.id === tourId ? { ...t, doctorIds: [...t.doctorIds, ''] } : t)),
       );
     },
-    [ensureCanWrite],
+    [ensureCanWrite, markBaseModified],
   );
 
   const handleRemoveDoctorFromTour = useCallback(
     (tourId: string, doctorIndex: number) => {
       if (!ensureCanWrite()) return;
 
+      markBaseModified();
       setTours((current) =>
         current.map((t) =>
           t.id === tourId
@@ -821,7 +930,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
         ),
       );
     },
-    [ensureCanWrite],
+    [ensureCanWrite, markBaseModified],
   );
 
   const handleUpdateDepartmentAssignments = useCallback(
@@ -829,6 +938,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
       if (!ensureCanWrite()) return;
 
       const dateStr = getDateString(date);
+      markMonthModified(dateStr);
       console.log(`[useScheduleData] Updating ${role} on ${dateStr}:`, doctors);
       setDepartmentAssignments((current) => {
         const newAssignmentsForDate = { ...(current[dateStr] || {}), [role]: doctors };
@@ -845,12 +955,26 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
         return updated;
       });
     },
-    [ensureCanWrite],
+    [ensureCanWrite, markMonthModified],
   );
 
   const handleImportData = useCallback(
     (data: ImportData, onSuccess?: () => void) => {
       if (!ensureCanWrite()) return;
+
+      if (
+        data.doctors ||
+        data.tours ||
+        data.tourOrder ||
+        typeof data.showPkdv === 'boolean' ||
+        data.holidaySchedule
+      ) {
+        markBaseModified();
+      }
+      markMonthsModifiedFromRecord(data.tourOverrides);
+      markMonthsModifiedFromRecord(data.doctorOverrides);
+      markMonthsModifiedFromRecord(data.scheduleSnapshots);
+      markMonthsModifiedFromRecord(data.departmentAssignments);
 
       if (data.doctors) setDoctors(data.doctors);
       if (data.tours) setTours(data.tours);
@@ -865,7 +989,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
         onSuccess();
       }
     },
-    [ensureCanWrite],
+    [ensureCanWrite, markBaseModified, markMonthsModifiedFromRecord],
   );
 
   // Holiday Schedule Handlers
@@ -873,6 +997,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
     (startDate: string | null, endDate: string | null) => {
       if (!ensureCanWrite()) return;
 
+      markBaseModified();
       setHolidaySchedule((current) => ({
         ...current,
         startDate,
@@ -881,7 +1006,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
         doctorOverrides: {},
       }));
     },
-    [ensureCanWrite],
+    [ensureCanWrite, markBaseModified],
   );
 
   const handleUpdateHolidayDoctors = useCallback(
@@ -890,6 +1015,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
 
       // Max 6 doctors
       const limitedDoctors = doctors.slice(0, 6);
+      markBaseModified();
       setHolidaySchedule((current) => ({
         ...current,
         doctorOverrides: {
@@ -898,37 +1024,40 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
         },
       }));
     },
-    [ensureCanWrite],
+    [ensureCanWrite, markBaseModified],
   );
 
   const handleSetHolidayTour = useCallback(
     (tourId: string | undefined) => {
       if (!ensureCanWrite()) return;
 
+      markBaseModified();
       setHolidaySchedule((current) => ({
         ...current,
         holidayTourId: tourId,
       }));
     },
-    [ensureCanWrite],
+    [ensureCanWrite, markBaseModified],
   );
 
   const handleSetHolidayInsertionIndex = useCallback(
     (index: number) => {
       if (!ensureCanWrite()) return;
 
+      markBaseModified();
       setHolidaySchedule((current) => ({
         ...current,
         holidayInsertionIndex: index,
       }));
     },
-    [ensureCanWrite],
+    [ensureCanWrite, markBaseModified],
   );
 
   const handleResetHolidayDay = useCallback(
     (dateStr: string) => {
       if (!ensureCanWrite()) return;
 
+      markBaseModified();
       setHolidaySchedule((current) => {
         const nextOverrides = { ...current.doctorOverrides };
         delete nextOverrides[dateStr];
@@ -938,7 +1067,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
         };
       });
     },
-    [ensureCanWrite],
+    [ensureCanWrite, markBaseModified],
   );
 
   const handleSetRotationStartDate = useCallback(
@@ -946,6 +1075,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
       if (!ensureCanWrite()) return;
 
       if (!newDateStr) {
+        markBaseModified();
         setRotationStartDate(null);
         return;
       }
@@ -991,13 +1121,22 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
 
         // Apply overrides and update start date
         if (Object.keys(overridesToAdd).length > 0) {
+          markMonthsModifiedFromRecord(overridesToAdd);
           setTourOverrides((prev) => ({ ...prev, ...overridesToAdd }));
         }
       }
 
+      markBaseModified();
       setRotationStartDate(newDateStr);
     },
-    [rotationStartDate, tourOverrides, tourOrder, ensureCanWrite],
+    [
+      rotationStartDate,
+      tourOverrides,
+      tourOrder,
+      ensureCanWrite,
+      markBaseModified,
+      markMonthsModifiedFromRecord,
+    ],
   );
 
   return {
