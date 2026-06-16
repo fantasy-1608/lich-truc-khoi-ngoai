@@ -160,10 +160,12 @@ const App: React.FC = () => {
               tourOverrides={scheduleData.tourOverrides}
               doctorOverrides={scheduleData.doctorOverrides}
               scheduleSnapshots={scheduleData.scheduleSnapshots}
+              showAddDoctorShortcut={scheduleData.showAddDoctorShortcut}
               onSwapTours={scheduleData.handleSwapTours}
               onSwapDoctors={scheduleData.handleSwapDoctors}
               allDoctors={scheduleData.doctors}
               onReplaceDoctor={scheduleData.handleReplaceDoctor}
+              onAddDoctorToDate={scheduleData.handleAddDoctorToDate}
               onResetOverrides={scheduleData.handleResetOverrides}
               doctorsById={scheduleData.doctorsById}
               toursById={scheduleData.toursById}
@@ -212,6 +214,7 @@ const App: React.FC = () => {
               tours={scheduleData.tours}
               tourOrder={scheduleData.tourOrder}
               showPkdv={scheduleData.showPkdv}
+              showAddDoctorShortcut={scheduleData.showAddDoctorShortcut}
               rotationStartDate={scheduleData.rotationStartDate}
               onSetRotationStartDate={scheduleData.handleSetRotationStartDate}
               onAddDoctor={scheduleData.handleAddDoctor}
@@ -220,6 +223,7 @@ const App: React.FC = () => {
               onUpdateDoctorInTour={scheduleData.handleUpdateDoctorInTour}
               onReorderTours={scheduleData.handleReorderTours}
               onTogglePkdvVisibility={scheduleData.handleTogglePkdvVisibility}
+              onToggleAddDoctorShortcut={scheduleData.handleToggleAddDoctorShortcut}
               onAddDoctorToTour={scheduleData.handleAddDoctorToTour}
               onRemoveDoctorFromTour={scheduleData.handleRemoveDoctorFromTour}
               onImportData={scheduleData.handleImportData}
@@ -231,6 +235,7 @@ const App: React.FC = () => {
                 doctorOverrides: scheduleData.doctorOverrides,
                 scheduleSnapshots: scheduleData.scheduleSnapshots,
                 showPkdv: scheduleData.showPkdv,
+                showAddDoctorShortcut: scheduleData.showAddDoctorShortcut,
                 departmentAssignments: scheduleData.departmentAssignments,
               }}
               onDone={() => changeView(lastScheduleView)}

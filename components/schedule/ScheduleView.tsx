@@ -16,6 +16,7 @@ import { useCalendarGrid } from '../../hooks/useCalendarGrid';
 import ScheduleHeader from './ScheduleHeader';
 import ScheduleDayCell from './ScheduleDayCell';
 import ReplaceDoctorPopup from './ReplaceDoctorPopup';
+import AddDoctorPopup from './AddDoctorPopup';
 import ResetPopover from './ResetPopover';
 import { exportScheduleToPDF } from '../../utils/export';
 import ShiftRequestModal from './ShiftRequestModal';
@@ -30,6 +31,7 @@ interface ScheduleViewProps {
   tourOverrides: Record<string, string>;
   doctorOverrides: Record<string, string[]>;
   scheduleSnapshots: Record<string, ScheduleSnapshotEntry>;
+  showAddDoctorShortcut: boolean;
   allDoctors: Doctor[];
   doctorsById: Record<string, Doctor>;
   toursById: Record<string, Tour>;
@@ -41,6 +43,7 @@ interface ScheduleViewProps {
     selection2: { date: Date; doctorIndex: number },
   ) => void;
   onReplaceDoctor: (selection: { date: Date; doctorIndex: number }, newDoctorName: string) => void;
+  onAddDoctorToDate: (date: Date, doctorName: string) => void;
   onResetOverrides: (date: Date) => void;
   onViewDateChange?: (date: Date) => void;
   holidaySchedule?: HolidayScheduleData;
@@ -100,10 +103,12 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
     tourOverrides,
     doctorOverrides,
     scheduleSnapshots,
+    showAddDoctorShortcut,
     onSwapTours,
     onSwapDoctors,
     allDoctors,
     onReplaceDoctor,
+    onAddDoctorToDate,
     onResetOverrides,
     doctorsById,
     toursById,
@@ -137,6 +142,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
   const [selectedDoctor, setSelectedDoctor] = useState<SelectedDoctor | null>(null);
   const [selectedTourDate, setSelectedTourDate] = useState<Date | null>(null);
   const [resetPopover, setResetPopover] = useState<ResetPopoverState | null>(null);
+  const [addDoctorDay, setAddDoctorDay] = useState<ScheduleCalendarDay | null>(null);
   const [requestDay, setRequestDay] = useState<ScheduleCalendarDay | null>(null);
   const [requestsDate, setRequestsDate] = useState<string | null>(null);
   const [selectedMobileWeekId, setSelectedMobileWeekId] = useState<string>('');
@@ -220,9 +226,23 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
     }
   };
 
+  const handleAddDoctorClick = (doctorName: string) => {
+    if (!addDoctorDay) return;
+    onAddDoctorToDate(addDoctorDay.date, doctorName);
+    setAddDoctorDay(null);
+  };
+
+  const openAddDoctor = (day: ScheduleCalendarDay) => {
+    if (!day.doctors || !canEdit) return;
+    setSelectedDoctor(null);
+    setSelectedTourDate(null);
+    setAddDoctorDay(day);
+  };
+
   const cancelSelection = () => {
     setSelectedDoctor(null);
     setSelectedTourDate(null);
+    setAddDoctorDay(null);
   };
 
   const handleResetIconClick = (e: React.MouseEvent, date: Date) => {
@@ -265,9 +285,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
     const groups: MobileWeekGroup[] = [];
 
     for (let rowStart = 0; rowStart < calendarGrid.length; rowStart += 7) {
-      const days = calendarGrid
-        .slice(rowStart, rowStart + 7)
-        .filter((day) => day.isCurrentMonth);
+      const days = calendarGrid.slice(rowStart, rowStart + 7).filter((day) => day.isCurrentMonth);
 
       if (days.length === 0) continue;
 
@@ -340,7 +358,9 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
 
   const selectMobileWeek = (week: MobileWeekGroup) => {
     setSelectedMobileWeekId(week.id);
-    setSelectedMobileDayString(getDateString((week.days.find((day) => day.isToday) || week.days[0]).date));
+    setSelectedMobileDayString(
+      getDateString((week.days.find((day) => day.isToday) || week.days[0]).date),
+    );
   };
 
   return (
@@ -384,11 +404,13 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
                   selectedTourDate={selectedTourDate}
                   onTourClick={handleTourClick}
                   onDoctorClick={handleDoctorClick}
+                  onAddDoctorClick={openAddDoctor}
                   onResetIconClick={handleResetIconClick}
                   onRequestClick={handleRequestClick}
                   onViewRequestsClick={handleViewRequestsClick}
                   pendingRequestCount={pendingRequestCountsByDate[getDateString(day.date)] || 0}
                   canManageRequests={canManageShiftRequests}
+                  showAddDoctorShortcut={canEdit && showAddDoctorShortcut}
                   isHoliday={isHolidayDate(day.date)}
                 />
               ))}
@@ -396,7 +418,9 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
           </div>
         </div>
 
-        <div className={`schedule-compact ${isCompactSchedule ? 'block' : 'hidden'} mt-3 space-y-3`}>
+        <div
+          className={`schedule-compact ${isCompactSchedule ? 'block' : 'hidden'} mt-3 space-y-3`}
+        >
           {shouldShowMobileEditNotice && (
             <div className="flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-amber-800 dark:border-amber-800/70 dark:bg-amber-900/20 dark:text-amber-200">
               <LockIcon className="mt-0.5 h-4 w-4 shrink-0" />
@@ -453,7 +477,8 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
             <div className="flex gap-1.5 rounded-2xl border border-slate-200/80 bg-slate-50/80 p-2 dark:border-slate-700/70 dark:bg-slate-800/60">
               {selectedMobileWeek.days.map((day) => {
                 const dateString = getDateString(day.date);
-                const isSelected = dateString === getDateString(selectedMobileDay?.date || day.date);
+                const isSelected =
+                  dateString === getDateString(selectedMobileDay?.date || day.date);
                 const pendingCount = pendingRequestCountsByDate[dateString] || 0;
 
                 return (
@@ -482,9 +507,15 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
                       )}
                     </span>
                     <span className="absolute right-1 top-1 flex gap-0.5" aria-hidden="true">
-                      {day.isModified && <span className="h-1.5 w-1.5 rounded-full bg-orange-400" />}
-                      {pendingCount > 0 && <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />}
-                      {isHolidayDate(day.date) && <span className="h-1.5 w-1.5 rounded-full bg-rose-400" />}
+                      {day.isModified && (
+                        <span className="h-1.5 w-1.5 rounded-full bg-orange-400" />
+                      )}
+                      {pendingCount > 0 && (
+                        <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                      )}
+                      {isHolidayDate(day.date) && (
+                        <span className="h-1.5 w-1.5 rounded-full bg-rose-400" />
+                      )}
                     </span>
                   </button>
                 );
@@ -527,6 +558,17 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
                   <PlusIcon className="h-5 w-5" />
                 </button>
               </div>
+
+              {canEdit && showAddDoctorShortcut && !shouldShowMobileEditNotice && (
+                <button
+                  type="button"
+                  onClick={() => openAddDoctor(selectedMobileDay)}
+                  className="mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-3 text-sm font-bold text-indigo-700 transition-colors hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-300"
+                >
+                  <PlusIcon className="h-4 w-4" />
+                  Thêm bác sĩ cho ngày này
+                </button>
+              )}
 
               <div
                 className="mt-3 overflow-hidden rounded-2xl border border-slate-100 bg-slate-50/80 dark:border-slate-700 dark:bg-slate-900/40 sm:mt-4"
@@ -604,6 +646,15 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
           selectedDoctor={selectedDoctor}
           onReplaceClick={handleReplaceClick}
           onClose={cancelSelection}
+        />
+      )}
+
+      {addDoctorDay && (
+        <AddDoctorPopup
+          allDoctors={allDoctors}
+          day={addDoctorDay}
+          onAddClick={handleAddDoctorClick}
+          onClose={() => setAddDoctorDay(null)}
         />
       )}
 

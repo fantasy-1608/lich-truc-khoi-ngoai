@@ -111,6 +111,7 @@ export interface ImportData {
   doctorOverrides?: Record<string, string[]>;
   scheduleSnapshots?: Record<string, ScheduleSnapshotEntry>;
   showPkdv?: boolean;
+  showAddDoctorShortcut?: boolean;
   departmentAssignments?: Record<string, Partial<DepartmentAssignments>>;
   holidaySchedule?: HolidayScheduleData;
 }

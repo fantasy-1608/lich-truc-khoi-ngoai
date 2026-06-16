@@ -10,11 +10,13 @@ interface ScheduleDayCellProps {
   selectedTourDate: Date | null;
   onTourClick: (day: ScheduleCalendarDay) => void;
   onDoctorClick: (day: ScheduleCalendarDay, doctorIndex: number, doctorName: string) => void;
+  onAddDoctorClick: (day: ScheduleCalendarDay) => void;
   onResetIconClick: (e: React.MouseEvent, date: Date) => void;
   onRequestClick: (day: ScheduleCalendarDay) => void;
   onViewRequestsClick: (day: ScheduleCalendarDay) => void;
   pendingRequestCount?: number;
   canManageRequests?: boolean;
+  showAddDoctorShortcut?: boolean;
   isHoliday?: boolean;
   variant?: 'grid' | 'list';
 }
@@ -25,11 +27,13 @@ const ScheduleDayCell: React.FC<ScheduleDayCellProps> = ({
   selectedTourDate,
   onTourClick,
   onDoctorClick,
+  onAddDoctorClick,
   onResetIconClick,
   onRequestClick,
   onViewRequestsClick,
   pendingRequestCount = 0,
   canManageRequests = false,
+  showAddDoctorShortcut = false,
   isHoliday = false,
   variant = 'grid',
 }) => {
@@ -104,6 +108,16 @@ const ScheduleDayCell: React.FC<ScheduleDayCellProps> = ({
           </button>
 
           <div className="flex shrink-0 items-center gap-1.5">
+            {showAddDoctorShortcut && (
+              <button
+                type="button"
+                onClick={() => onAddDoctorClick(day)}
+                className="grid h-9 min-w-9 place-items-center rounded-full border border-indigo-200 bg-indigo-50 px-2 text-xs font-bold text-indigo-700 transition-colors hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-300"
+                aria-label={`Thêm bác sĩ trực cho ngày ${day.date.getDate()}`}
+              >
+                BS
+              </button>
+            )}
             {day.isModified && (
               <button
                 className="grid h-9 w-9 place-items-center rounded-full bg-amber-100 text-amber-600 transition-colors hover:bg-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
@@ -251,6 +265,25 @@ const ScheduleDayCell: React.FC<ScheduleDayCellProps> = ({
       <div className="flex items-start justify-between gap-1 mb-2">
         {day.isCurrentMonth && !isBeforeStartDate && day.doctors ? (
           <div className="flex items-center gap-1 min-h-7">
+            {showAddDoctorShortcut && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAddDoctorClick(day);
+                }}
+                className="
+                  inline-flex min-h-7 items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-1.5 text-indigo-700
+                  transition-all duration-150 hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1
+                  dark:border-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-300 dark:hover:bg-indigo-900/35
+                  sm:-translate-y-0.5 sm:opacity-0 sm:group-hover:translate-y-0 sm:group-hover:opacity-100 sm:focus-visible:translate-y-0 sm:focus-visible:opacity-100
+                "
+                aria-label={`Thêm bác sĩ trực cho ngày ${day.date.getDate()}`}
+              >
+                <PlusIcon className="h-3.5 w-3.5" />
+                <span className="hidden lg:inline text-[11px] font-semibold">BS</span>
+              </button>
+            )}
             <button
               type="button"
               onClick={(e) => {

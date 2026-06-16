@@ -59,6 +59,7 @@ interface ScheduleData {
   doctorOverrides: Record<string, string[]>;
   scheduleSnapshots: Record<string, ScheduleSnapshotEntry>;
   showPkdv: boolean;
+  showAddDoctorShortcut: boolean;
   departmentAssignments: Record<string, Partial<DepartmentAssignments>>;
   holidaySchedule: HolidayScheduleData;
   rotationStartDate: string | null; // New field
@@ -81,6 +82,7 @@ const DEFAULT_DATA: ScheduleData = {
   doctorOverrides: {},
   scheduleSnapshots: {},
   showPkdv: true,
+  showAddDoctorShortcut: false,
   departmentAssignments: {},
   holidaySchedule: DEFAULT_HOLIDAY_SCHEDULE,
   rotationStartDate: getDateString(START_DATE), // Use local date format, not ISO
@@ -106,6 +108,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
     {},
   );
   const [showPkdv, setShowPkdv] = useState<boolean>(true);
+  const [showAddDoctorShortcut, setShowAddDoctorShortcut] = useState<boolean>(false);
   const [departmentAssignments, setDepartmentAssignments] = useState<
     Record<string, Partial<DepartmentAssignments>>
   >({});
@@ -162,6 +165,9 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
       setTourOrder(data.tourOrder);
     }
     if (typeof data.showPkdv === 'boolean') setShowPkdv(data.showPkdv);
+    if (typeof data.showAddDoctorShortcut === 'boolean') {
+      setShowAddDoctorShortcut(data.showAddDoctorShortcut);
+    }
     if (typeof data.rotationStartDate === 'string') setRotationStartDate(data.rotationStartDate);
     if (data.holidaySchedule) setHolidaySchedule(data.holidaySchedule);
   }, []);
@@ -282,6 +288,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
       tours,
       tourOrder,
       showPkdv,
+      showAddDoctorShortcut,
       holidaySchedule,
       rotationStartDate,
       lastSaved: new Date().toISOString(),
@@ -363,6 +370,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
     doctorOverrides,
     scheduleSnapshots,
     showPkdv,
+    showAddDoctorShortcut,
     departmentAssignments,
     holidaySchedule,
     rotationStartDate,
@@ -718,6 +726,23 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
     [getDoctorsForDate, ensureCanWrite, markMonthModified],
   );
 
+  const handleAddDoctorToDate = useCallback(
+    (date: Date, doctorName: string) => {
+      if (!ensureCanWrite()) return;
+
+      const dateStr = getDateString(date);
+      const doctorsOnDate = getDoctorsForDate(date);
+      if (!doctorsOnDate || doctorsOnDate.includes(doctorName)) return;
+
+      markMonthModified(dateStr);
+      setDoctorOverrides((current) => ({
+        ...current,
+        [dateStr]: [...doctorsOnDate, doctorName],
+      }));
+    },
+    [ensureCanWrite, getDoctorsForDate, markMonthModified],
+  );
+
   const handleResetOverrides = useCallback(
     (date: Date) => {
       if (!ensureCanWrite()) return;
@@ -851,6 +876,12 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
     setShowPkdv((current) => !current);
   }, [ensureCanWrite, markBaseModified]);
 
+  const handleToggleAddDoctorShortcut = useCallback(() => {
+    if (!ensureCanWrite()) return;
+    markBaseModified();
+    setShowAddDoctorShortcut((current) => !current);
+  }, [ensureCanWrite, markBaseModified]);
+
   const handleAddDoctor = useCallback(
     (name: string, isCtch: boolean) => {
       if (!ensureCanWrite()) return;
@@ -967,6 +998,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
         data.tours ||
         data.tourOrder ||
         typeof data.showPkdv === 'boolean' ||
+        typeof data.showAddDoctorShortcut === 'boolean' ||
         data.holidaySchedule
       ) {
         markBaseModified();
@@ -983,6 +1015,9 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
       if (data.doctorOverrides) setDoctorOverrides(data.doctorOverrides);
       if (data.scheduleSnapshots) setScheduleSnapshots(data.scheduleSnapshots);
       if (typeof data.showPkdv === 'boolean') setShowPkdv(data.showPkdv);
+      if (typeof data.showAddDoctorShortcut === 'boolean') {
+        setShowAddDoctorShortcut(data.showAddDoctorShortcut);
+      }
       if (data.departmentAssignments) setDepartmentAssignments(data.departmentAssignments);
       if (data.holidaySchedule) setHolidaySchedule(data.holidaySchedule);
       if (onSuccess) {
@@ -1147,6 +1182,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
     doctorOverrides,
     scheduleSnapshots,
     showPkdv,
+    showAddDoctorShortcut,
     departmentAssignments,
     holidaySchedule,
     rotationStartDate,
@@ -1157,10 +1193,12 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
     handleSwapTours,
     handleSwapDoctors,
     handleReplaceDoctor,
+    handleAddDoctorToDate,
     handleResetOverrides,
     handleUpdateDoctorInTour,
     handleReorderTours,
     handleTogglePkdvVisibility,
+    handleToggleAddDoctorShortcut,
     handleUpdateDepartmentAssignments,
     handleAddDoctor,
     handleRemoveDoctor,

@@ -11,6 +11,7 @@ interface SettingsViewProps {
   tours: Tour[];
   tourOrder: string[];
   showPkdv: boolean;
+  showAddDoctorShortcut: boolean;
   rotationStartDate: string | null;
   onSetRotationStartDate: (date: string | null) => void;
   onAddDoctor: (name: string, isCtch: boolean) => void;
@@ -19,6 +20,7 @@ interface SettingsViewProps {
   onUpdateDoctorInTour: (tourId: string, doctorIndex: number, newDoctorId: string) => void;
   onReorderTours: (newOrder: string[]) => void;
   onTogglePkdvVisibility: () => void;
+  onToggleAddDoctorShortcut: () => void;
   onAddDoctorToTour: (tourId: string) => void;
   onRemoveDoctorFromTour: (tourId: string, doctorIndex: number) => void;
   onImportData: (data: ImportData, onSuccess?: () => void) => void;
@@ -63,7 +65,9 @@ const SettingsView: React.FC<SettingsViewProps> = (props) => {
           <div className="glass-card rounded-3xl p-6 sm:p-8">
             <GeneralSettings
               showPkdv={restProps.showPkdv}
+              showAddDoctorShortcut={restProps.showAddDoctorShortcut}
               onTogglePkdvVisibility={restProps.onTogglePkdvVisibility}
+              onToggleAddDoctorShortcut={restProps.onToggleAddDoctorShortcut}
               rotationStartDate={restProps.rotationStartDate}
               onSetRotationStartDate={restProps.onSetRotationStartDate}
             />

@@ -20,6 +20,7 @@ export interface ScheduleBaseStorageData {
   tours?: Tour[];
   tourOrder?: string[];
   showPkdv?: boolean;
+  showAddDoctorShortcut?: boolean;
   rotationStartDate?: string | null;
   holidaySchedule?: HolidayScheduleData;
   lastSaved?: string | null;
