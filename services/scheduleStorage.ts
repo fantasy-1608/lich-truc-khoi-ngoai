@@ -112,6 +112,27 @@ const saveLocalJson = async (filename: string, data: unknown): Promise<void> => 
   }
 };
 
+// --- localStorage cache helpers (stale-while-revalidate) ---
+const CACHE_PREFIX = 'schedule_cache_';
+
+const getCachedData = <T>(key: string): T | null => {
+  try {
+    const raw = localStorage.getItem(CACHE_PREFIX + key);
+    if (!raw) return null;
+    return JSON.parse(raw) as T;
+  } catch {
+    return null;
+  }
+};
+
+const setCachedData = (key: string, data: unknown): void => {
+  try {
+    localStorage.setItem(CACHE_PREFIX + key, JSON.stringify(data));
+  } catch {
+    // localStorage full or unavailable — silently ignore
+  }
+};
+
 export const loadBaseScheduleData = async (): Promise<
   ScheduleStorageRecord<ScheduleBaseStorageData>
 > => {
@@ -129,10 +150,20 @@ export const loadBaseScheduleData = async (): Promise<
     .maybeSingle();
 
   if (error) throw error;
-  return {
+
+  const result: ScheduleStorageRecord<ScheduleBaseStorageData> = {
     data: (data?.data as ScheduleBaseStorageData | undefined) ?? null,
     updatedAt: (data?.updated_at as string | undefined) ?? null,
   };
+
+  // Cache for stale-while-revalidate on next visit
+  if (result.data) setCachedData('base', result);
+  return result;
+};
+
+/** Load cached base data synchronously (instant, possibly stale) */
+export const loadCachedBaseData = (): ScheduleStorageRecord<ScheduleBaseStorageData> | null => {
+  return getCachedData<ScheduleStorageRecord<ScheduleBaseStorageData>>('base');
 };
 
 export const saveBaseScheduleData = async (
@@ -176,10 +207,22 @@ export const loadMonthScheduleData = async (
     .maybeSingle();
 
   if (error) throw error;
-  return {
+
+  const result: ScheduleStorageRecord<ScheduleMonthStorageData> = {
     data: (data?.data as ScheduleMonthStorageData | undefined) ?? null,
     updatedAt: (data?.updated_at as string | undefined) ?? null,
   };
+
+  // Cache for stale-while-revalidate
+  if (result.data) setCachedData(`month_${filename}`, result);
+  return result;
+};
+
+/** Load cached month data synchronously (instant, possibly stale) */
+export const loadCachedMonthData = (
+  filename: string,
+): ScheduleStorageRecord<ScheduleMonthStorageData> | null => {
+  return getCachedData<ScheduleStorageRecord<ScheduleMonthStorageData>>(`month_${filename}`);
 };
 
 export const saveMonthScheduleData = async (

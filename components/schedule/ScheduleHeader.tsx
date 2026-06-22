@@ -3,6 +3,7 @@ import { SelectedDoctor } from '../../types';
 import { ArrowLeftIcon } from '../icons/ArrowLeftIcon';
 import { ArrowRightIcon } from '../icons/ArrowRightIcon';
 import { DownloadIcon } from '../icons/DownloadIcon';
+import { CalendarIcon } from '../icons/CalendarIcon';
 
 interface ScheduleHeaderProps {
   currentDate: Date;
@@ -12,6 +13,7 @@ interface ScheduleHeaderProps {
   onNextMonth: () => void;
   onCancelSelection: () => void;
   onExportPDF: () => Promise<void>;
+  onExportICS: () => void;
 }
 
 const ScheduleHeader: React.FC<ScheduleHeaderProps> = ({
@@ -22,6 +24,7 @@ const ScheduleHeader: React.FC<ScheduleHeaderProps> = ({
   onNextMonth,
   onCancelSelection,
   onExportPDF,
+  onExportICS,
 }) => {
   const [isExporting, setIsExporting] = useState(false);
 
@@ -84,6 +87,14 @@ const ScheduleHeader: React.FC<ScheduleHeaderProps> = ({
           aria-label="Next month"
         >
           <ArrowRightIcon className="h-6 w-6" />
+        </button>
+        <button
+          onClick={onExportICS}
+          className="inline-flex h-11 w-11 items-center justify-center rounded-full text-slate-600 transition-all-app hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700 sm:h-10 sm:w-10 sm:hover:scale-105"
+          aria-label="Export ICS"
+          title="Lưu vào lịch điện thoại (.ics)"
+        >
+          <CalendarIcon className="h-6 w-6" />
         </button>
         <button
           onClick={handlePDFExport}

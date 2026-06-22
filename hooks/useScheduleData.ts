@@ -20,6 +20,8 @@ import {
   saveBaseScheduleData,
   saveMonthScheduleData,
   subscribeToScheduleChanges,
+  loadCachedBaseData,
+  loadCachedMonthData,
 } from '../services/scheduleStorage';
 
 // Helper to get date string in YYYY-MM-DD format using local time components
@@ -47,6 +49,9 @@ const withoutMonthEntries = <T>(entries: Record<string, T>, filename: string): R
       ([dateString]) => !isDateStringInMonthFilename(dateString, filename),
     ),
   );
+
+// Read-only polling interval (60 seconds) — uses simple fetch instead of WebSocket
+const READ_ONLY_POLL_INTERVAL = 60_000;
 
 // Storage file path (via Vite API)
 // STORAGE_URL removed as it was unused
@@ -195,19 +200,26 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
     }
   }, []);
 
-  // Load Base Data on mount
+  // Load Base Data on mount — cache-first, then revalidate
   useEffect(() => {
     if (!enabled) {
       setIsLoaded(false);
       return;
     }
 
+    // 1. Instant: apply cached data if available
+    const cached = loadCachedBaseData();
+    if (cached?.data) {
+      applyBaseData(cached.data);
+      baseUpdatedAtRef.current = cached.updatedAt;
+    }
+
+    // 2. Background: fetch fresh data from Supabase
     const loadBaseData = async () => {
       try {
         const record = await loadBaseScheduleData();
         baseUpdatedAtRef.current = record.updatedAt;
         applyBaseData(record.data);
-        // Don't overwrite overrides from base, only global settings
       } catch {
         console.log('No base data found, using defaults');
       } finally {
@@ -217,13 +229,24 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
     loadBaseData();
   }, [applyBaseData, enabled]);
 
-  // Load Monthly Data when currentViewDate changes
+  // Load Monthly Data when currentViewDate changes — cache-first
   useEffect(() => {
     if (!enabled) return;
 
+    const filename = getMonthKey(currentViewDate);
+
+    // 1. Instant: apply cached month data
+    if (!loadedMonthsRef.current.has(filename)) {
+      const cached = loadCachedMonthData(filename);
+      if (cached?.data) {
+        applyMonthData(filename, cached.data);
+        monthUpdatedAtRef.current[filename] = cached.updatedAt;
+      }
+    }
+
+    // 2. Background: fetch fresh from Supabase
     const loadMonthlyData = async () => {
-      const filename = getMonthKey(currentViewDate);
-      if (loadedMonthsRef.current.has(filename)) return; // Already loaded
+      if (loadedMonthsRef.current.has(filename)) return;
 
       try {
         const record = await loadMonthScheduleData(filename);
@@ -232,48 +255,78 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
         loadedMonthsRef.current.add(filename);
       } catch {
         // File might not exist yet, that's fine
+        loadedMonthsRef.current.add(filename);
       }
     };
     loadMonthlyData();
   }, [applyMonthData, currentViewDate, enabled]);
 
+  // Item 6: Editors use realtime WebSocket; read-only users use lightweight polling
   useEffect(() => {
     if (!enabled || !isLoaded) return;
 
     const filename = getMonthKey(currentViewDate);
-    const channel = subscribeToScheduleChanges({
-      currentMonthFilename: filename,
-      onBaseChange: (record) => {
-        if (record.updatedAt && record.updatedAt === baseUpdatedAtRef.current) return;
-        if (baseModifiedRef.current) return;
 
-        skipNextAutoSaveRef.current = true;
-        baseUpdatedAtRef.current = record.updatedAt;
-        baseModifiedRef.current = false;
-        applyBaseData(record.data);
-        onSaveSuccess?.();
-      },
-      onMonthChange: (changedFilename, record) => {
-        if (record.updatedAt && record.updatedAt === monthUpdatedAtRef.current[changedFilename]) {
-          return;
+    // Editors: use persistent realtime subscription (existing behavior)
+    if (canWrite) {
+      const channel = subscribeToScheduleChanges({
+        currentMonthFilename: filename,
+        onBaseChange: (record) => {
+          if (record.updatedAt && record.updatedAt === baseUpdatedAtRef.current) return;
+          if (baseModifiedRef.current) return;
+
+          skipNextAutoSaveRef.current = true;
+          baseUpdatedAtRef.current = record.updatedAt;
+          baseModifiedRef.current = false;
+          applyBaseData(record.data);
+          onSaveSuccess?.();
+        },
+        onMonthChange: (changedFilename, record) => {
+          if (record.updatedAt && record.updatedAt === monthUpdatedAtRef.current[changedFilename]) {
+            return;
+          }
+          if (modifiedMonthsRef.current.has(changedFilename)) return;
+
+          skipNextAutoSaveRef.current = true;
+          monthUpdatedAtRef.current[changedFilename] = record.updatedAt;
+          modifiedMonthsRef.current.delete(changedFilename);
+          loadedMonthsRef.current.add(changedFilename);
+          applyMonthData(changedFilename, record.data);
+          onSaveSuccess?.();
+        },
+      });
+
+      return () => {
+        if (channel) {
+          void channel.unsubscribe();
         }
-        if (modifiedMonthsRef.current.has(changedFilename)) return;
+      };
+    }
 
-        skipNextAutoSaveRef.current = true;
-        monthUpdatedAtRef.current[changedFilename] = record.updatedAt;
-        modifiedMonthsRef.current.delete(changedFilename);
-        loadedMonthsRef.current.add(changedFilename);
-        applyMonthData(changedFilename, record.data);
-        onSaveSuccess?.();
-      },
-    });
+    // Read-only users: lightweight polling (no WebSocket connection)
+    const poll = async () => {
+      try {
+        const [baseRecord, monthRecord] = await Promise.all([
+          loadBaseScheduleData(),
+          loadMonthScheduleData(filename),
+        ]);
 
-    return () => {
-      if (channel) {
-        void channel.unsubscribe();
+        if (baseRecord.updatedAt !== baseUpdatedAtRef.current) {
+          baseUpdatedAtRef.current = baseRecord.updatedAt;
+          applyBaseData(baseRecord.data);
+        }
+        if (monthRecord.updatedAt !== monthUpdatedAtRef.current[filename]) {
+          monthUpdatedAtRef.current[filename] = monthRecord.updatedAt;
+          applyMonthData(filename, monthRecord.data);
+        }
+      } catch {
+        // Silently ignore polling errors
       }
     };
-  }, [applyBaseData, applyMonthData, currentViewDate, enabled, isLoaded, onSaveSuccess]);
+
+    const intervalId = setInterval(poll, READ_ONLY_POLL_INTERVAL);
+    return () => clearInterval(intervalId);
+  }, [applyBaseData, applyMonthData, canWrite, currentViewDate, enabled, isLoaded, onSaveSuccess]);
 
   // Save data to file (debounced) - INTELLIGENT SAVE
   const saveData = useCallback(async () => {

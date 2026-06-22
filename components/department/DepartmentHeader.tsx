@@ -3,6 +3,7 @@ import { ArrowLeftIcon } from '../icons/ArrowLeftIcon';
 import { ArrowRightIcon } from '../icons/ArrowRightIcon';
 import { ChartBarIcon } from '../icons/ChartBarIcon';
 import { DownloadIcon } from '../icons/DownloadIcon';
+import { CalendarIcon } from '../icons/CalendarIcon';
 
 interface DepartmentHeaderProps {
   currentDate: Date;
@@ -10,6 +11,7 @@ interface DepartmentHeaderProps {
   onNextMonth: () => void;
   onOpenStats: () => void;
   onExportPDF: () => Promise<void>;
+  onExportICS: () => void;
 }
 
 const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({
@@ -18,6 +20,7 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({
   onNextMonth,
   onOpenStats,
   onExportPDF,
+  onExportICS,
 }) => {
   const [isExporting, setIsExporting] = useState(false);
 
@@ -57,6 +60,14 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({
           title="Xem thống kê"
         >
           <ChartBarIcon className="w-6 h-6" />
+        </button>
+        <button
+          onClick={onExportICS}
+          className="p-2 rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transform hover:scale-105 transition-all-app"
+          aria-label="Export ICS"
+          title="Lưu vào lịch điện thoại (.ics)"
+        >
+          <CalendarIcon className="w-6 h-6" />
         </button>
         <button
           onClick={handlePDFExport}

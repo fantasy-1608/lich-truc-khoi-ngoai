@@ -18,9 +18,9 @@ const getDateString = (date: Date): string => {
 };
 
 const requestTypeOptions: Array<{ value: ShiftRequestType; label: string; hint: string }> = [
-  { value: 'off', label: 'Nghỉ trực', hint: 'Xin nghỉ hoặc báo không trực được ngày này.' },
-  { value: 'swap', label: 'Đổi trực', hint: 'Đề xuất đổi với ngày hoặc bác sĩ khác.' },
-  { value: 'note', label: 'Ghi chú', hint: 'Gửi thông tin khác để người quản lý xem.' },
+  { value: 'off', label: 'Xin nghỉ', hint: 'Báo không trực được ngày này.' },
+  { value: 'swap', label: 'Đổi trực', hint: 'Xin đổi sang ngày hoặc bác sĩ khác.' },
+  { value: 'note', label: 'Ghi chú', hint: 'Nhắn điều khác cho người quản lý.' },
 ];
 
 const ShiftRequestModal: React.FC<ShiftRequestModalProps> = ({
@@ -49,6 +49,17 @@ const ShiftRequestModal: React.FC<ShiftRequestModalProps> = ({
     month: 'long',
     year: 'numeric',
   });
+  const shortDateLabel = date.toLocaleDateString('vi-VN', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'numeric',
+  });
+  const messagePlaceholder =
+    requestType === 'off'
+      ? 'Có thể bỏ trống nếu chỉ cần báo nghỉ.'
+      : requestType === 'swap'
+        ? 'Ví dụ: Em muốn đổi sang ca phù hợp trong tuần này.'
+        : 'Nhập nội dung cần nhắn cho người quản lý.';
 
   const doctorOptions = useMemo(() => {
     const names = new Set<string>();
@@ -83,10 +94,17 @@ const ShiftRequestModal: React.FC<ShiftRequestModalProps> = ({
       setError('Vui lòng chọn bác sĩ gửi yêu cầu.');
       return;
     }
-    if (!trimmedMessage) {
-      setError('Vui lòng nhập nội dung yêu cầu.');
+    if (requestType === 'note' && !trimmedMessage) {
+      setError('Vui lòng nhập nội dung ghi chú.');
       return;
     }
+
+    const fallbackMessage =
+      requestType === 'off'
+        ? `Xin nghỉ trực ngày ${dateLabel}.`
+        : `Xin đổi trực ngày ${dateLabel}${targetDate ? ` sang ngày ${targetDate}` : ''}${
+            targetDoctorName.trim() ? ` với ${targetDoctorName.trim()}` : ''
+          }.`;
 
     setIsSubmitting(true);
     try {
@@ -96,7 +114,7 @@ const ShiftRequestModal: React.FC<ShiftRequestModalProps> = ({
         requesterDoctorName: requesterDoctorName.trim(),
         targetDate: requestType === 'swap' && targetDate ? targetDate : null,
         targetDoctorName: requestType === 'swap' && targetDoctorName ? targetDoctorName : null,
-        message: trimmedMessage,
+        message: trimmedMessage || fallbackMessage,
         contact: contact.trim() || null,
       });
       onClose();
@@ -119,12 +137,12 @@ const ShiftRequestModal: React.FC<ShiftRequestModalProps> = ({
         aria-modal="true"
         aria-labelledby="shift-request-title"
       >
-        <div className="sticky top-0 z-10 bg-white dark:bg-slate-800 px-5 py-4 border-b border-slate-200 dark:border-slate-700 flex items-start justify-between gap-4">
+        <div className="sticky top-0 z-10 bg-white dark:bg-slate-800 px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex items-start justify-between gap-4 sm:px-5 sm:py-4">
           <div>
-            <h3 id="shift-request-title" className="font-semibold text-slate-900 dark:text-white">
+            <h3 id="shift-request-title" className="text-base font-bold text-slate-900 dark:text-white">
               Gửi yêu cầu trực
             </h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{dateLabel}</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{shortDateLabel}</p>
           </div>
           <button
             type="button"
@@ -136,13 +154,13 @@ const ShiftRequestModal: React.FC<ShiftRequestModalProps> = ({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-5 space-y-5">
-          <div>
+        <form onSubmit={handleSubmit} className="p-4 space-y-4 sm:p-5">
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-3 dark:border-slate-700 dark:bg-slate-900/35">
             <label
               htmlFor="shift-request-doctor"
-              className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1.5"
+              className="block text-sm font-bold text-slate-800 dark:text-slate-100 mb-1.5"
             >
-              Bác sĩ gửi yêu cầu
+              Tôi là
             </label>
             <select
               ref={firstInputRef}
@@ -151,7 +169,7 @@ const ShiftRequestModal: React.FC<ShiftRequestModalProps> = ({
               value={requesterDoctorName}
               onChange={(event) => setRequesterDoctorName(event.target.value)}
               required
-              className="w-full min-h-12 px-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full min-h-12 px-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-950 text-base font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
               <option value="">Chọn bác sĩ</option>
               {doctorOptions.map((doctorName) => (
@@ -162,21 +180,21 @@ const ShiftRequestModal: React.FC<ShiftRequestModalProps> = ({
             </select>
           </div>
 
-          <fieldset>
-            <legend className="text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">
-              Loại yêu cầu
+          <fieldset className="rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900/35">
+            <legend className="px-1 text-sm font-bold text-slate-800 dark:text-slate-100">
+              Tôi muốn
             </legend>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
               {requestTypeOptions.map((option) => (
                 <label
                   key={option.value}
-                  className={`rounded-xl border p-3 cursor-pointer transition-colors ${
+                  className={`min-h-[76px] rounded-xl border p-3 cursor-pointer transition-colors focus-within:ring-2 focus-within:ring-indigo-500 ${
                     requestType === option.value
-                      ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300'
-                      : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:border-indigo-200'
+                      ? 'border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-900/35 dark:text-indigo-200'
+                      : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/60 text-slate-700 dark:text-slate-200 hover:border-indigo-200 dark:hover:border-indigo-800'
                   }`}
                 >
-                  <span className="flex items-center gap-2 text-sm font-semibold">
+                  <span className="flex items-center gap-2 text-sm font-bold">
                     <input
                       type="radio"
                       name="requestType"
@@ -187,7 +205,7 @@ const ShiftRequestModal: React.FC<ShiftRequestModalProps> = ({
                     />
                     {option.label}
                   </span>
-                  <span className="block mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  <span className="block mt-1 text-xs leading-snug text-slate-500 dark:text-slate-400">
                     {option.hint}
                   </span>
                 </label>
@@ -196,13 +214,17 @@ const ShiftRequestModal: React.FC<ShiftRequestModalProps> = ({
           </fieldset>
 
           {requestType === 'swap' && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="rounded-2xl border border-indigo-100 bg-indigo-50/60 p-3 dark:border-indigo-900/60 dark:bg-indigo-950/25">
+              <p className="mb-3 text-sm font-bold text-indigo-800 dark:text-indigo-200">
+                Muốn đổi với
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label
                   htmlFor="shift-request-target-date"
                   className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1.5"
                 >
-                  Ngày muốn đổi
+                  Ngày khác
                 </label>
                 <input
                   id="shift-request-target-date"
@@ -210,6 +232,7 @@ const ShiftRequestModal: React.FC<ShiftRequestModalProps> = ({
                   type="date"
                   value={targetDate}
                   onChange={(event) => setTargetDate(event.target.value)}
+                  enterKeyHint="next"
                   className="w-full min-h-12 px-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
@@ -218,7 +241,7 @@ const ShiftRequestModal: React.FC<ShiftRequestModalProps> = ({
                   htmlFor="shift-request-target-doctor"
                   className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1.5"
                 >
-                  Người muốn đổi
+                  Bác sĩ nếu biết
                 </label>
                 <input
                   id="shift-request-target-doctor"
@@ -227,53 +250,66 @@ const ShiftRequestModal: React.FC<ShiftRequestModalProps> = ({
                   value={targetDoctorName}
                   onChange={(event) => setTargetDoctorName(event.target.value)}
                   autoComplete="name"
+                  enterKeyHint="next"
                   className="w-full min-h-12 px-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="Không bắt buộc"
                 />
+              </div>
               </div>
             </div>
           )}
 
-          <div>
+          <div className="rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900/35">
             <label
               htmlFor="shift-request-message"
-              className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1.5"
+              className="block text-sm font-bold text-slate-800 dark:text-slate-100 mb-1.5"
             >
-              Nội dung yêu cầu
+              Ghi thêm {requestType === 'note' ? '' : '(không bắt buộc)'}
             </label>
             <textarea
               id="shift-request-message"
               name="message"
               value={message}
               onChange={(event) => setMessage(event.target.value)}
-              rows={4}
-              required
+              rows={3}
+              required={requestType === 'note'}
               maxLength={500}
               className="w-full px-3 py-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-y"
-              placeholder="Ví dụ: Em xin nghỉ trực ngày này vì có việc gia đình..."
+              placeholder={messagePlaceholder}
+              enterKeyHint="done"
             />
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-              Tối đa 500 ký tự. Lịch chính chỉ thay đổi sau khi quản lý sắp xếp.
+              {requestType === 'note'
+                ? 'Cần nhập nội dung để người quản lý biết việc cần xử lý.'
+                : 'Có thể gửi ngay nếu không cần giải thích thêm.'}
             </p>
           </div>
 
-          <div>
-            <label
-              htmlFor="shift-request-contact"
-              className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1.5"
-            >
-              Liên hệ thêm nếu cần
-            </label>
-            <input
-              id="shift-request-contact"
-              name="contact"
-              type="text"
-              value={contact}
-              onChange={(event) => setContact(event.target.value)}
-              autoComplete="tel email"
-              className="w-full min-h-12 px-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              placeholder="Số điện thoại hoặc email"
-            />
-          </div>
+          <details className="rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900/35">
+            <summary className="cursor-pointer text-sm font-bold text-slate-700 dark:text-slate-200">
+              Thêm liên hệ
+            </summary>
+            <div className="mt-3">
+              <label
+                htmlFor="shift-request-contact"
+                className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1.5"
+              >
+                Số điện thoại hoặc email
+              </label>
+              <input
+                id="shift-request-contact"
+                name="contact"
+                type="text"
+                value={contact}
+                onChange={(event) => setContact(event.target.value)}
+                autoComplete="tel email"
+                inputMode="text"
+                enterKeyHint="done"
+                className="w-full min-h-12 px-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="Không bắt buộc"
+              />
+            </div>
+          </details>
 
           {error && (
             <p className="text-sm text-red-600 dark:text-red-400" role="alert">
@@ -281,18 +317,18 @@ const ShiftRequestModal: React.FC<ShiftRequestModalProps> = ({
             </p>
           )}
 
-          <div className="flex flex-col-reverse sm:flex-row gap-3 sm:justify-end pt-2">
+          <div className="sticky bottom-0 -mx-4 -mb-4 flex flex-col-reverse gap-2 border-t border-slate-200 bg-white/95 p-4 backdrop-blur dark:border-slate-700 dark:bg-slate-800/95 sm:-mx-5 sm:-mb-5 sm:flex-row sm:justify-end sm:p-5">
             <button
               type="button"
               onClick={onClose}
-              className="min-h-11 px-4 rounded-xl border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+              className="min-h-12 px-4 rounded-xl border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
             >
               Hủy
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="min-h-11 px-5 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-wait transition-colors"
+              className="min-h-12 px-5 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-wait transition-colors"
             >
               {isSubmitting ? 'Đang gửi...' : 'Gửi yêu cầu'}
             </button>

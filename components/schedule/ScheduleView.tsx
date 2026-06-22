@@ -22,8 +22,11 @@ import { exportScheduleToPDF } from '../../utils/export';
 import ShiftRequestModal from './ShiftRequestModal';
 import ShiftRequestsPanel from './ShiftRequestsPanel';
 import DayShiftRequestsModal from './DayShiftRequestsModal';
+import ExportICSModal from '../department/ExportICSModal';
 import { PlusIcon } from '../icons/PlusIcon';
 import { LockIcon } from '../icons/LockIcon';
+import { generateDoctorICS, downloadICSFile } from '../../utils/icsExport';
+import { DepartmentAssignments } from '../../types';
 
 interface ScheduleViewProps {
   tours: Tour[];
@@ -60,6 +63,7 @@ interface ScheduleViewProps {
     status: ShiftRequestStatus,
     reviewNote: string,
   ) => Promise<void>;
+  departmentAssignments: Record<string, Partial<DepartmentAssignments>>;
 }
 
 const getDateString = (date: Date): string => {
@@ -125,6 +129,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
     pendingRequestCountsByDate,
     onSubmitShiftRequest,
     onUpdateShiftRequestReview,
+    departmentAssignments,
   } = props;
 
   const isHolidayDate = (date: Date): boolean => {
@@ -145,6 +150,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
   const [addDoctorDay, setAddDoctorDay] = useState<ScheduleCalendarDay | null>(null);
   const [requestDay, setRequestDay] = useState<ScheduleCalendarDay | null>(null);
   const [requestsDate, setRequestsDate] = useState<string | null>(null);
+  const [isICSModalOpen, setIsICSModalOpen] = useState(false);
   const [selectedMobileWeekId, setSelectedMobileWeekId] = useState<string>('');
   const [selectedMobileDayString, setSelectedMobileDayString] = useState<string>('');
   const [isCompactSchedule, setIsCompactSchedule] = useState(false);
@@ -175,6 +181,23 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
     rotationStartDate,
     scheduleSnapshots,
   );
+
+  const handleExportPDF = async () => {
+    return exportScheduleToPDF(calendarGrid, currentDate);
+  };
+
+  const handleExportICS = (doctorName: string) => {
+    const icsContent = generateDoctorICS(
+      doctorName,
+      calendarGrid,
+      getDoctorsForDate,
+      departmentAssignments
+    );
+    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+    const year = currentDate.getFullYear();
+    const filename = `LichTruc_${doctorName}_T${month}-${year}.ics`;
+    downloadICSFile(filename, icsContent);
+  };
 
   const handleTourClick = (day: ScheduleCalendarDay) => {
     if (!day.doctors) return;
@@ -338,14 +361,21 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
     if (!shell || typeof ResizeObserver === 'undefined') return;
 
     const updateCompactState = () => {
-      setIsCompactSchedule(shell.getBoundingClientRect().width < 720);
+      const shellWidth = shell.getBoundingClientRect().width;
+      setIsCompactSchedule(shellWidth < 720);
     };
 
     updateCompactState();
     const observer = new ResizeObserver(updateCompactState);
     observer.observe(shell);
+    window.addEventListener('resize', updateCompactState);
+    window.addEventListener('orientationchange', updateCompactState);
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', updateCompactState);
+      window.removeEventListener('orientationchange', updateCompactState);
+    };
   }, []);
 
   const selectedMobileWeek =
@@ -355,6 +385,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
     selectedMobileWeek?.days[0];
   const showPortraitEditPause = canEdit && isMobilePortrait;
   const shouldShowMobileEditNotice = showPortraitEditPause || showMobileEditNotice;
+  const hasActiveSelection = Boolean(selectedDoctor || selectedTourDate);
 
   const selectMobileWeek = (week: MobileWeekGroup) => {
     setSelectedMobileWeekId(week.id);
@@ -367,6 +398,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
     <>
       <div
         ref={scheduleShellRef}
+        data-compact={isCompactSchedule}
         className="schedule-shell glass-card rounded-2xl p-3 sm:mt-20 sm:rounded-3xl sm:p-8 mt-28"
       >
         <ScheduleHeader
@@ -376,14 +408,15 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
           onPrevMonth={handlePrevMonth}
           onNextMonth={handleNextMonth}
           onCancelSelection={cancelSelection}
-          onExportPDF={async () => exportScheduleToPDF(calendarGrid, currentDate)}
+          onExportPDF={handleExportPDF}
+          onExportICS={() => setIsICSModalOpen(true)}
         />
 
         <div
           ref={calendarRef}
           className={`schedule-desktop ${isCompactSchedule ? 'hidden' : 'block'} bg-white/50 dark:bg-slate-800/50 rounded-2xl p-4 shadow-inner overflow-x-auto`}
         >
-          <div className="min-w-[720px] sm:min-w-0">
+          <div className="min-w-[980px] xl:min-w-0">
             <div className="grid grid-cols-7 gap-2 mb-2">
               {weekDays.map((day) => (
                 <div
@@ -499,7 +532,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
                     </span>
                     <span className="mt-0.5 block text-base font-bold">{day.date.getDate()}</span>
                     <span className="mt-0.5 block truncate text-[10px] font-semibold leading-tight text-slate-500 dark:text-slate-400">
-                      {day.tourName?.replace(/^Bs\.\s*/i, '') || '-'}
+                      {day.tourName || '-'}
                     </span>
                     <span className="mt-0.5 block h-1.5">
                       {day.isToday && (
@@ -537,13 +570,45 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
                     </h3>
                   </div>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <span className="inline-flex items-center rounded-full border border-indigo-100 bg-indigo-50 px-2.5 py-1 text-xs font-bold text-indigo-700 dark:border-indigo-800/50 dark:bg-indigo-900/30 dark:text-indigo-300">
-                      Tua {selectedMobileDay.tourName}
-                    </span>
+                    {canEdit && !shouldShowMobileEditNotice ? (
+                      <button
+                        type="button"
+                        onClick={() => handleTourClick(selectedMobileDay)}
+                        className="inline-flex items-center rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-xs font-bold text-indigo-700 transition-colors hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-indigo-800/60 dark:bg-indigo-900/30 dark:text-indigo-300 dark:hover:bg-indigo-900/45"
+                        aria-pressed={
+                          selectedTourDate?.getTime() === selectedMobileDay.date.getTime()
+                        }
+                        aria-label={`Chọn tua ngày ${selectedMobileDay.date.getDate()} để hoán đổi`}
+                      >
+                        Tua {selectedMobileDay.tourName}
+                      </button>
+                    ) : (
+                      <span className="inline-flex items-center rounded-full border border-indigo-100 bg-indigo-50 px-2.5 py-1 text-xs font-bold text-indigo-700 dark:border-indigo-800/50 dark:bg-indigo-900/30 dark:text-indigo-300">
+                        Tua {selectedMobileDay.tourName}
+                      </span>
+                    )}
                     {selectedMobileDay.isModified && (
                       <span className="rounded-full bg-orange-100 px-2.5 py-1 text-xs font-bold text-orange-700 dark:bg-orange-900/40 dark:text-orange-300">
                         Đã chỉnh
                       </span>
+                    )}
+                    {canEdit && !shouldShowMobileEditNotice && selectedMobileDay.isModified && (
+                      <button
+                        type="button"
+                        onClick={(e) => handleResetIconClick(e, selectedMobileDay.date)}
+                        className="rounded-full border border-orange-200 bg-white px-2.5 py-1 text-xs font-bold text-orange-700 transition-colors hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-orange-500 dark:border-orange-800/70 dark:bg-slate-900/70 dark:text-orange-300 dark:hover:bg-orange-900/30"
+                      >
+                        Xóa thay đổi
+                      </button>
+                    )}
+                    {hasActiveSelection && (
+                      <button
+                        type="button"
+                        onClick={cancelSelection}
+                        className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-bold text-slate-600 transition-colors hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200 dark:hover:bg-slate-800"
+                      >
+                        Hủy chọn
+                      </button>
                     )}
                   </div>
                 </div>
@@ -578,6 +643,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
                   const isSelected =
                     selectedDoctor?.date.getTime() === selectedMobileDay.date.getTime() &&
                     selectedDoctor.doctorIndex === doctorIndex;
+                  const canEditDoctorRow = canEdit && !shouldShowMobileEditNotice;
 
                   const rowClassName = `flex min-h-10 w-full items-center gap-3 border-b px-3 text-left transition-colors last:border-b-0 sm:min-h-12 ${
                     isSelected
@@ -596,9 +662,23 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
                   );
 
                   return (
-                    <div key={`${doctor}-${doctorIndex}`} className={rowClassName}>
-                      {rowContent}
-                    </div>
+                    <React.Fragment key={`${doctor}-${doctorIndex}`}>
+                      {canEditDoctorRow ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleDoctorClick(selectedMobileDay, doctorIndex, doctor)
+                          }
+                          className={`${rowClassName} hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500 dark:hover:bg-slate-800`}
+                          aria-pressed={isSelected}
+                          aria-label={`Chọn ${doctor} ngày ${selectedMobileDay.date.getDate()} để hoán đổi hoặc thay thế`}
+                        >
+                          {rowContent}
+                        </button>
+                      ) : (
+                        <div className={rowClassName}>{rowContent}</div>
+                      )}
+                    </React.Fragment>
                   );
                 })}
               </div>
@@ -680,6 +760,13 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
           onUpdateReview={onUpdateShiftRequestReview}
         />
       )}
+
+      <ExportICSModal
+        isOpen={isICSModalOpen}
+        onClose={() => setIsICSModalOpen(false)}
+        allDoctors={allDoctors}
+        onExport={handleExportICS}
+      />
     </>
   );
 };

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+/* Google Fonts loaded via index.html with preconnect for faster delivery */
 
 @import 'tailwindcss';
 
@@ -112,6 +112,54 @@
     .drawer-backdrop,
     .drawer-panel {
       animation: none;
+    }
+  }
+
+  @media (orientation: landscape) and (max-height: 560px) and (max-width: 1100px) {
+    .app-header {
+      top: 0.5rem;
+      padding-inline: 0.75rem;
+    }
+
+    .app-header-card {
+      border-radius: 1rem;
+      padding-block: 0.5rem;
+      padding-inline: 0.75rem;
+    }
+
+    .app-header-actions {
+      gap: 0.25rem;
+    }
+
+    .app-icon-button {
+      padding: 0.45rem;
+      border-radius: 0.75rem;
+    }
+
+    .app-icon-button svg {
+      height: 1.1rem;
+      width: 1.1rem;
+    }
+
+    .app-brand {
+      font-size: 1rem;
+      line-height: 1.5rem;
+    }
+
+    .app-main {
+      padding: 0.5rem 0.75rem 1rem;
+    }
+
+    .schedule-shell {
+      margin-top: 4.25rem;
+      border-radius: 1rem;
+      padding: 0.75rem;
+    }
+
+    .schedule-shell .schedule-desktop {
+      border-radius: 1rem;
+      padding: 0.75rem;
+      scrollbar-width: thin;
     }
   }
 }

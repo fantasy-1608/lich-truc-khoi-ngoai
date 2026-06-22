@@ -40,7 +40,7 @@ const ScheduleDayCell: React.FC<ScheduleDayCellProps> = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const isBeforeStartDate = day.date.getTime() < START_DATE.getTime();
   const isSelectedTour = selectedTourDate?.getTime() === day.date.getTime();
-
+  const hasTopBadge = day.isModified || isHoliday;
   const dateLabel = day.date.toLocaleDateString('vi-VN', {
     weekday: 'long',
     day: 'numeric',
@@ -101,7 +101,7 @@ const ScheduleDayCell: React.FC<ScheduleDayCellProps> = ({
               </span>
               <span className="truncate">
                 {day.doctors
-                  .map((doctor, index) => `${index + 1} ${doctor.replace(/^Bs\.\s*/i, '')}`)
+                  .map((doctor, index) => `${index + 1} ${doctor}`)
                   .join(' · ')}
               </span>
             </span>
@@ -264,7 +264,11 @@ const ScheduleDayCell: React.FC<ScheduleDayCellProps> = ({
       )}
       <div className="flex items-start justify-between gap-1 mb-2">
         {day.isCurrentMonth && !isBeforeStartDate && day.doctors ? (
-          <div className="flex items-center gap-1 min-h-7">
+          <div
+            className={`flex min-h-7 items-center gap-1 ${
+              hasTopBadge ? 'ml-8' : ''
+            }`}
+          >
             {showAddDoctorShortcut && (
               <button
                 type="button"
@@ -273,7 +277,7 @@ const ScheduleDayCell: React.FC<ScheduleDayCellProps> = ({
                   onAddDoctorClick(day);
                 }}
                 className="
-                  inline-flex min-h-7 items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-1.5 text-indigo-700
+                  inline-flex h-7 min-w-7 items-center justify-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-1.5 text-indigo-700
                   transition-all duration-150 hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1
                   dark:border-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-300 dark:hover:bg-indigo-900/35
                   sm:-translate-y-0.5 sm:opacity-0 sm:group-hover:translate-y-0 sm:group-hover:opacity-100 sm:focus-visible:translate-y-0 sm:focus-visible:opacity-100
@@ -281,7 +285,7 @@ const ScheduleDayCell: React.FC<ScheduleDayCellProps> = ({
                 aria-label={`Thêm bác sĩ trực cho ngày ${day.date.getDate()}`}
               >
                 <PlusIcon className="h-3.5 w-3.5" />
-                <span className="hidden lg:inline text-[11px] font-semibold">BS</span>
+                <span className="hidden xl:inline text-[11px] font-semibold">BS</span>
               </button>
             )}
             <button
@@ -291,18 +295,18 @@ const ScheduleDayCell: React.FC<ScheduleDayCellProps> = ({
                 onRequestClick(day);
               }}
               className={`
-                inline-flex items-center gap-1 min-h-7 px-1.5 sm:px-2 rounded-full border border-emerald-200 dark:border-emerald-800
-                bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300
-                hover:bg-emerald-100 dark:hover:bg-emerald-900/35 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-1
+                inline-flex h-7 min-w-7 items-center justify-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-1.5 text-emerald-700
+                hover:bg-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-1
+                dark:border-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-300 dark:hover:bg-emerald-900/35
                 transition-all duration-150
-                sm:opacity-0 sm:-translate-y-0.5 sm:group-hover:opacity-100 sm:group-hover:translate-y-0 sm:focus-visible:opacity-100 sm:focus-visible:translate-y-0
+                sm:-translate-y-0.5 sm:opacity-0 sm:group-hover:translate-y-0 sm:group-hover:opacity-100 sm:focus-visible:translate-y-0 sm:focus-visible:opacity-100
                 ${pendingRequestCount > 0 ? 'max-lg:opacity-100 max-lg:translate-y-0' : ''}
               `}
               aria-label={`Gửi yêu cầu trực cho ngày ${day.date.getDate()}`}
               title="Gửi yêu cầu đổi/nghỉ trực"
             >
               <PlusIcon className="h-3.5 w-3.5" />
-              <span className="hidden lg:inline text-[11px] font-semibold">Yêu cầu</span>
+              <span className="hidden xl:inline text-[11px] font-semibold">Yêu cầu</span>
             </button>
             {pendingRequestCount > 0 && (
               <button
@@ -313,7 +317,7 @@ const ScheduleDayCell: React.FC<ScheduleDayCellProps> = ({
                     onViewRequestsClick(day);
                   }
                 }}
-                className={`min-h-7 px-2 rounded-full border text-[11px] font-bold transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-1 ${
+                className={`h-7 min-w-7 rounded-full border px-2 text-[11px] font-bold transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-1 ${
                   canManageRequests
                     ? 'bg-amber-500 border-amber-500 text-white hover:bg-amber-600'
                     : 'bg-amber-100 border-amber-200 text-amber-700 cursor-default'
@@ -329,7 +333,7 @@ const ScheduleDayCell: React.FC<ScheduleDayCellProps> = ({
                     : 'Mở khóa chỉnh sửa để xem ai đã gửi yêu cầu'
                 }
               >
-                {pendingRequestCount} yêu cầu
+                {pendingRequestCount}
               </button>
             )}
           </div>
@@ -387,7 +391,7 @@ const ScheduleDayCell: React.FC<ScheduleDayCellProps> = ({
                     aria-label={`${doctor}, bác sĩ số ${docIndex + 1}. Nhấn để chọn hoán đổi`}
                     aria-pressed={isSelected}
                     className={`
-                                            relative pl-6 pr-2 py-1 rounded-lg text-xs sm:text-sm cursor-pointer transition-all duration-200 border
+                                            relative pl-4 pr-1.5 py-1 rounded-lg text-xs sm:text-sm cursor-pointer transition-all duration-200 border
                                             focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1
                                             ${
                                               isSelected
@@ -398,7 +402,7 @@ const ScheduleDayCell: React.FC<ScheduleDayCellProps> = ({
                     title={doctor}
                   >
                     <span
-                      className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400 dark:text-slate-500"
+                      className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[9px] font-bold text-slate-400 dark:text-slate-500"
                       aria-hidden="true"
                     >
                       {docIndex + 1}
