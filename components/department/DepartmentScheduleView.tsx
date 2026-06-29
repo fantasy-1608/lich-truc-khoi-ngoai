@@ -3,14 +3,13 @@ import { getNextMonthDate } from '../../utils/date';
 import { Doctor, DepartmentRole, DepartmentAssignments, HolidayScheduleData } from '../../types';
 import { useDepartmentCalendarGrid } from '../../hooks/useDepartmentCalendarGrid';
 import DepartmentHeader from './DepartmentHeader';
-import DepartmentDayCell, { RoleAssignment } from './DepartmentDayCell';
+import DepartmentDayCell from './DepartmentDayCell';
 import StatsModal from './StatsModal';
 import AssignmentPopover from './AssignmentPopover';
 import ExportICSModal from './ExportICSModal';
 
 import { exportDepartmentToPDF } from '../../utils/export';
 import { generateDoctorICS, downloadICSFile } from '../../utils/icsExport';
-import { START_DATE } from '../../constants';
 
 // Helper to get date string in YYYY-MM-DD format using local time components
 const getDateString = (date: Date): string => {
@@ -92,7 +91,7 @@ const DepartmentScheduleView: React.FC<DepartmentScheduleViewProps> = (props) =>
       doctorName,
       calendarGrid,
       getDoctorsForDate,
-      departmentAssignments
+      departmentAssignments,
     );
     const month = String(currentDate.getMonth() + 1).padStart(2, '0');
     const year = currentDate.getFullYear();

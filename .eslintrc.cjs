@@ -12,6 +12,7 @@ module.exports = {
   plugins: ['react-refresh', '@typescript-eslint', 'prettier'],
   rules: {
     'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+    'react-hooks/set-state-in-effect': 'warn',
     'prettier/prettier': 'warn',
     '@typescript-eslint/no-explicit-any': 'warn',
   },

@@ -1,10 +1,10 @@
-import { CalendarDay, DepartmentAssignments, DepartmentRole } from '../types';
+import { CalendarDay, DepartmentAssignments } from '../types';
 
 export const generateDoctorICS = (
   doctorName: string,
   calendarDays: CalendarDay[],
   getDoctorsForDate: (date: Date) => string[] | undefined,
-  departmentAssignments: Record<string, Partial<DepartmentAssignments>>
+  departmentAssignments: Record<string, Partial<DepartmentAssignments>>,
 ): string => {
   const getDateString = (date: Date): string => {
     const year = date.getFullYear();

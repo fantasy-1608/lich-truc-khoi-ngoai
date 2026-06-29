@@ -1,6 +1,6 @@
 import React, { memo, useState } from 'react';
 import { ScheduleCalendarDay, SelectedDoctor } from '../../types';
-import { RefreshIcon } from '../icons/RefreshIcon';
+import { StaffChangeIcon } from '../icons/StaffChangeIcon';
 import { START_DATE } from '../../constants';
 import { PlusIcon } from '../icons/PlusIcon';
 
@@ -100,9 +100,7 @@ const ScheduleDayCell: React.FC<ScheduleDayCellProps> = ({
                 Tua {day.tourName}
               </span>
               <span className="truncate">
-                {day.doctors
-                  .map((doctor, index) => `${index + 1} ${doctor}`)
-                  .join(' · ')}
+                {day.doctors.map((doctor, index) => `${index + 1} ${doctor}`).join(' · ')}
               </span>
             </span>
           </button>
@@ -120,12 +118,13 @@ const ScheduleDayCell: React.FC<ScheduleDayCellProps> = ({
             )}
             {day.isModified && (
               <button
-                className="grid h-9 w-9 place-items-center rounded-full bg-amber-100 text-amber-600 transition-colors hover:bg-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="reset-override-button grid h-9 w-9 place-items-center rounded-full bg-amber-100 text-amber-600 transition-colors hover:bg-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
                 aria-label={`Khôi phục lịch gốc cho ngày ${day.date.getDate()}`}
                 title="Lịch đã được thay đổi. Nhấp để tùy chỉnh."
                 onClick={(e) => onResetIconClick(e, day.date)}
               >
-                <RefreshIcon className="h-4 w-4" />
+                <StaffChangeIcon className="h-4 w-4" />
+                <span className="reset-override-label sr-only">Đã chỉnh</span>
               </button>
             )}
             {pendingRequestCount > 0 && (
@@ -248,12 +247,13 @@ const ScheduleDayCell: React.FC<ScheduleDayCellProps> = ({
     >
       {day.isModified && (
         <button
-          className="absolute top-2 left-2 p-1 rounded-full bg-amber-100 text-amber-600 hover:bg-amber-200 transition-colors z-20 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-1"
+          className="reset-override-button absolute top-2 left-2 p-1 rounded-full bg-amber-100 text-amber-600 hover:bg-amber-200 transition-colors z-20 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-1"
           aria-label={`Khôi phục lịch gốc cho ngày ${day.date.getDate()}`}
           title="Lịch đã được thay đổi. Nhấp để tùy chỉnh."
           onClick={(e) => onResetIconClick(e, day.date)}
         >
-          <RefreshIcon className="h-3.5 w-3.5" />
+          <StaffChangeIcon className="h-3.5 w-3.5" />
+          <span className="reset-override-label sr-only">Đã chỉnh</span>
         </button>
       )}
       {/* Holiday indicator */}
@@ -264,11 +264,7 @@ const ScheduleDayCell: React.FC<ScheduleDayCellProps> = ({
       )}
       <div className="flex items-start justify-between gap-1 mb-2">
         {day.isCurrentMonth && !isBeforeStartDate && day.doctors ? (
-          <div
-            className={`flex min-h-7 items-center gap-1 ${
-              hasTopBadge ? 'ml-8' : ''
-            }`}
-          >
+          <div className={`flex min-h-7 items-center gap-1 ${hasTopBadge ? 'ml-8' : ''}`}>
             {showAddDoctorShortcut && (
               <button
                 type="button"

@@ -106,11 +106,7 @@ const Header: React.FC<HeaderProps> = ({
                 Lịch trực
               </h1>
               {view !== View.SETTINGS && (
-                <nav
-                  role="tablist"
-                  aria-label="Chọn loại lịch"
-                  className="hidden sm:block"
-                >
+                <nav role="tablist" aria-label="Chọn loại lịch" className="hidden sm:block">
                   <div className="relative flex items-center bg-slate-100/50 dark:bg-slate-800/50 p-1 rounded-xl">
                     <div
                       className="absolute top-1 bottom-1 bg-white dark:bg-slate-700 shadow-sm rounded-lg transition-all duration-300 ease-[cubic-bezier(0.25,1,0.5,1)]"

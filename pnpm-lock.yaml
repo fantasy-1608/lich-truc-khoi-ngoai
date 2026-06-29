@@ -17,9 +17,6 @@ importers:
       autoprefixer:
         specifier: ^10.4.22
         version: 10.5.0(postcss@8.5.15)
-      html2canvas:
-        specifier: ^1.4.1
-        version: 1.4.1
       jspdf:
         specifier: ^3.0.4
         version: 3.0.4
@@ -2713,7 +2710,8 @@ snapshots:
 
   balanced-match@4.0.4: {}
 
-  base64-arraybuffer@1.0.2: {}
+  base64-arraybuffer@1.0.2:
+    optional: true
 
   baseline-browser-mapping@2.10.32: {}
 
@@ -2783,6 +2781,7 @@ snapshots:
   css-line-break@2.1.0:
     dependencies:
       utrie: 1.0.2
+    optional: true
 
   css-tree@3.2.1:
     dependencies:
@@ -3067,6 +3066,7 @@ snapshots:
     dependencies:
       css-line-break: 2.1.0
       text-segmentation: 1.0.3
+    optional: true
 
   http-proxy-agent@7.0.2:
     dependencies:
@@ -3474,6 +3474,7 @@ snapshots:
   text-segmentation@1.0.3:
     dependencies:
       utrie: 1.0.2
+    optional: true
 
   text-table@0.2.0: {}
 
@@ -3531,6 +3532,7 @@ snapshots:
   utrie@1.0.2:
     dependencies:
       base64-arraybuffer: 1.0.2
+    optional: true
 
   vite@6.4.2(@types/node@22.19.19)(jiti@2.7.0)(lightningcss@1.32.0):
     dependencies:

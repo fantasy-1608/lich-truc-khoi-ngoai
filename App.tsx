@@ -9,7 +9,9 @@ import { useAppController } from './hooks/useAppController';
 
 // Lazy-loaded views — code-split into separate chunks for faster initial load
 const SettingsView = React.lazy(() => import('./components/settings/SettingsView'));
-const DepartmentScheduleView = React.lazy(() => import('./components/department/DepartmentScheduleView'));
+const DepartmentScheduleView = React.lazy(
+  () => import('./components/department/DepartmentScheduleView'),
+);
 const HolidayScheduleView = React.lazy(() => import('./components/holiday/HolidayScheduleView'));
 
 const LazyFallback = () => (
@@ -44,7 +46,10 @@ const App: React.FC = () => {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen font-sans bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 transition-colors duration-300">
+      <div
+        className="ui-redesign min-h-screen bg-slate-50 font-sans text-slate-900 transition-colors duration-300 dark:bg-slate-900 dark:text-slate-100"
+        data-ui-design="new"
+      >
         <Header
           view={view}
           onViewChange={changeView}
