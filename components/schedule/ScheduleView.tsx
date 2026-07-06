@@ -23,6 +23,7 @@ import ShiftRequestModal from './ShiftRequestModal';
 import ShiftRequestsPanel from './ShiftRequestsPanel';
 import DayShiftRequestsModal from './DayShiftRequestsModal';
 import ExportICSModal from '../department/ExportICSModal';
+import StatsModal from '../department/StatsModal';
 import { PlusIcon } from '../icons/PlusIcon';
 import { LockIcon } from '../icons/LockIcon';
 import { generateDoctorICS, downloadICSFile } from '../../utils/icsExport';
@@ -151,6 +152,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
   const [requestDay, setRequestDay] = useState<ScheduleCalendarDay | null>(null);
   const [requestsDate, setRequestsDate] = useState<string | null>(null);
   const [isICSModalOpen, setIsICSModalOpen] = useState(false);
+  const [isStatsModalOpen, setIsStatsModalOpen] = useState(false);
   const [selectedMobileWeekId, setSelectedMobileWeekId] = useState<string>('');
   const [selectedMobileDayString, setSelectedMobileDayString] = useState<string>('');
   const [isCompactSchedule, setIsCompactSchedule] = useState(false);
@@ -191,7 +193,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
       doctorName,
       calendarGrid,
       getDoctorsForDate,
-      departmentAssignments
+      departmentAssignments,
     );
     const month = String(currentDate.getMonth() + 1).padStart(2, '0');
     const year = currentDate.getFullYear();
@@ -408,6 +410,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
           onPrevMonth={handlePrevMonth}
           onNextMonth={handleNextMonth}
           onCancelSelection={cancelSelection}
+          onOpenStats={() => setIsStatsModalOpen(true)}
           onExportPDF={handleExportPDF}
           onExportICS={() => setIsICSModalOpen(true)}
         />
@@ -666,9 +669,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
                       {canEditDoctorRow ? (
                         <button
                           type="button"
-                          onClick={() =>
-                            handleDoctorClick(selectedMobileDay, doctorIndex, doctor)
-                          }
+                          onClick={() => handleDoctorClick(selectedMobileDay, doctorIndex, doctor)}
                           className={`${rowClassName} hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500 dark:hover:bg-slate-800`}
                           aria-pressed={isSelected}
                           aria-label={`Chọn ${doctor} ngày ${selectedMobileDay.date.getDate()} để hoán đổi hoặc thay thế`}
@@ -758,6 +759,18 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
           )}
           onClose={() => setRequestsDate(null)}
           onUpdateReview={onUpdateShiftRequestReview}
+        />
+      )}
+
+      {isStatsModalOpen && (
+        <StatsModal
+          currentDate={currentDate}
+          departmentAssignments={departmentAssignments}
+          allDoctors={allDoctors.map((doctor) => doctor.name)}
+          getDoctorsForDate={getDoctorsForDate}
+          title="Thống kê toàn khối ngoại"
+          mode="directOnly"
+          onClose={() => setIsStatsModalOpen(false)}
         />
       )}
 

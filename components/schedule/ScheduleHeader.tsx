@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { SelectedDoctor } from '../../types';
 import { ArrowLeftIcon } from '../icons/ArrowLeftIcon';
 import { ArrowRightIcon } from '../icons/ArrowRightIcon';
+import { ChartBarIcon } from '../icons/ChartBarIcon';
 import { DownloadIcon } from '../icons/DownloadIcon';
 import { CalendarIcon } from '../icons/CalendarIcon';
 
@@ -12,6 +13,7 @@ interface ScheduleHeaderProps {
   onPrevMonth: () => void;
   onNextMonth: () => void;
   onCancelSelection: () => void;
+  onOpenStats: () => void;
   onExportPDF: () => Promise<void>;
   onExportICS: () => void;
 }
@@ -23,6 +25,7 @@ const ScheduleHeader: React.FC<ScheduleHeaderProps> = ({
   onPrevMonth,
   onNextMonth,
   onCancelSelection,
+  onOpenStats,
   onExportPDF,
   onExportICS,
 }) => {
@@ -38,7 +41,7 @@ const ScheduleHeader: React.FC<ScheduleHeaderProps> = ({
   };
 
   return (
-    <div className="mb-3 grid grid-cols-[44px_1fr_88px] items-center sm:mb-4">
+    <div className="mb-3 grid grid-cols-[44px_minmax(0,1fr)_auto] items-center gap-2 sm:mb-4">
       <button
         onClick={onPrevMonth}
         className="inline-flex h-11 w-11 items-center justify-center rounded-full text-slate-600 transition-all-app hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700 sm:h-10 sm:w-10 sm:hover:scale-105"
@@ -80,13 +83,21 @@ const ScheduleHeader: React.FC<ScheduleHeaderProps> = ({
           </div>
         )}
       </div>
-      <div className="flex items-center justify-end gap-1">
+      <div className="flex min-w-max items-center justify-end gap-2 sm:gap-3">
         <button
           onClick={onNextMonth}
           className="inline-flex h-11 w-11 items-center justify-center rounded-full text-slate-600 transition-all-app hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700 sm:h-10 sm:w-10 sm:hover:scale-105"
           aria-label="Next month"
         >
           <ArrowRightIcon className="h-6 w-6" />
+        </button>
+        <button
+          onClick={onOpenStats}
+          className="inline-flex h-11 w-11 items-center justify-center rounded-full text-slate-600 transition-all-app hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700 sm:h-10 sm:w-10 sm:hover:scale-105"
+          aria-label="View Statistics"
+          title="Xem thống kê"
+        >
+          <ChartBarIcon className="h-6 w-6" />
         </button>
         <button
           onClick={onExportICS}
