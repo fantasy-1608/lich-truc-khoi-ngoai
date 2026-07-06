@@ -348,15 +348,9 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
     };
 
     try {
-      // Save Base
-      if (shouldSaveBase) {
-        conflictFilename = null;
-        const updatedAt = await saveBaseScheduleData(baseData, baseUpdatedAtRef.current);
-        baseUpdatedAtRef.current = updatedAt;
-        baseModifiedRef.current = false;
-      }
-
       // 2. Save Monthly Data (Overrides)
+      // Save frozen month data before global rotation changes so a failed month save
+      // cannot leave older schedules recomputed from a newer tour order.
       for (const filename of dirtyMonths) {
         conflictFilename = filename;
         const content: ScheduleMonthStorageData = {};
@@ -385,6 +379,14 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
         );
         monthUpdatedAtRef.current[filename] = updatedAt;
         modifiedMonthsRef.current.delete(filename);
+      }
+
+      // Save Base
+      if (shouldSaveBase) {
+        conflictFilename = null;
+        const updatedAt = await saveBaseScheduleData(baseData, baseUpdatedAtRef.current);
+        baseUpdatedAtRef.current = updatedAt;
+        baseModifiedRef.current = false;
       }
 
       onSaveSuccess?.();
@@ -912,12 +914,12 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
         newOrder.every((tourId, index) => tourId === tourOrder[index]);
       if (isSameOrder) return;
 
-      const currentMonthStart = new Date(
+      const currentMonthEndExclusive = new Date(
         currentViewDate.getFullYear(),
-        currentViewDate.getMonth(),
+        currentViewDate.getMonth() + 1,
         1,
       );
-      freezeScheduleBefore(currentMonthStart);
+      freezeScheduleBefore(currentMonthEndExclusive);
       markBaseModified();
       setTourOrder(newOrder);
     },
