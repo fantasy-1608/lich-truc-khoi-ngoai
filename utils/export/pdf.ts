@@ -230,11 +230,19 @@ const drawCalendarTable = (
       pdf.setTextColor(0, 0, 0);
       pdf.text(String(cell.date), x + colWidth - 6, y + 18, { align: 'right' });
 
-      setPDFFont(pdf, 'normal');
-      pdf.setFontSize(8.5);
-
       if (cell.doctors?.length) {
-        drawDoctorGrid(pdf, cell.doctors, x + 4, y + 37, colWidth - 8, 12.5);
+        const doctorRowCount = Math.ceil(cell.doctors.length / 2);
+        const compactDoctorGrid = doctorRowCount >= 3;
+        setPDFFont(pdf, 'normal');
+        pdf.setFontSize(compactDoctorGrid ? 7.8 : 8.5);
+        drawDoctorGrid(
+          pdf,
+          cell.doctors,
+          x + 4,
+          compactDoctorGrid ? y + 31 : y + 37,
+          colWidth - 8,
+          compactDoctorGrid ? 10 : 12.5,
+        );
       }
     });
   });
