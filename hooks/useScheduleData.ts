@@ -819,22 +819,6 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
     [ensureCanWrite, markMonthModified],
   );
 
-  const handleUpdateDoctorInTour = useCallback(
-    (tourId: string, doctorIndex: number, newDoctorId: string) => {
-      if (!ensureCanWrite()) return;
-
-      markBaseModified();
-      setTours((current) =>
-        current.map((t) =>
-          t.id === tourId
-            ? { ...t, doctorIds: t.doctorIds.map((d, i) => (i === doctorIndex ? newDoctorId : d)) }
-            : t,
-        ),
-      );
-    },
-    [ensureCanWrite, markBaseModified],
-  );
-
   const getStandardTourIdForDate = useCallback(
     (date: Date): string | undefined => {
       const startDate = rotationStartDate
@@ -852,6 +836,11 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
       return tourOrder[diffDays % tourOrder.length];
     },
     [rotationStartDate, tourOrder],
+  );
+
+  const getVisibleMonthEndExclusive = useCallback(
+    () => new Date(currentViewDate.getFullYear(), currentViewDate.getMonth() + 1, 1),
+    [currentViewDate],
   );
 
   const freezeScheduleBefore = useCallback(
@@ -906,6 +895,23 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
     ],
   );
 
+  const handleUpdateDoctorInTour = useCallback(
+    (tourId: string, doctorIndex: number, newDoctorId: string) => {
+      if (!ensureCanWrite()) return;
+
+      freezeScheduleBefore(getVisibleMonthEndExclusive());
+      markBaseModified();
+      setTours((current) =>
+        current.map((t) =>
+          t.id === tourId
+            ? { ...t, doctorIds: t.doctorIds.map((d, i) => (i === doctorIndex ? newDoctorId : d)) }
+            : t,
+        ),
+      );
+    },
+    [ensureCanWrite, freezeScheduleBefore, getVisibleMonthEndExclusive, markBaseModified],
+  );
+
   const handleReorderTours = useCallback(
     (newOrder: string[]) => {
       if (!ensureCanWrite()) return;
@@ -914,16 +920,11 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
         newOrder.every((tourId, index) => tourId === tourOrder[index]);
       if (isSameOrder) return;
 
-      const currentMonthEndExclusive = new Date(
-        currentViewDate.getFullYear(),
-        currentViewDate.getMonth() + 1,
-        1,
-      );
-      freezeScheduleBefore(currentMonthEndExclusive);
+      freezeScheduleBefore(getVisibleMonthEndExclusive());
       markBaseModified();
       setTourOrder(newOrder);
     },
-    [currentViewDate, ensureCanWrite, freezeScheduleBefore, markBaseModified, tourOrder],
+    [ensureCanWrite, freezeScheduleBefore, getVisibleMonthEndExclusive, markBaseModified, tourOrder],
   );
   const handleTogglePkdvVisibility = useCallback(() => {
     if (!ensureCanWrite()) return;
@@ -995,18 +996,20 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
     (tourId: string) => {
       if (!ensureCanWrite()) return;
 
+      freezeScheduleBefore(getVisibleMonthEndExclusive());
       markBaseModified();
       setTours((current) =>
         current.map((t) => (t.id === tourId ? { ...t, doctorIds: [...t.doctorIds, ''] } : t)),
       );
     },
-    [ensureCanWrite, markBaseModified],
+    [ensureCanWrite, freezeScheduleBefore, getVisibleMonthEndExclusive, markBaseModified],
   );
 
   const handleRemoveDoctorFromTour = useCallback(
     (tourId: string, doctorIndex: number) => {
       if (!ensureCanWrite()) return;
 
+      freezeScheduleBefore(getVisibleMonthEndExclusive());
       markBaseModified();
       setTours((current) =>
         current.map((t) =>
@@ -1016,7 +1019,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
         ),
       );
     },
-    [ensureCanWrite, markBaseModified],
+    [ensureCanWrite, freezeScheduleBefore, getVisibleMonthEndExclusive, markBaseModified],
   );
 
   const handleUpdateDepartmentAssignments = useCallback(
