@@ -135,9 +135,17 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
 
   const ensureCanWrite = useCallback(() => {
     if (canWrite) return true;
-    onError?.('Bạn đang ở chế độ chỉ xem. Hãy đăng nhập để chỉnh sửa lịch.');
+    onErrorRef.current?.('Bạn đang ở chế độ chỉ xem. Hãy đăng nhập để chỉnh sửa lịch.');
     return false;
-  }, [canWrite, onError]);
+  }, [canWrite]);
+
+  // Stabilize callbacks
+  const onErrorRef = useRef(onError);
+  const onSaveSuccessRef = useRef(onSaveSuccess);
+  useEffect(() => {
+    onErrorRef.current = onError;
+    onSaveSuccessRef.current = onSaveSuccess;
+  }, [onError, onSaveSuccess]);
 
   // Helper to get storage key for a month
   const getMonthKey = (date: Date) => {
@@ -279,7 +287,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
           baseUpdatedAtRef.current = record.updatedAt;
           baseModifiedRef.current = false;
           applyBaseData(record.data);
-          onSaveSuccess?.();
+          onSaveSuccessRef.current?.();
         },
         onMonthChange: (changedFilename, record) => {
           if (record.updatedAt && record.updatedAt === monthUpdatedAtRef.current[changedFilename]) {
@@ -292,7 +300,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
           modifiedMonthsRef.current.delete(changedFilename);
           loadedMonthsRef.current.add(changedFilename);
           applyMonthData(changedFilename, record.data);
-          onSaveSuccess?.();
+          onSaveSuccessRef.current?.();
         },
       });
 
@@ -326,7 +334,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
 
     const intervalId = setInterval(poll, READ_ONLY_POLL_INTERVAL);
     return () => clearInterval(intervalId);
-  }, [applyBaseData, applyMonthData, canWrite, currentViewDate, enabled, isLoaded, onSaveSuccess]);
+  }, [applyBaseData, applyMonthData, canWrite, currentViewDate, enabled, isLoaded]);
 
   // Save data to file (debounced) - INTELLIGENT SAVE
   const saveData = useCallback(async () => {
@@ -389,10 +397,10 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
         baseModifiedRef.current = false;
       }
 
-      onSaveSuccess?.();
+      onSaveSuccessRef.current?.();
     } catch (error) {
       console.error('Failed to save:', error);
-      onError?.(
+      onErrorRef.current?.(
         error instanceof ScheduleConflictError
           ? 'Dữ liệu đã được cập nhật từ máy khác. Ứng dụng sẽ tải bản mới nhất để tránh ghi đè.'
           : error instanceof Error && error.message === 'Missing editor email'
@@ -402,17 +410,22 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
 
       if (error instanceof ScheduleConflictError) {
         const filename = conflictFilename ?? getMonthKey(currentViewDate);
-        const [baseRecord, monthRecord] = await Promise.all([
-          loadBaseScheduleData(),
-          loadMonthScheduleData(filename),
-        ]);
-        skipNextAutoSaveRef.current = true;
-        baseUpdatedAtRef.current = baseRecord.updatedAt;
-        monthUpdatedAtRef.current[filename] = monthRecord.updatedAt;
-        baseModifiedRef.current = false;
-        modifiedMonthsRef.current.delete(filename);
-        applyBaseData(baseRecord.data);
-        applyMonthData(filename, monthRecord.data);
+        modifiedMonthsRef.current.delete(filename); // Ensure we don't loop if recovery fails
+        
+        try {
+          const [baseRecord, monthRecord] = await Promise.all([
+            loadBaseScheduleData(),
+            loadMonthScheduleData(filename),
+          ]);
+          skipNextAutoSaveRef.current = true;
+          baseUpdatedAtRef.current = baseRecord.updatedAt;
+          monthUpdatedAtRef.current[filename] = monthRecord.updatedAt;
+          baseModifiedRef.current = false;
+          applyBaseData(baseRecord.data);
+          applyMonthData(filename, monthRecord.data);
+        } catch (recoveryError) {
+          console.error('Failed to recover from conflict:', recoveryError);
+        }
       }
     }
   }, [
@@ -430,8 +443,6 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
     holidaySchedule,
     rotationStartDate,
     currentViewDate,
-    onError,
-    onSaveSuccess,
   ]);
 
   // Auto-save logic remains similar
@@ -679,9 +690,28 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
     ],
   );
 
+  const getUpcomingMonthStart = useCallback(() => {
+    const today = new Date();
+    // Freeze everything before the 1st of the upcoming month (e.g. Sept 1st when today is in August)
+    return new Date(today.getFullYear(), today.getMonth() + 1, 1);
+  }, []);
+
+  const isDateFrozen = useCallback(
+    (date: Date): boolean => {
+      const boundary = getUpcomingMonthStart();
+      const checkDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      return checkDate < boundary;
+    },
+    [getUpcomingMonthStart],
+  );
+
   const handleSwapTours = useCallback(
     (date1: Date, date2: Date) => {
       if (!ensureCanWrite()) return;
+      if (isDateFrozen(date1) || isDateFrozen(date2)) {
+        onErrorRef.current?.('Lịch ngày này đã đóng băng, không thể chỉnh sửa.');
+        return;
+      }
 
       const getEffectiveTourId = (date: Date): string | undefined => {
         const dateString = getDateString(date);
@@ -729,6 +759,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
       rotationStartDate,
       ensureCanWrite,
       markMonthModified,
+      isDateFrozen,
     ],
   );
 
@@ -738,6 +769,10 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
       selection2: { date: Date; doctorIndex: number },
     ) => {
       if (!ensureCanWrite()) return;
+      if (isDateFrozen(selection1.date) || isDateFrozen(selection2.date)) {
+        onErrorRef.current?.('Lịch ngày này đã đóng băng, không thể chỉnh sửa.');
+        return;
+      }
 
       const date1Str = getDateString(selection1.date);
       const date2Str = getDateString(selection2.date);
@@ -763,12 +798,16 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
         [date2Str]: newDoctors2,
       }));
     },
-    [getDoctorsForDate, ensureCanWrite, markMonthModified],
+    [getDoctorsForDate, ensureCanWrite, markMonthModified, isDateFrozen],
   );
 
   const handleReplaceDoctor = useCallback(
     (selection: { date: Date; doctorIndex: number }, newDoctorName: string) => {
       if (!ensureCanWrite()) return;
+      if (isDateFrozen(selection.date)) {
+        onErrorRef.current?.('Lịch ngày này đã đóng băng, không thể chỉnh sửa.');
+        return;
+      }
 
       const dateStr = getDateString(selection.date);
       const doctorsOnDate = getDoctorsForDate(selection.date);
@@ -778,12 +817,16 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
       markMonthModified(dateStr);
       setDoctorOverrides((current) => ({ ...current, [dateStr]: newDoctors }));
     },
-    [getDoctorsForDate, ensureCanWrite, markMonthModified],
+    [getDoctorsForDate, ensureCanWrite, markMonthModified, isDateFrozen],
   );
 
   const handleAddDoctorToDate = useCallback(
     (date: Date, doctorName: string) => {
       if (!ensureCanWrite()) return;
+      if (isDateFrozen(date)) {
+        onErrorRef.current?.('Lịch ngày này đã đóng băng, không thể chỉnh sửa.');
+        return;
+      }
 
       const dateStr = getDateString(date);
       const doctorsOnDate = getDoctorsForDate(date);
@@ -795,12 +838,16 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
         [dateStr]: [...doctorsOnDate, doctorName],
       }));
     },
-    [ensureCanWrite, getDoctorsForDate, markMonthModified],
+    [ensureCanWrite, getDoctorsForDate, markMonthModified, isDateFrozen],
   );
 
   const handleResetOverrides = useCallback(
     (date: Date) => {
       if (!ensureCanWrite()) return;
+      if (isDateFrozen(date)) {
+        onErrorRef.current?.('Lịch ngày này đã đóng băng, không thể chỉnh sửa.');
+        return;
+      }
 
       const dateStr = getDateString(date);
       markMonthModified(dateStr);
@@ -816,7 +863,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
         return next;
       });
     },
-    [ensureCanWrite, markMonthModified],
+    [ensureCanWrite, markMonthModified, isDateFrozen],
   );
 
   const getStandardTourIdForDate = useCallback(
@@ -899,7 +946,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
     (tourId: string, doctorIndex: number, newDoctorId: string) => {
       if (!ensureCanWrite()) return;
 
-      freezeScheduleBefore(getVisibleMonthEndExclusive());
+      freezeScheduleBefore(getUpcomingMonthStart());
       markBaseModified();
       setTours((current) =>
         current.map((t) =>
@@ -909,7 +956,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
         ),
       );
     },
-    [ensureCanWrite, freezeScheduleBefore, getVisibleMonthEndExclusive, markBaseModified],
+    [ensureCanWrite, freezeScheduleBefore, getUpcomingMonthStart, markBaseModified],
   );
 
   const handleReorderTours = useCallback(
@@ -920,11 +967,11 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
         newOrder.every((tourId, index) => tourId === tourOrder[index]);
       if (isSameOrder) return;
 
-      freezeScheduleBefore(getVisibleMonthEndExclusive());
+      freezeScheduleBefore(getUpcomingMonthStart());
       markBaseModified();
       setTourOrder(newOrder);
     },
-    [ensureCanWrite, freezeScheduleBefore, getVisibleMonthEndExclusive, markBaseModified, tourOrder],
+    [ensureCanWrite, freezeScheduleBefore, getUpcomingMonthStart, markBaseModified, tourOrder],
   );
   const handleTogglePkdvVisibility = useCallback(() => {
     if (!ensureCanWrite()) return;
@@ -996,20 +1043,20 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
     (tourId: string) => {
       if (!ensureCanWrite()) return;
 
-      freezeScheduleBefore(getVisibleMonthEndExclusive());
+      freezeScheduleBefore(getUpcomingMonthStart());
       markBaseModified();
       setTours((current) =>
         current.map((t) => (t.id === tourId ? { ...t, doctorIds: [...t.doctorIds, ''] } : t)),
       );
     },
-    [ensureCanWrite, freezeScheduleBefore, getVisibleMonthEndExclusive, markBaseModified],
+    [ensureCanWrite, freezeScheduleBefore, getUpcomingMonthStart, markBaseModified],
   );
 
   const handleRemoveDoctorFromTour = useCallback(
     (tourId: string, doctorIndex: number) => {
       if (!ensureCanWrite()) return;
 
-      freezeScheduleBefore(getVisibleMonthEndExclusive());
+      freezeScheduleBefore(getUpcomingMonthStart());
       markBaseModified();
       setTours((current) =>
         current.map((t) =>
@@ -1019,12 +1066,16 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
         ),
       );
     },
-    [ensureCanWrite, freezeScheduleBefore, getVisibleMonthEndExclusive, markBaseModified],
+    [ensureCanWrite, freezeScheduleBefore, getUpcomingMonthStart, markBaseModified],
   );
 
   const handleUpdateDepartmentAssignments = useCallback(
     (date: Date, role: DepartmentRole, doctors: string[]) => {
       if (!ensureCanWrite()) return;
+      if (isDateFrozen(date)) {
+        onErrorRef.current?.('Lịch ngày này đã đóng băng, không thể chỉnh sửa.');
+        return;
+      }
 
       const dateStr = getDateString(date);
       markMonthModified(dateStr);
@@ -1044,7 +1095,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
         return updated;
       });
     },
-    [ensureCanWrite, markMonthModified],
+    [ensureCanWrite, markMonthModified, isDateFrozen],
   );
 
   const handleImportData = useCallback(

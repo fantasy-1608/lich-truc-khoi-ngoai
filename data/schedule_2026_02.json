@@ -29,23 +29,11 @@
     "2026-02-27": "tour-2"
   },
   "doctorOverrides": {
-    "2026-02-13": [
-      "Bs. Anh",
-      "Bs. Luận",
-      "Bs. Tân",
-      "Bs. Phúc"
-    ],
     "2026-02-01": [
       "Bs. Anh",
       "Bs. Luận",
       "Bs. Tân",
       "Bs. Cảnh"
-    ],
-    "2026-02-26": [
-      "Bs. Anh",
-      "Bs. Luận",
-      "Bs. Phúc",
-      "Bs. Tân"
     ],
     "2026-02-02": [
       "Bs. Tiến",
@@ -59,11 +47,23 @@
       "Bs. Tôn",
       "Bs. Hiển"
     ],
+    "2026-02-09": [
+      "Bs. Anh",
+      "Bs. Luận",
+      "Bs. Phúc",
+      "Bs. Khánh"
+    ],
     "2026-02-10": [
       "Bs. Tiến",
       "Bs. Thông",
       "Bs. Tôn",
       "Bs. Hiển"
+    ],
+    "2026-02-13": [
+      "Bs. Anh",
+      "Bs. Luận",
+      "Bs. Tân",
+      "Bs. Phúc"
     ],
     "2026-02-23": [
       "Bs. Tiến",
@@ -71,17 +71,17 @@
       "Bs. Tôn",
       "Bs. Hiển"
     ],
+    "2026-02-26": [
+      "Bs. Anh",
+      "Bs. Luận",
+      "Bs. Phúc",
+      "Bs. Tân"
+    ],
     "2026-02-27": [
       "Bs. Tiến",
       "Bs. Thông",
       "Bs. Tôn",
       "Bs. Hiển"
-    ],
-    "2026-02-09": [
-      "Bs. Anh",
-      "Bs. Luận",
-      "Bs. Phúc",
-      "Bs. Khánh"
     ]
   },
   "departmentAssignments": {
@@ -116,13 +116,13 @@
       ]
     },
     "2026-02-05": {
-      "ungTruc": [
-        "Bs. Hiền",
-        "Bs. Tôn"
-      ],
       "pkdk": [
         "Bs. Đức",
         "Bs. Tân"
+      ],
+      "ungTruc": [
+        "Bs. Hiền",
+        "Bs. Tôn"
       ]
     },
     "2026-02-06": {
@@ -166,13 +166,13 @@
       ]
     },
     "2026-02-12": {
-      "ungTruc": [
-        "Bs. Tân",
-        "Bs. Anh"
-      ],
       "pkdk": [
         "Bs. Tôn",
         "Bs. Hiền"
+      ],
+      "ungTruc": [
+        "Bs. Tân",
+        "Bs. Anh"
       ]
     },
     "2026-02-13": {

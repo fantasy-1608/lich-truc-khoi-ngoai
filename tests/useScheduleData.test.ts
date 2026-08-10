@@ -16,7 +16,7 @@ vi.mock('../services/scheduleStorage', () => ({
 describe('useScheduleData', () => {
   beforeEach(() => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
-    vi.setSystemTime(new Date(2026, 6, 6));
+    vi.setSystemTime(new Date(2026, 7, 6)); // August 6, 2026
   });
 
   afterEach(() => {

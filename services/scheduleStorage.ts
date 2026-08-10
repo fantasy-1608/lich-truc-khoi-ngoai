@@ -11,6 +11,7 @@ import {
 const BASE_FILENAME = 'schedule_base.json';
 const BASE_ID = 'default';
 const EDITOR_EMAIL_STORAGE_KEY = 'schedule-editor-email';
+const EDITOR_EMAIL_VERIFY_TIMEOUT_MS = 8000;
 
 let editorEmail = '';
 sessionStorage.removeItem(EDITOR_EMAIL_STORAGE_KEY);
@@ -75,6 +76,30 @@ const throwStorageError = (error: unknown): never => {
   throw error;
 };
 
+export class ScheduleEditorVerificationTimeoutError extends Error {
+  constructor() {
+    super('schedule_editor_verification_timeout');
+    this.name = 'ScheduleEditorVerificationTimeoutError';
+  }
+}
+
+const withTimeout = async <T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  createTimeoutError: () => Error,
+): Promise<T> => {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(createTimeoutError()), timeoutMs);
+  });
+
+  try {
+    return await Promise.race([promise, timeout]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+};
+
 export const setScheduleEditorEmail = (email: string): void => {
   editorEmail = email.trim();
 };
@@ -87,9 +112,15 @@ export const clearScheduleEditorEmail = (): void => {
 export const verifyScheduleEditorEmail = async (email: string): Promise<boolean> => {
   if (!supabase) return true;
 
-  const { data, error } = await supabase.rpc('is_schedule_editor', {
-    input_email: email.trim(),
-  });
+  const { data, error } = await withTimeout(
+    Promise.resolve(
+      supabase.rpc('is_schedule_editor', {
+        input_email: email.trim(),
+      }),
+    ),
+    EDITOR_EMAIL_VERIFY_TIMEOUT_MS,
+    () => new ScheduleEditorVerificationTimeoutError(),
+  );
 
   if (error) throw error;
   return data === true;

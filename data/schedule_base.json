@@ -1,4 +1,42 @@
 {
+  "tours": [
+    {
+      "id": "tour-1",
+      "doctorIds": [
+        "doc-a",
+        "doc-b",
+        "doc-k",
+        "doc-c"
+      ]
+    },
+    {
+      "id": "tour-2",
+      "doctorIds": [
+        "doc-e",
+        "doc-f",
+        "doc-g",
+        "doc-h"
+      ]
+    },
+    {
+      "id": "tour-3",
+      "doctorIds": [
+        "doc-i",
+        "doc-r",
+        "doc-l",
+        "doc-1767858780052-bp6s6jxwf"
+      ]
+    },
+    {
+      "id": "tour-4",
+      "doctorIds": [
+        "doc-m",
+        "doc-1781843100155-5r2bs6309",
+        "doc-o",
+        "doc-p"
+      ]
+    }
+  ],
   "doctors": [
     {
       "id": "doc-a",
@@ -99,60 +137,38 @@
       "id": "doc-1779073461104-0vvbsx882",
       "name": "Bs. Dung",
       "isCtch": true
+    },
+    {
+      "id": "doc-1781172218764-4na7bmnak",
+      "name": "Bs. Thuận",
+      "isCtch": true
+    },
+    {
+      "id": "doc-1781172266465-lduj3exl6",
+      "name": "Bs. Tín",
+      "isCtch": true
+    },
+    {
+      "id": "doc-1781843100155-5r2bs6309",
+      "name": "Bs. Đạt",
+      "isCtch": true
     }
   ],
-  "tours": [
-    {
-      "id": "tour-1",
-      "doctorIds": [
-        "doc-a",
-        "doc-b",
-        "doc-1767400272875-fk6vmv74o",
-        "doc-c"
-      ]
-    },
-    {
-      "id": "tour-2",
-      "doctorIds": [
-        "doc-e",
-        "doc-f",
-        "doc-g",
-        "doc-h"
-      ]
-    },
-    {
-      "id": "tour-3",
-      "doctorIds": [
-        "doc-i",
-        "doc-r",
-        "doc-l",
-        "doc-1767858780052-bp6s6jxwf"
-      ]
-    },
-    {
-      "id": "tour-4",
-      "doctorIds": [
-        "doc-m",
-        "doc-n",
-        "doc-o",
-        "doc-p"
-      ]
-    }
-  ],
+  "showPkdv": false,
+  "lastSaved": "2026-08-10T05:21:06.446Z",
   "tourOrder": [
-    "tour-4",
     "tour-3",
+    "tour-4",
     "tour-1",
     "tour-2"
   ],
-  "showPkdv": false,
-  "rotationStartDate": "2026-04-30",
-  "lastSaved": "2026-05-29T14:19:30.764Z",
   "holidaySchedule": {
-    "startDate": null,
     "endDate": null,
+    "startDate": null,
     "holidayTourId": "reinforcement",
-    "holidayInsertionIndex": 1,
-    "doctorOverrides": {}
-  }
+    "doctorOverrides": {},
+    "holidayInsertionIndex": 1
+  },
+  "rotationStartDate": "2026-08-04",
+  "showAddDoctorShortcut": true
 }

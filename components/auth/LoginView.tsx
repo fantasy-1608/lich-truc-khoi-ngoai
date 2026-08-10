@@ -32,12 +32,20 @@ const LoginView: React.FC<LoginViewProps> = ({
       } else {
         await onSignIn(targetEmail, password);
       }
-    } catch {
-      setError(
-        onEmailOnlySignIn
-          ? 'Email này không có quyền chỉnh sửa.'
-          : 'Email hoặc mật khẩu không đúng.',
-      );
+    } catch (error) {
+      if (
+        onEmailOnlySignIn &&
+        error instanceof Error &&
+        error.message === 'schedule_editor_verification_timeout'
+      ) {
+        setError('Không kết nối được máy chủ chỉnh sửa. Vui lòng thử lại sau ít phút.');
+      } else {
+        setError(
+          onEmailOnlySignIn
+            ? 'Email này không có quyền chỉnh sửa.'
+            : 'Email hoặc mật khẩu không đúng.',
+        );
+      }
     } finally {
       setIsSubmitting(false);
     }

@@ -29,14 +29,17 @@ export const useAppController = () => {
   const auth = useSupabaseAuth();
   const canWrite = !isSupabaseConfigured || hasEditorAccess;
 
+  const handleScheduleError = useCallback((message: string) => showToast(message, 'error'), [showToast]);
+  const handleShiftSuccess = useCallback((message: string) => showToast(message, 'success'), [showToast]);
+
   const scheduleData = useScheduleData({
-    onError: (message) => showToast(message, 'error'),
+    onError: handleScheduleError,
     canWrite,
   });
   const shiftRequests = useShiftRequests({
     canManage: canWrite,
-    onError: (message) => showToast(message, 'error'),
-    onSuccess: (message) => showToast(message, 'success'),
+    onError: handleScheduleError,
+    onSuccess: handleShiftSuccess,
   });
 
   useEffect(() => {
