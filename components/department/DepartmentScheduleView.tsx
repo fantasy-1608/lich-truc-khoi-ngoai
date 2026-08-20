@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { getNextMonthDate } from '../../utils/date';
 import { Doctor, DepartmentRole, DepartmentAssignments, HolidayScheduleData } from '../../types';
 import { useDepartmentCalendarGrid } from '../../hooks/useDepartmentCalendarGrid';
@@ -24,6 +24,7 @@ interface DepartmentScheduleViewProps {
   showPkdv: boolean;
   departmentAssignments: Record<string, Partial<DepartmentAssignments>>;
   onUpdateDepartmentAssignments: (date: Date, role: DepartmentRole, doctors: string[]) => void;
+  onViewDateChange: (date: Date) => void;
   getDoctorsForDate: (date: Date) => string[] | undefined;
   holidaySchedule?: HolidayScheduleData;
 }
@@ -40,6 +41,7 @@ const DepartmentScheduleView: React.FC<DepartmentScheduleViewProps> = (props) =>
     showPkdv,
     departmentAssignments,
     onUpdateDepartmentAssignments,
+    onViewDateChange,
     getDoctorsForDate,
   } = props;
 
@@ -61,6 +63,10 @@ const DepartmentScheduleView: React.FC<DepartmentScheduleViewProps> = (props) =>
   const [isStatsModalOpen, setIsStatsModalOpen] = useState(false);
   const [isICSModalOpen, setIsICSModalOpen] = useState(false);
   const [hoveredDoctor, setHoveredDoctor] = useState<string | null>(null);
+
+  useEffect(() => {
+    onViewDateChange(currentDate);
+  }, [currentDate, onViewDateChange]);
 
   const calendarGrid = useDepartmentCalendarGrid(currentDate);
   const calendarWeeks = useMemo(() => {

@@ -102,6 +102,7 @@ const App: React.FC = () => {
                 showPkdv={scheduleData.showPkdv}
                 departmentAssignments={scheduleData.departmentAssignments}
                 onUpdateDepartmentAssignments={scheduleData.handleUpdateDepartmentAssignments}
+                onViewDateChange={scheduleData.handleSetViewDate}
                 holidaySchedule={scheduleData.holidaySchedule}
               />
             </Suspense>

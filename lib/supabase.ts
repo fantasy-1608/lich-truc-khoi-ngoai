@@ -7,5 +7,9 @@ export const isSupabaseConfigured = Boolean(supabaseUrl && supabasePublishableKe
 export const editorEmail = import.meta.env.VITE_EDITOR_EMAIL;
 
 export const supabase: SupabaseClient | null = isSupabaseConfigured
-  ? createClient(supabaseUrl as string, supabasePublishableKey as string)
+  ? createClient(supabaseUrl as string, supabasePublishableKey as string, {
+      // Schedule mutations already implement optimistic-concurrency recovery.
+      // Retrying RPC POSTs can amplify one conflict/outage into a request storm.
+      db: { retry: false },
+    })
   : null;
