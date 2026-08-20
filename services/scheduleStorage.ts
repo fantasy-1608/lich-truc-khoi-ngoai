@@ -7,6 +7,7 @@ import {
   ScheduleSnapshotEntry,
   Tour,
 } from '../types';
+import { runRecoverableScheduleSave } from '../utils/scheduleSaveRecovery';
 
 const BASE_FILENAME = 'schedule_base.json';
 const BASE_ID = 'default';
@@ -201,7 +202,8 @@ export const saveBaseScheduleData = async (
   data: ScheduleBaseStorageData,
   expectedUpdatedAt: string | null,
 ): Promise<string | null> => {
-  if (!supabase) {
+  const client = supabase;
+  if (!client) {
     await saveLocalJson(BASE_FILENAME, data);
     return null;
   }
@@ -210,14 +212,21 @@ export const saveBaseScheduleData = async (
     throw new Error('Missing editor email');
   }
 
-  const { data: updatedAt, error } = await supabase.rpc('save_schedule_base_if_current_by_email', {
-    input_email: editorEmail,
-    input_data: data,
-    expected_updated_at: expectedUpdatedAt,
-  });
-
-  if (error) throwStorageError(error);
-  return (updatedAt as string | null) ?? null;
+  try {
+    return await runRecoverableScheduleSave({
+      execute: () =>
+        client.rpc('save_schedule_base_if_current_by_email', {
+          input_email: editorEmail,
+          input_data: data,
+          expected_updated_at: expectedUpdatedAt,
+        }),
+      loadSavedRecord: loadBaseScheduleData,
+      intendedData: data,
+      isConflictError: isScheduleConflictError,
+    });
+  } catch (error) {
+    throwStorageError(error);
+  }
 };
 
 export const loadMonthScheduleData = async (
@@ -261,7 +270,8 @@ export const saveMonthScheduleData = async (
   data: ScheduleMonthStorageData,
   expectedUpdatedAt: string | null,
 ): Promise<string | null> => {
-  if (!supabase) {
+  const client = supabase;
+  if (!client) {
     await saveLocalJson(filename, data);
     return null;
   }
@@ -271,15 +281,22 @@ export const saveMonthScheduleData = async (
   }
 
   const month = monthFromFilename(filename);
-  const { data: updatedAt, error } = await supabase.rpc('save_schedule_month_if_current_by_email', {
-    input_email: editorEmail,
-    input_month: month,
-    input_data: data,
-    expected_updated_at: expectedUpdatedAt,
-  });
-
-  if (error) throwStorageError(error);
-  return (updatedAt as string | null) ?? null;
+  try {
+    return await runRecoverableScheduleSave({
+      execute: () =>
+        client.rpc('save_schedule_month_if_current_by_email', {
+          input_email: editorEmail,
+          input_month: month,
+          input_data: data,
+          expected_updated_at: expectedUpdatedAt,
+        }),
+      loadSavedRecord: () => loadMonthScheduleData(filename),
+      intendedData: data,
+      isConflictError: isScheduleConflictError,
+    });
+  } catch (error) {
+    throwStorageError(error);
+  }
 };
 
 interface ScheduleChangeHandlers {
