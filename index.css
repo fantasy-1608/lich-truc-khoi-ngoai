@@ -789,7 +789,6 @@
     border-radius: 8px !important;
     background: var(--roster-surface) !important;
     box-shadow: 0 10px 30px rgba(16, 42, 51, 0.06) !important;
-    overflow: hidden;
   }
 
   .schedule-command-bar {
@@ -801,6 +800,8 @@
     padding: 0.75rem;
     border-bottom: 1px solid var(--roster-border);
     background: var(--roster-surface);
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
   }
 
   .month-controller {
@@ -987,21 +988,27 @@
 
   .doctor-inspector {
     position: sticky;
-    top: 4rem;
+    top: 4.5rem;
     align-self: start;
-    min-height: calc(100dvh - 10.75rem);
+    max-height: calc(100dvh - 5.5rem);
+    overflow-y: auto;
     border-left: 1px solid var(--roster-border);
     background: var(--roster-surface);
     color: var(--roster-text);
+    z-index: 10;
   }
 
   .inspector-heading {
+    position: sticky;
+    top: 0;
+    z-index: 2;
     display: grid;
     grid-template-columns: 3rem minmax(0, 1fr);
     gap: 0.75rem;
     align-items: center;
     padding: 1rem;
     border-bottom: 1px solid var(--roster-border);
+    background: var(--roster-surface);
   }
 
   .doctor-avatar {
