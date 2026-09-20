@@ -21,7 +21,10 @@ if (fs.existsSync(envPath)) {
       supabaseUrl = trimmed.replace('VITE_SUPABASE_URL=', '').replace(/^#\s*/, '').trim();
     }
     if (trimmed.startsWith('VITE_SUPABASE_PUBLISHABLE_KEY=')) {
-      supabaseKey = trimmed.replace('VITE_SUPABASE_PUBLISHABLE_KEY=', '').replace(/^#\s*/, '').trim();
+      supabaseKey = trimmed
+        .replace('VITE_SUPABASE_PUBLISHABLE_KEY=', '')
+        .replace(/^#\s*/, '')
+        .trim();
     }
     if (trimmed.startsWith('VITE_EDITOR_EMAIL=')) {
       editorEmail = trimmed.replace('VITE_EDITOR_EMAIL=', '').trim();
@@ -50,7 +53,7 @@ async function sync() {
   if (fs.existsSync(baseFilePath)) {
     console.log('📦 Syncing schedule_base.json ...');
     const content = JSON.parse(fs.readFileSync(baseFilePath, 'utf-8'));
-    
+
     // Get current updated_at to pass to RPC or null
     const { data: currentBase } = await supabase
       .from('schedule_base')
@@ -58,11 +61,14 @@ async function sync() {
       .eq('id', 'default')
       .maybeSingle();
 
-    const { data: updatedAt, error } = await supabase.rpc('save_schedule_base_if_current_by_email', {
-      input_email: editorEmail,
-      input_data: content,
-      expected_updated_at: currentBase?.updated_at ?? null,
-    });
+    const { data: updatedAt, error } = await supabase.rpc(
+      'save_schedule_base_if_current_by_email',
+      {
+        input_email: editorEmail,
+        input_data: content,
+        expected_updated_at: currentBase?.updated_at ?? null,
+      },
+    );
 
     if (error) console.error('   ❌ Error syncing schedule_base:', error.message);
     else console.log('   ✅ schedule_base synced successfully.');

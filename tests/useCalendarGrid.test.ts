@@ -175,6 +175,107 @@ describe('useCalendarGrid', () => {
         expect(Array.isArray(day.doctors)).toBe(true);
       });
     });
+
+    it('flags a doctor assigned again after only one recovery day', () => {
+      const currentDate = new Date(2025, 10, 1);
+      const getDoctorsForDate = (date: Date) => {
+        if (date.getDate() === 3) return ['Dr. A', 'Dr. B'];
+        if (date.getDate() === 5) return ['Dr. B', 'Dr. C'];
+        return [];
+      };
+
+      const { result } = renderHook(() =>
+        useCalendarGrid(
+          currentDate,
+          testDoctorsById,
+          testToursById,
+          testTourOrder,
+          {},
+          {},
+          getDoctorsForDate,
+          null,
+        ),
+      );
+
+      const nov5 = result.current.find((day) => day.isCurrentMonth && day.date.getDate() === 5);
+      expect(nov5?.fatigueWarningDoctors).toEqual(['Dr. B']);
+    });
+
+    it('flags a doctor assigned again on the post-duty day', () => {
+      const currentDate = new Date(2025, 10, 1);
+      const getDoctorsForDate = (date: Date) => {
+        if (date.getDate() === 3) return ['Dr. A', 'Dr. B'];
+        if (date.getDate() === 4) return ['Dr. B', 'Dr. C'];
+        return [];
+      };
+
+      const { result } = renderHook(() =>
+        useCalendarGrid(
+          currentDate,
+          testDoctorsById,
+          testToursById,
+          testTourOrder,
+          {},
+          {},
+          getDoctorsForDate,
+          null,
+        ),
+      );
+
+      const nov4 = result.current.find((day) => day.isCurrentMonth && day.date.getDate() === 4);
+      expect(nov4?.postDutyWarningDoctors).toEqual(['Dr. B']);
+    });
+
+    it('keeps a three-day chain in the higher-priority post-duty warning only', () => {
+      const currentDate = new Date(2025, 10, 1);
+      const getDoctorsForDate = (date: Date) => {
+        if ([3, 4, 5].includes(date.getDate())) return ['Dr. B'];
+        return [];
+      };
+
+      const { result } = renderHook(() =>
+        useCalendarGrid(
+          currentDate,
+          testDoctorsById,
+          testToursById,
+          testTourOrder,
+          {},
+          {},
+          getDoctorsForDate,
+          null,
+        ),
+      );
+
+      const nov5 = result.current.find((day) => day.isCurrentMonth && day.date.getDate() === 5);
+      expect(nov5?.postDutyWarningDoctors).toEqual(['Dr. B']);
+      expect(nov5?.fatigueWarningDoctors).toEqual([]);
+    });
+
+    it('detects a short recovery interval across the previous-month boundary', () => {
+      const currentDate = new Date(2025, 11, 1);
+      const getDoctorsForDate = (date: Date) => {
+        const dateString = getDateString(date);
+        if (dateString === '2025-11-30') return ['Dr. A'];
+        if (dateString === '2025-12-02') return ['Dr. A', 'Dr. C'];
+        return [];
+      };
+
+      const { result } = renderHook(() =>
+        useCalendarGrid(
+          currentDate,
+          testDoctorsById,
+          testToursById,
+          testTourOrder,
+          {},
+          {},
+          getDoctorsForDate,
+          null,
+        ),
+      );
+
+      const dec2 = result.current.find((day) => day.isCurrentMonth && day.date.getDate() === 2);
+      expect(dec2?.fatigueWarningDoctors).toEqual(['Dr. A']);
+    });
   });
 
   describe('Overrides', () => {

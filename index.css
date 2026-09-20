@@ -610,3 +610,759 @@
     transform: translate3d(0, 0, 0) scale(1);
   }
 }
+
+/* Crew operations redesign — approved comp implementation */
+@font-face {
+  font-family: 'Roster Sans';
+  src: url('/fonts/NotoSans-Regular.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Roster Sans';
+  src: url('/fonts/NotoSans-Bold.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 600 800;
+  font-display: swap;
+}
+
+@layer components {
+  .ui-redesign {
+    --roster-background: #e6eaee;
+    --roster-surface: #ffffff;
+    --roster-surface-subtle: #f2f5f7;
+    --roster-surface-inset: #edf2f4;
+    --roster-border: #c9d4da;
+    --roster-border-strong: #8ca0aa;
+    --roster-text: #102a33;
+    --roster-text-muted: #526974;
+    --roster-primary: #147d73;
+    --roster-primary-hover: #0f675f;
+    --roster-primary-soft: #d9f1ef;
+    --roster-accent: #1765a6;
+    --roster-accent-soft: #dcecf8;
+    --roster-warning: #914900;
+    --roster-warning-soft: #fff0dc;
+    --roster-holiday: #b6103e;
+    --roster-holiday-soft: #fde5ec;
+    font-family: 'Roster Sans', 'Inter', sans-serif;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .dark .ui-redesign {
+    --roster-background: #08151b;
+    --roster-surface: #10232d;
+    --roster-surface-subtle: #0c1d25;
+    --roster-surface-inset: #152b35;
+    --roster-border: #35505c;
+    --roster-border-strong: #6f8994;
+    --roster-text: #f4f8f9;
+    --roster-text-muted: #b6c6cd;
+    --roster-primary: #31b8aa;
+    --roster-primary-hover: #5fd3c6;
+    --roster-primary-soft: #143f3d;
+    --roster-accent: #69aee0;
+    --roster-accent-soft: #17364b;
+    --roster-warning: #f2a544;
+    --roster-warning-soft: #402b16;
+    --roster-holiday: #f06a91;
+    --roster-holiday-soft: #451d2b;
+  }
+
+  .ui-redesign ::selection {
+    background: var(--roster-primary);
+    color: #fff;
+  }
+
+  .ui-redesign .app-header {
+    position: sticky !important;
+    inset: 0 0 auto !important;
+    padding: 0 !important;
+    border-color: var(--roster-border) !important;
+    background: var(--roster-surface) !important;
+    box-shadow: 0 6px 18px rgba(16, 42, 51, 0.05);
+  }
+
+  .brand-mark {
+    display: grid;
+    height: 2rem;
+    width: 2rem;
+    place-items: center;
+    border-radius: 6px;
+    background: var(--roster-primary);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  .roster-primary-tab {
+    position: relative;
+    min-height: 4rem;
+    padding-inline: 1rem;
+    color: var(--roster-text-muted);
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition:
+      color 150ms ease,
+      background-color 150ms ease;
+  }
+
+  .roster-primary-tab::after {
+    position: absolute;
+    right: 1rem;
+    bottom: -1px;
+    left: 1rem;
+    height: 3px;
+    border-radius: 3px 3px 0 0;
+    background: transparent;
+    content: '';
+  }
+
+  .roster-primary-tab:hover {
+    color: var(--roster-text);
+    background: var(--roster-surface-subtle);
+  }
+
+  .roster-primary-tab[aria-selected='true'] {
+    background: transparent !important;
+    color: var(--roster-primary) !important;
+  }
+
+  .roster-primary-tab[aria-selected='true']::after {
+    background: var(--roster-primary);
+  }
+
+  .edit-mode-button,
+  .ui-redesign .app-icon-button,
+  .command-icon {
+    display: inline-flex;
+    min-height: 2.5rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border: 1px solid var(--roster-border);
+    border-radius: 6px !important;
+    background: var(--roster-surface);
+    color: var(--roster-text-muted);
+    padding: 0.5rem 0.7rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    transition:
+      background-color 150ms ease,
+      border-color 150ms ease,
+      color 150ms ease,
+      transform 100ms ease;
+  }
+
+  .edit-mode-button:hover,
+  .ui-redesign .app-icon-button:hover,
+  .command-icon:hover {
+    border-color: var(--roster-border-strong);
+    background: var(--roster-surface-subtle);
+    color: var(--roster-text);
+  }
+
+  .edit-mode-button:active,
+  .ui-redesign .app-icon-button:active,
+  .command-icon:active {
+    transform: translateY(1px);
+  }
+
+  .edit-mode-button.is-unlocked {
+    border-color: color-mix(in srgb, var(--roster-primary) 48%, transparent);
+    background: var(--roster-primary-soft);
+    color: var(--roster-primary-hover);
+  }
+
+  .ui-redesign .app-main {
+    min-height: calc(100dvh - 4rem);
+    padding: 0.75rem !important;
+  }
+
+  .ui-redesign .schedule-shell {
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 1px solid var(--roster-border) !important;
+    border-radius: 8px !important;
+    background: var(--roster-surface) !important;
+    box-shadow: 0 10px 30px rgba(16, 42, 51, 0.06) !important;
+    overflow: hidden;
+  }
+
+  .schedule-command-bar {
+    display: grid;
+    grid-template-columns: auto minmax(16rem, 1fr) auto auto;
+    align-items: center;
+    gap: 0.75rem;
+    min-height: 4.5rem;
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--roster-border);
+    background: var(--roster-surface);
+  }
+
+  .month-controller {
+    display: grid;
+    grid-template-columns: 2.5rem minmax(9.5rem, auto) 2.5rem;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .month-title {
+    color: var(--roster-text);
+    font-size: 1.125rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .doctor-search {
+    display: flex;
+    min-height: 2.625rem;
+    align-items: center;
+    gap: 0.6rem;
+    border: 1px solid var(--roster-border);
+    border-radius: 6px;
+    background: var(--roster-surface-subtle);
+    padding-inline: 0.75rem;
+    color: var(--roster-text-muted);
+  }
+
+  .doctor-search:focus-within {
+    border-color: var(--roster-primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--roster-primary) 18%, transparent);
+  }
+
+  .doctor-search svg {
+    height: 1.2rem;
+    width: 1.2rem;
+    flex: none;
+  }
+  .doctor-search input {
+    min-width: 0;
+    flex: 1;
+    background: transparent;
+    color: var(--roster-text);
+    font-size: 0.875rem;
+    outline: none;
+  }
+  .doctor-search input::placeholder {
+    color: var(--roster-text-muted);
+    opacity: 0.82;
+  }
+
+  .warning-summary,
+  .command-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .warning-counter {
+    display: inline-flex;
+    min-height: 2.625rem;
+    align-items: center;
+    gap: 0.4rem;
+    border: 1px solid currentColor;
+    border-radius: 6px;
+    padding: 0.45rem 0.65rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .warning-counter.is-critical {
+    background: var(--roster-holiday-soft);
+    color: var(--roster-holiday);
+  }
+  .warning-counter.is-warning {
+    background: var(--roster-warning-soft);
+    color: var(--roster-warning);
+  }
+  .dark .warning-counter.is-critical {
+    color: #fb86a8;
+  }
+  .dark .warning-counter.is-warning {
+    color: #f6b85c;
+  }
+  .warning-counter strong {
+    font-size: 0.875rem;
+  }
+
+  .selection-status {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    border-top: 1px solid var(--roster-border);
+    padding-top: 0.65rem;
+    color: var(--roster-primary-hover);
+    font-size: 0.8125rem;
+  }
+
+  .selection-status button {
+    color: var(--roster-accent);
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .schedule-workspace {
+    grid-template-columns: minmax(0, 1fr) 19rem;
+    min-height: calc(100dvh - 10.75rem);
+    background: var(--roster-surface-subtle);
+  }
+
+  .ui-redesign .schedule-desktop {
+    min-width: 0;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: var(--roster-surface) !important;
+    padding: 0 !important;
+  }
+
+  .weekday-row {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    border-bottom: 1px solid var(--roster-border);
+    background: var(--roster-surface-subtle);
+  }
+
+  .weekday-label {
+    padding: 0.65rem 0.5rem;
+    border-right: 1px solid var(--roster-border);
+    color: var(--roster-text-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-align: center;
+  }
+
+  .weekday-label:last-child {
+    border-right: 0;
+  }
+
+  .calendar-month-grid {
+    gap: 0 !important;
+    background: var(--roster-border);
+  }
+
+  .calendar-month-grid > [role='gridcell'] {
+    min-height: 8.6rem !important;
+    border-width: 0 1px 1px 0 !important;
+    border-radius: 0 !important;
+    background: var(--roster-surface) !important;
+    box-shadow: none !important;
+    padding: 0.55rem !important;
+  }
+
+  .calendar-month-grid > [role='gridcell']:nth-child(7n) {
+    border-right-width: 0 !important;
+  }
+  .calendar-month-grid > [role='gridcell']:hover {
+    background: var(--roster-surface-subtle) !important;
+  }
+
+  .calendar-month-grid [role='button'][aria-label*='bác sĩ số'] {
+    border-color: color-mix(in srgb, var(--roster-border) 78%, transparent) !important;
+    border-radius: 4px !important;
+    background: var(--roster-surface-subtle) !important;
+  }
+
+  .calendar-month-grid [role='button'][aria-label*='bác sĩ số']:hover {
+    border-color: var(--roster-primary) !important;
+    background: var(--roster-primary-soft) !important;
+  }
+
+  .calendar-month-grid [role='button'][data-doctor-focused='true'] {
+    border-color: var(--roster-primary) !important;
+    background: var(--roster-primary) !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--roster-primary) 28%, transparent) !important;
+  }
+
+  .doctor-inspector {
+    position: sticky;
+    top: 4rem;
+    align-self: start;
+    min-height: calc(100dvh - 10.75rem);
+    border-left: 1px solid var(--roster-border);
+    background: var(--roster-surface);
+    color: var(--roster-text);
+  }
+
+  .inspector-heading {
+    display: grid;
+    grid-template-columns: 3rem minmax(0, 1fr);
+    gap: 0.75rem;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid var(--roster-border);
+  }
+
+  .doctor-avatar {
+    display: grid;
+    height: 3rem;
+    width: 3rem;
+    place-items: center;
+    border-radius: 8px;
+    background: var(--roster-primary-soft);
+    color: var(--roster-primary-hover);
+    font-weight: 800;
+  }
+
+  .inspector-kicker {
+    color: var(--roster-primary) !important;
+    font-size: 0.6875rem !important;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .inspector-heading h3 {
+    margin-top: 0.1rem;
+    font-size: 1rem;
+    font-weight: 800;
+  }
+  .inspector-heading p:last-child {
+    margin-top: 0.15rem;
+    color: var(--roster-text-muted);
+    font-size: 0.75rem;
+  }
+  .inspector-alerts {
+    display: grid;
+    gap: 0.5rem;
+    padding: 0.75rem;
+  }
+
+  .inspector-alert {
+    display: grid;
+    grid-template-columns: 1.25rem 1fr;
+    gap: 0.6rem;
+    align-items: start;
+    border: 1px solid currentColor;
+    border-radius: 6px;
+    padding: 0.65rem;
+  }
+
+  .inspector-alert div {
+    display: grid;
+    gap: 0.1rem;
+  }
+  .inspector-alert strong {
+    font-size: 0.8125rem;
+  }
+  .inspector-alert span {
+    font-size: 0.75rem;
+    opacity: 0.82;
+  }
+  .inspector-alert.is-critical {
+    background: var(--roster-holiday-soft);
+    color: var(--roster-holiday);
+  }
+  .inspector-alert.is-warning {
+    background: var(--roster-warning-soft);
+    color: var(--roster-warning);
+  }
+  .inspector-list {
+    border-top: 1px solid var(--roster-border);
+  }
+  .inspector-list-title {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    color: var(--roster-text-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+
+  .inspector-duty-row {
+    display: grid;
+    width: 100%;
+    grid-template-columns: 3.5rem 3.5rem minmax(0, 1fr);
+    gap: 0.5rem;
+    border-top: 1px solid var(--roster-border);
+    padding: 0.65rem 1rem;
+    color: var(--roster-text-muted);
+    font-size: 0.75rem;
+    text-align: left;
+  }
+
+  .inspector-duty-row:hover {
+    background: var(--roster-primary-soft);
+    color: var(--roster-text);
+  }
+  .inspector-duty-row strong {
+    overflow: hidden;
+    color: var(--roster-text);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .inspector-empty {
+    display: grid;
+    min-height: 24rem;
+    place-items: center;
+    align-content: center;
+    gap: 0.6rem;
+    padding: 2rem;
+    text-align: center;
+  }
+  .inspector-empty-mark {
+    display: grid;
+    height: 3.5rem;
+    width: 3.5rem;
+    place-items: center;
+    border: 1px solid var(--roster-border);
+    border-radius: 8px;
+    background: var(--roster-surface-subtle);
+    color: var(--roster-primary);
+    font-weight: 800;
+  }
+  .inspector-empty h3 {
+    font-size: 0.9375rem;
+    font-weight: 800;
+  }
+  .inspector-empty p {
+    max-width: 15rem;
+    color: var(--roster-text-muted);
+    font-size: 0.8125rem;
+    line-height: 1.55;
+  }
+
+  .mobile-bottom-nav {
+    position: fixed;
+    z-index: 60;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border-top: 1px solid var(--roster-border);
+    background: color-mix(in srgb, var(--roster-surface) 96%, transparent);
+    box-shadow: 0 -8px 24px rgba(16, 42, 51, 0.08);
+  }
+
+  .mobile-bottom-tab {
+    display: grid;
+    min-height: 3.75rem;
+    place-items: center;
+    align-content: center;
+    gap: 0.2rem;
+    color: var(--roster-text-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+
+  .mobile-bottom-tab[aria-selected='true'] {
+    background: var(--roster-primary-soft) !important;
+    color: var(--roster-primary-hover) !important;
+  }
+
+  .ui-redesign :is(button, input, [role='button'], [role='tab']):focus-visible {
+    outline: 2px solid var(--roster-primary) !important;
+    outline-offset: 2px;
+  }
+
+  @media (max-width: 1100px) {
+    .schedule-command-bar {
+      grid-template-columns: auto minmax(12rem, 1fr) auto;
+    }
+    .warning-summary {
+      display: none;
+    }
+    .schedule-workspace {
+      grid-template-columns: minmax(0, 1fr) 16rem;
+    }
+  }
+
+  @media (max-width: 1279px) {
+    .schedule-workspace {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .doctor-inspector {
+      display: none;
+    }
+  }
+
+  @media (max-width: 719px) {
+    .ui-redesign .app-main {
+      padding: 0 0 4.5rem !important;
+    }
+    .ui-redesign .app-header {
+      box-shadow: none;
+    }
+    .brand-mark {
+      height: 1.8rem;
+      width: 1.8rem;
+      font-size: 0.6875rem;
+    }
+    .edit-mode-button {
+      min-height: 2.4rem;
+      padding-inline: 0.6rem;
+    }
+    .ui-redesign .schedule-shell {
+      border-width: 0 !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+    }
+    .schedule-command-bar {
+      grid-template-columns: 1fr auto;
+      gap: 0.5rem;
+      padding: 0.6rem;
+    }
+    .month-controller {
+      grid-template-columns: 2.5rem minmax(8rem, 1fr) 2.5rem;
+    }
+    .month-title {
+      font-size: 1rem;
+    }
+    .warning-summary {
+      display: none;
+    }
+    .doctor-search {
+      display: flex;
+      grid-column: 1 / -1;
+      grid-row: 2;
+    }
+    .command-actions .command-icon:first-child {
+      display: none;
+    }
+    .selection-status {
+      grid-column: 1 / -1;
+    }
+    .schedule-compact {
+      margin: 0 !important;
+      padding: 0.65rem !important;
+      background: var(--roster-surface-subtle);
+    }
+    .schedule-compact > [role='tablist'] {
+      margin-inline: -0.65rem !important;
+      padding-inline: 0.65rem !important;
+    }
+    .schedule-compact [role='tab'] {
+      border-radius: 6px !important;
+    }
+    .schedule-compact section {
+      border-radius: 8px !important;
+    }
+  }
+
+  .department-roster,
+  .holiday-roster,
+  .settings-workspace {
+    margin: 0 !important;
+  }
+
+  .department-roster,
+  .holiday-roster {
+    overflow: hidden;
+    border: 1px solid var(--roster-border);
+    border-radius: 8px;
+    background: var(--roster-surface);
+    box-shadow: 0 10px 30px rgba(16, 42, 51, 0.05);
+  }
+
+  .department-command-bar {
+    display: grid;
+    grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 4.5rem;
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--roster-border);
+  }
+
+  .department-week {
+    gap: 0 !important;
+    background: var(--roster-border);
+  }
+  .department-week > div {
+    min-height: 13.75rem !important;
+    border-width: 0 1px 1px 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    transform: none !important;
+  }
+  .department-week > div:nth-child(7) {
+    border-right-width: 0 !important;
+  }
+  .department-week > div:hover {
+    transform: none !important;
+  }
+  .department-week [class*='rounded-lg'] {
+    border-radius: 4px !important;
+  }
+
+  .holiday-roster {
+    padding: 1rem;
+  }
+  .holiday-export-button {
+    display: inline-flex;
+    min-height: 2.625rem;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: 6px;
+    background: var(--roster-holiday);
+    padding: 0.6rem 0.9rem;
+    color: #fff;
+    font-size: 0.875rem;
+    font-weight: 700;
+  }
+  .holiday-export-button:hover {
+    filter: brightness(0.94);
+  }
+  .holiday-period-panel {
+    border-color: var(--roster-border) !important;
+    background: var(--roster-surface-subtle) !important;
+  }
+  .holiday-roster input,
+  .holiday-roster select {
+    border-radius: 6px !important;
+    box-shadow: none !important;
+  }
+  .holiday-roster button {
+    box-shadow: none !important;
+  }
+
+  .settings-workspace {
+    padding: 1rem 0 2rem;
+  }
+  .settings-workspace > div:first-child {
+    margin-bottom: 1rem !important;
+    padding-inline: 0.25rem !important;
+  }
+  .settings-workspace .glass-card {
+    border-radius: 8px !important;
+    box-shadow: none !important;
+  }
+  .settings-workspace input,
+  .settings-workspace select,
+  .settings-workspace textarea,
+  .settings-workspace button {
+    border-radius: 6px !important;
+  }
+
+  @media (max-width: 719px) {
+    .department-roster,
+    .holiday-roster {
+      border-width: 0;
+      border-radius: 0;
+      box-shadow: none;
+    }
+    .department-roster {
+      padding: 0.65rem;
+    }
+    .holiday-roster {
+      padding: 1rem 0.75rem 5rem;
+    }
+    .department-command-bar {
+      margin: -0.65rem -0.65rem 0.65rem;
+    }
+    .settings-workspace {
+      padding: 0.75rem 0.75rem 5rem;
+    }
+  }
+}

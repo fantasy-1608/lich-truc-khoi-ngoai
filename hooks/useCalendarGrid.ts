@@ -2,6 +2,18 @@ import { useMemo } from 'react';
 import { Doctor, Tour, ScheduleCalendarDay, ScheduleSnapshotEntry } from '../types';
 import { START_DATE } from '../constants';
 
+const normalizeDoctorName = (name: string): string => name.trim().toLocaleLowerCase('vi-VN');
+
+const getOverlappingDoctors = (
+  doctors: string[] | undefined,
+  recentDoctors: string[] | undefined,
+): string[] => {
+  if (!doctors?.length || !recentDoctors?.length) return [];
+
+  const recentDoctorNames = new Set(recentDoctors.map(normalizeDoctorName));
+  return doctors.filter((doctor) => recentDoctorNames.has(normalizeDoctorName(doctor)));
+};
+
 export const useCalendarGrid = (
   currentDate: Date,
   doctorsById: Record<string, Doctor>,
@@ -40,6 +52,8 @@ export const useCalendarGrid = (
         isToday: false,
         isWeekend: date.getDay() === 0 || date.getDay() === 6,
         isModified: false,
+        postDutyWarningDoctors: [],
+        fatigueWarningDoctors: [],
       });
     }
 
@@ -56,6 +70,24 @@ export const useCalendarGrid = (
 
       // Use centralized getDoctorsForDate
       const doctors = getDoctorsForDate(date);
+      const previousDay = new Date(year, month, day - 1);
+      previousDay.setHours(0, 0, 0, 0);
+      const previousDayDoctors =
+        previousDay.getTime() >= START_DATE.getTime() ? getDoctorsForDate(previousDay) : undefined;
+      const postDutyWarningDoctors = getOverlappingDoctors(doctors, previousDayDoctors);
+
+      // A 24-hour duty ends the following morning. Warn when the same doctor is assigned
+      // again after only one recovery day (for example: duty Monday, duty again Wednesday).
+      const previousDutyDate = new Date(year, month, day - 2);
+      previousDutyDate.setHours(0, 0, 0, 0);
+      const doctorsTwoDaysBefore =
+        previousDutyDate.getTime() >= START_DATE.getTime()
+          ? getDoctorsForDate(previousDutyDate)
+          : undefined;
+      const postDutyDoctorNames = new Set(postDutyWarningDoctors.map(normalizeDoctorName));
+      const fatigueWarningDoctors = getOverlappingDoctors(doctors, doctorsTwoDaysBefore).filter(
+        (doctor) => !postDutyDoctorNames.has(normalizeDoctorName(doctor)),
+      );
 
       // We still want to show the tour name if possible
       // Logic for tour name (main tour)
@@ -109,6 +141,8 @@ export const useCalendarGrid = (
         isToday: date.getTime() === today.getTime(),
         isWeekend: date.getDay() === 0 || date.getDay() === 6,
         isModified: hasTourOverride || hasDoctorOverride,
+        postDutyWarningDoctors,
+        fatigueWarningDoctors,
       });
     }
 
@@ -124,6 +158,8 @@ export const useCalendarGrid = (
         isToday: false,
         isWeekend: date.getDay() === 0 || date.getDay() === 6,
         isModified: false,
+        postDutyWarningDoctors: [],
+        fatigueWarningDoctors: [],
       });
     }
 

@@ -139,7 +139,10 @@ const ShiftRequestModal: React.FC<ShiftRequestModalProps> = ({
       >
         <div className="sticky top-0 z-10 bg-white dark:bg-slate-800 px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex items-start justify-between gap-4 sm:px-5 sm:py-4">
           <div>
-            <h3 id="shift-request-title" className="text-base font-bold text-slate-900 dark:text-white">
+            <h3
+              id="shift-request-title"
+              className="text-base font-bold text-slate-900 dark:text-white"
+            >
               Gửi yêu cầu trực
             </h3>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{shortDateLabel}</p>
@@ -219,42 +222,42 @@ const ShiftRequestModal: React.FC<ShiftRequestModalProps> = ({
                 Muốn đổi với
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label
-                  htmlFor="shift-request-target-date"
-                  className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1.5"
-                >
-                  Ngày khác
-                </label>
-                <input
-                  id="shift-request-target-date"
-                  name="targetDate"
-                  type="date"
-                  value={targetDate}
-                  onChange={(event) => setTargetDate(event.target.value)}
-                  enterKeyHint="next"
-                  className="w-full min-h-12 px-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="shift-request-target-doctor"
-                  className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1.5"
-                >
-                  Bác sĩ nếu biết
-                </label>
-                <input
-                  id="shift-request-target-doctor"
-                  name="targetDoctorName"
-                  type="text"
-                  value={targetDoctorName}
-                  onChange={(event) => setTargetDoctorName(event.target.value)}
-                  autoComplete="name"
-                  enterKeyHint="next"
-                  className="w-full min-h-12 px-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  placeholder="Không bắt buộc"
-                />
-              </div>
+                <div>
+                  <label
+                    htmlFor="shift-request-target-date"
+                    className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1.5"
+                  >
+                    Ngày khác
+                  </label>
+                  <input
+                    id="shift-request-target-date"
+                    name="targetDate"
+                    type="date"
+                    value={targetDate}
+                    onChange={(event) => setTargetDate(event.target.value)}
+                    enterKeyHint="next"
+                    className="w-full min-h-12 px-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="shift-request-target-doctor"
+                    className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1.5"
+                  >
+                    Bác sĩ nếu biết
+                  </label>
+                  <input
+                    id="shift-request-target-doctor"
+                    name="targetDoctorName"
+                    type="text"
+                    value={targetDoctorName}
+                    onChange={(event) => setTargetDoctorName(event.target.value)}
+                    autoComplete="name"
+                    enterKeyHint="next"
+                    className="w-full min-h-12 px-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Không bắt buộc"
+                  />
+                </div>
               </div>
             </div>
           )}

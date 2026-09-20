@@ -29,8 +29,14 @@ export const useAppController = () => {
   const auth = useSupabaseAuth();
   const canWrite = !isSupabaseConfigured || hasEditorAccess;
 
-  const handleScheduleError = useCallback((message: string) => showToast(message, 'error'), [showToast]);
-  const handleShiftSuccess = useCallback((message: string) => showToast(message, 'success'), [showToast]);
+  const handleScheduleError = useCallback(
+    (message: string) => showToast(message, 'error'),
+    [showToast],
+  );
+  const handleShiftSuccess = useCallback(
+    (message: string) => showToast(message, 'success'),
+    [showToast],
+  );
 
   const scheduleData = useScheduleData({
     onError: handleScheduleError,

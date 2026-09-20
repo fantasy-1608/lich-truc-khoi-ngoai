@@ -29,211 +29,76 @@
     "2026-02-27": "tour-2"
   },
   "doctorOverrides": {
-    "2026-02-01": [
-      "Bs. Anh",
-      "Bs. Luận",
-      "Bs. Tân",
-      "Bs. Cảnh"
-    ],
-    "2026-02-02": [
-      "Bs. Tiến",
-      "Bs. Thông",
-      "Bs. Tôn",
-      "Bs. Hiển"
-    ],
-    "2026-02-06": [
-      "Bs. Tiến",
-      "Bs. Thông",
-      "Bs. Tôn",
-      "Bs. Hiển"
-    ],
-    "2026-02-09": [
-      "Bs. Anh",
-      "Bs. Luận",
-      "Bs. Phúc",
-      "Bs. Khánh"
-    ],
-    "2026-02-10": [
-      "Bs. Tiến",
-      "Bs. Thông",
-      "Bs. Tôn",
-      "Bs. Hiển"
-    ],
-    "2026-02-13": [
-      "Bs. Anh",
-      "Bs. Luận",
-      "Bs. Tân",
-      "Bs. Phúc"
-    ],
-    "2026-02-23": [
-      "Bs. Tiến",
-      "Bs. Thông",
-      "Bs. Tôn",
-      "Bs. Hiển"
-    ],
-    "2026-02-26": [
-      "Bs. Anh",
-      "Bs. Luận",
-      "Bs. Phúc",
-      "Bs. Tân"
-    ],
-    "2026-02-27": [
-      "Bs. Tiến",
-      "Bs. Thông",
-      "Bs. Tôn",
-      "Bs. Hiển"
-    ]
+    "2026-02-01": ["Bs. Anh", "Bs. Luận", "Bs. Tân", "Bs. Cảnh"],
+    "2026-02-02": ["Bs. Tiến", "Bs. Thông", "Bs. Tôn", "Bs. Hiển"],
+    "2026-02-06": ["Bs. Tiến", "Bs. Thông", "Bs. Tôn", "Bs. Hiển"],
+    "2026-02-09": ["Bs. Anh", "Bs. Luận", "Bs. Phúc", "Bs. Khánh"],
+    "2026-02-10": ["Bs. Tiến", "Bs. Thông", "Bs. Tôn", "Bs. Hiển"],
+    "2026-02-13": ["Bs. Anh", "Bs. Luận", "Bs. Tân", "Bs. Phúc"],
+    "2026-02-23": ["Bs. Tiến", "Bs. Thông", "Bs. Tôn", "Bs. Hiển"],
+    "2026-02-26": ["Bs. Anh", "Bs. Luận", "Bs. Phúc", "Bs. Tân"],
+    "2026-02-27": ["Bs. Tiến", "Bs. Thông", "Bs. Tôn", "Bs. Hiển"]
   },
   "departmentAssignments": {
     "2026-02-02": {
-      "pkdk": [
-        "Bs. Đức",
-        "Bs. Mẫn"
-      ],
-      "ungTruc": [
-        "Bs. An",
-        "Bs. Khánh"
-      ]
+      "pkdk": ["Bs. Đức", "Bs. Mẫn"],
+      "ungTruc": ["Bs. An", "Bs. Khánh"]
     },
     "2026-02-03": {
-      "pkdk": [
-        "Bs. Anh",
-        "Bs. Hiền"
-      ],
-      "ungTruc": [
-        "Bs. Khánh",
-        "Bs. Mẫn"
-      ]
+      "pkdk": ["Bs. Anh", "Bs. Hiền"],
+      "ungTruc": ["Bs. Khánh", "Bs. Mẫn"]
     },
     "2026-02-04": {
-      "pkdk": [
-        "Bs. Tôn",
-        "Bs. Hiền"
-      ],
-      "ungTruc": [
-        "Bs. Khánh",
-        "Bs. Tân"
-      ]
+      "pkdk": ["Bs. Tôn", "Bs. Hiền"],
+      "ungTruc": ["Bs. Khánh", "Bs. Tân"]
     },
     "2026-02-05": {
-      "pkdk": [
-        "Bs. Đức",
-        "Bs. Tân"
-      ],
-      "ungTruc": [
-        "Bs. Hiền",
-        "Bs. Tôn"
-      ]
+      "pkdk": ["Bs. Đức", "Bs. Tân"],
+      "ungTruc": ["Bs. Hiền", "Bs. Tôn"]
     },
     "2026-02-06": {
-      "pkdk": [
-        "Bs. Mẫn",
-        "Bs. Tân"
-      ],
-      "ungTruc": [
-        "Bs. Đức",
-        "Bs. An"
-      ]
+      "pkdk": ["Bs. Mẫn", "Bs. Tân"],
+      "ungTruc": ["Bs. Đức", "Bs. An"]
     },
     "2026-02-09": {
-      "pkdk": [
-        "Bs. Đức",
-        "Bs. Hiền"
-      ],
-      "ungTruc": [
-        "Bs. Tân",
-        "Bs. Tôn"
-      ]
+      "pkdk": ["Bs. Đức", "Bs. Hiền"],
+      "ungTruc": ["Bs. Tân", "Bs. Tôn"]
     },
     "2026-02-10": {
-      "pkdk": [
-        "Bs. Tân",
-        "Bs. Mẫn"
-      ],
-      "ungTruc": [
-        "Bs. Đức",
-        "Bs. An"
-      ]
+      "pkdk": ["Bs. Tân", "Bs. Mẫn"],
+      "ungTruc": ["Bs. Đức", "Bs. An"]
     },
     "2026-02-11": {
-      "pkdk": [
-        "Bs. Anh",
-        "Bs. Hiền"
-      ],
-      "ungTruc": [
-        "Bs. Mẫn",
-        "Bs. An"
-      ]
+      "pkdk": ["Bs. Anh", "Bs. Hiền"],
+      "ungTruc": ["Bs. Mẫn", "Bs. An"]
     },
     "2026-02-12": {
-      "pkdk": [
-        "Bs. Tôn",
-        "Bs. Hiền"
-      ],
-      "ungTruc": [
-        "Bs. Tân",
-        "Bs. Anh"
-      ]
+      "pkdk": ["Bs. Tôn", "Bs. Hiền"],
+      "ungTruc": ["Bs. Tân", "Bs. Anh"]
     },
     "2026-02-13": {
-      "pkdk": [
-        "Bs. Đức",
-        "Bs. Hiền"
-      ],
-      "ungTruc": [
-        "Bs. Khánh",
-        "Bs. Tôn"
-      ]
+      "pkdk": ["Bs. Đức", "Bs. Hiền"],
+      "ungTruc": ["Bs. Khánh", "Bs. Tôn"]
     },
     "2026-02-23": {
-      "pkdk": [
-        "Bs. Mẫn",
-        "Bs. Hiền"
-      ],
-      "ungTruc": [
-        "Bs. Đức",
-        "Bs. Tân"
-      ]
+      "pkdk": ["Bs. Mẫn", "Bs. Hiền"],
+      "ungTruc": ["Bs. Đức", "Bs. Tân"]
     },
     "2026-02-24": {
-      "pkdk": [
-        "Bs. Anh",
-        "Bs. Hiền"
-      ],
-      "ungTruc": [
-        "Bs. Mẫn",
-        "Bs. An"
-      ]
+      "pkdk": ["Bs. Anh", "Bs. Hiền"],
+      "ungTruc": ["Bs. Mẫn", "Bs. An"]
     },
     "2026-02-25": {
-      "pkdk": [
-        "Bs. Tôn",
-        "Bs. Hiền"
-      ],
-      "ungTruc": [
-        "Bs. Anh",
-        "Bs. Khánh"
-      ]
+      "pkdk": ["Bs. Tôn", "Bs. Hiền"],
+      "ungTruc": ["Bs. Anh", "Bs. Khánh"]
     },
     "2026-02-26": {
-      "pkdk": [
-        "Bs. Đức",
-        "Bs. Hiền"
-      ],
-      "ungTruc": [
-        "Bs. Khánh",
-        "Bs. Tôn"
-      ]
+      "pkdk": ["Bs. Đức", "Bs. Hiền"],
+      "ungTruc": ["Bs. Khánh", "Bs. Tôn"]
     },
     "2026-02-27": {
-      "pkdk": [
-        "Bs. Mẫn",
-        "Bs. Hiền"
-      ],
-      "ungTruc": [
-        "Bs. Đức",
-        "Bs. An"
-      ]
+      "pkdk": ["Bs. Mẫn", "Bs. Hiền"],
+      "ungTruc": ["Bs. Đức", "Bs. An"]
     }
   }
 }

@@ -47,7 +47,7 @@ const App: React.FC = () => {
   return (
     <ErrorBoundary>
       <div
-        className="ui-redesign min-h-screen bg-slate-50 font-sans text-slate-900 transition-colors duration-300 dark:bg-slate-900 dark:text-slate-100"
+        className="ui-redesign min-h-screen bg-slate-50 font-sans text-slate-900 dark:bg-slate-900 dark:text-slate-100"
         data-ui-design="new"
       >
         <Header
@@ -60,7 +60,7 @@ const App: React.FC = () => {
         />
 
         <main
-          className={`app-main mx-auto w-full max-w-[1800px] p-4 sm:p-6 lg:p-8 transition-opacity duration-150 ${contentVisible ? 'opacity-100' : 'opacity-0'}`}
+          className={`app-main mx-auto w-full max-w-[1920px] transition-opacity duration-150 ${contentVisible ? 'opacity-100' : 'opacity-0'}`}
         >
           {view === View.SCHEDULE && (
             <ScheduleView

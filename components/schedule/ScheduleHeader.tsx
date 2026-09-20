@@ -5,11 +5,17 @@ import { ArrowRightIcon } from '../icons/ArrowRightIcon';
 import { ChartBarIcon } from '../icons/ChartBarIcon';
 import { DownloadIcon } from '../icons/DownloadIcon';
 import { CalendarIcon } from '../icons/CalendarIcon';
+import { FatigueAlertIcon } from '../icons/FatigueAlertIcon';
 
 interface ScheduleHeaderProps {
   currentDate: Date;
   selectedDoctor: SelectedDoctor | null;
   selectedShiftDate: Date | null;
+  doctorQuery: string;
+  doctorNames: string[];
+  postDutyWarningCount: number;
+  fatigueWarningCount: number;
+  onDoctorQueryChange: (value: string) => void;
   onPrevMonth: () => void;
   onNextMonth: () => void;
   onCancelSelection: () => void;
@@ -22,6 +28,11 @@ const ScheduleHeader: React.FC<ScheduleHeaderProps> = ({
   currentDate,
   selectedDoctor,
   selectedShiftDate,
+  doctorQuery,
+  doctorNames,
+  postDutyWarningCount,
+  fatigueWarningCount,
+  onDoctorQueryChange,
   onPrevMonth,
   onNextMonth,
   onCancelSelection,
@@ -41,87 +52,117 @@ const ScheduleHeader: React.FC<ScheduleHeaderProps> = ({
   };
 
   return (
-    <div className="mb-3 grid grid-cols-[44px_minmax(0,1fr)_auto] items-center gap-2 sm:mb-4">
-      <button
-        onClick={onPrevMonth}
-        className="inline-flex h-11 w-11 items-center justify-center rounded-full text-slate-600 transition-all-app hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700 sm:h-10 sm:w-10 sm:hover:scale-105"
-        aria-label="Previous month"
-      >
-        <ArrowLeftIcon className="h-6 w-6" />
-      </button>
-      <div className="min-w-0 text-center">
-        <h2 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-200">
-          {`Tháng ${currentDate.getMonth() + 1}, ${currentDate.getFullYear()}`}
-        </h2>
-        {selectedDoctor && (
-          <div className="flex items-center justify-center space-x-2 mt-1 text-sm text-green-600 dark:text-green-400">
-            <span>
-              Đã chọn <span className="font-bold">{selectedDoctor.doctorName}</span>. Chọn bác sĩ
-              khác để hoán đổi, hoặc chọn từ danh sách bên dưới để thay thế.
-            </span>
-            <button
-              onClick={onCancelSelection}
-              className="font-semibold underline hover:text-green-700 dark:hover:text-green-300 shrink-0"
-            >
-              Hủy
-            </button>
-          </div>
-        )}
-        {selectedShiftDate && (
-          <div className="flex items-center justify-center space-x-2 mt-1 text-sm text-purple-600 dark:text-purple-400">
-            <span>
-              Đã chọn tua ngày{' '}
-              <span className="font-bold">{selectedShiftDate.toLocaleDateString('vi-VN')}</span>.
-              Chọn một tua khác để hoán đổi.
-            </span>
-            <button
-              onClick={onCancelSelection}
-              className="font-semibold underline hover:text-purple-700 dark:hover:text-purple-300 shrink-0"
-            >
-              Hủy
-            </button>
-          </div>
-        )}
-      </div>
-      <div className="flex min-w-max items-center justify-end gap-2 sm:gap-3">
+    <section className="schedule-command-bar" aria-label="Điều khiển lịch tháng">
+      <div className="month-controller">
         <button
-          onClick={onNextMonth}
-          className="inline-flex h-11 w-11 items-center justify-center rounded-full text-slate-600 transition-all-app hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700 sm:h-10 sm:w-10 sm:hover:scale-105"
-          aria-label="Next month"
+          type="button"
+          onClick={onPrevMonth}
+          className="command-icon"
+          aria-label="Tháng trước"
         >
-          <ArrowRightIcon className="h-6 w-6" />
+          <ArrowLeftIcon className="h-5 w-5" />
         </button>
+        <h2 className="month-title">
+          Tháng {currentDate.getMonth() + 1}, {currentDate.getFullYear()}
+        </h2>
+        <button type="button" onClick={onNextMonth} className="command-icon" aria-label="Tháng sau">
+          <ArrowRightIcon className="h-5 w-5" />
+        </button>
+      </div>
+
+      <label className="doctor-search">
+        <span className="sr-only">Tìm bác sĩ trong lịch tháng</span>
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+        >
+          <circle cx="11" cy="11" r="6.5" />
+          <path d="m16 16 4 4" strokeLinecap="round" />
+        </svg>
+        <input
+          type="search"
+          value={doctorQuery}
+          onChange={(event) => onDoctorQueryChange(event.target.value)}
+          list="schedule-doctor-names"
+          placeholder="Tìm bác sĩ trong lịch tháng…"
+        />
+        <datalist id="schedule-doctor-names">
+          {doctorNames.map((name) => (
+            <option value={name} key={name} />
+          ))}
+        </datalist>
+      </label>
+
+      <div className="warning-summary" aria-label="Tổng hợp cảnh báo">
+        <span className="warning-counter is-critical">
+          <FatigueAlertIcon className="h-4 w-4" />
+          <strong>{postDutyWarningCount}</strong>
+          <span>Ra trực</span>
+        </span>
+        <span className="warning-counter is-warning">
+          <FatigueAlertIcon className="h-4 w-4" />
+          <strong>{fatigueWarningCount}</strong>
+          <span>Mới ra trực</span>
+        </span>
+      </div>
+
+      <div className="command-actions">
         <button
+          type="button"
           onClick={onOpenStats}
-          className="inline-flex h-11 w-11 items-center justify-center rounded-full text-slate-600 transition-all-app hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700 sm:h-10 sm:w-10 sm:hover:scale-105"
-          aria-label="View Statistics"
+          className="command-icon"
+          aria-label="Xem thống kê"
           title="Xem thống kê"
         >
-          <ChartBarIcon className="h-6 w-6" />
+          <ChartBarIcon className="h-5 w-5" />
         </button>
         <button
+          type="button"
           onClick={onExportICS}
-          className="inline-flex h-11 w-11 items-center justify-center rounded-full text-slate-600 transition-all-app hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700 sm:h-10 sm:w-10 sm:hover:scale-105"
-          aria-label="Export ICS"
+          className="command-icon"
+          aria-label="Lưu vào lịch điện thoại"
           title="Lưu vào lịch điện thoại (.ics)"
         >
-          <CalendarIcon className="h-6 w-6" />
+          <CalendarIcon className="h-5 w-5" />
         </button>
         <button
+          type="button"
           onClick={handlePDFExport}
           disabled={isExporting}
-          className="inline-flex h-11 w-11 items-center justify-center rounded-full text-slate-600 transition-all-app hover:bg-slate-100 disabled:cursor-wait disabled:opacity-50 dark:text-slate-300 dark:hover:bg-slate-700 sm:h-10 sm:w-10 sm:hover:scale-105"
-          aria-label="Export to PDF"
-          title="Xuất ra file PDF"
+          className="command-icon"
+          aria-label="Xuất PDF"
+          title="Xuất PDF"
         >
           {isExporting ? (
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-slate-900 dark:border-slate-100"></div>
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
           ) : (
-            <DownloadIcon className="w-6 h-6" />
+            <DownloadIcon className="h-5 w-5" />
           )}
         </button>
       </div>
-    </div>
+
+      {(selectedDoctor || selectedShiftDate) && (
+        <div className="selection-status">
+          <span>
+            {selectedDoctor ? (
+              <>
+                Đã chọn <strong>{selectedDoctor.doctorName}</strong>
+              </>
+            ) : (
+              <>
+                Đã chọn tua ngày <strong>{selectedShiftDate?.toLocaleDateString('vi-VN')}</strong>
+              </>
+            )}
+          </span>
+          <button type="button" onClick={onCancelSelection}>
+            Hủy chọn
+          </button>
+        </div>
+      )}
+    </section>
   );
 };
 

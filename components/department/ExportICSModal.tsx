@@ -64,7 +64,8 @@ const ExportICSModal: React.FC<ExportICSModalProps> = ({
               ))}
             </select>
             <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-              Lịch tải về sẽ bao gồm tất cả các ca trực (trực chính, ứng trực, khám...) của bác sĩ trong tháng đang hiển thị.
+              Lịch tải về sẽ bao gồm tất cả các ca trực (trực chính, ứng trực, khám...) của bác sĩ
+              trong tháng đang hiển thị.
             </p>
           </div>
         </div>

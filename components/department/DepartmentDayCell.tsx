@@ -116,13 +116,13 @@ const DepartmentDayCell: React.FC<DepartmentDayCellProps> = ({
   onHoverDoctor = () => {},
 }) => {
   const isBeforeStartDate = day.date.getTime() < START_DATE.getTime();
-  
-  const isDoctorActiveHere = hoveredDoctor && (
-    (onCallDoctors && onCallDoctors.includes(hoveredDoctor)) ||
-    (assignments?.ungTruc && assignments.ungTruc.includes(hoveredDoctor)) ||
-    (assignments?.pkdk && assignments.pkdk.includes(hoveredDoctor)) ||
-    (assignments?.pkdv && assignments.pkdv.includes(hoveredDoctor))
-  );
+
+  const isDoctorActiveHere =
+    hoveredDoctor &&
+    ((onCallDoctors && onCallDoctors.includes(hoveredDoctor)) ||
+      (assignments?.ungTruc && assignments.ungTruc.includes(hoveredDoctor)) ||
+      (assignments?.pkdk && assignments.pkdk.includes(hoveredDoctor)) ||
+      (assignments?.pkdv && assignments.pkdv.includes(hoveredDoctor)));
 
   const getDoctorHighlightClass = (doc: string, currentClasses: string) => {
     if (!hoveredDoctor) return currentClasses;
@@ -259,7 +259,9 @@ const DepartmentDayCell: React.FC<DepartmentDayCellProps> = ({
     const roleInfo = [
       { role: 'ungTruc' as DepartmentRole, label: 'Ứng trực', theme: roleThemeClasses.ungTruc },
       { role: 'pkdk' as DepartmentRole, label: 'PKĐK', theme: roleThemeClasses.pkdk },
-      ...(showPkdv ? [{ role: 'pkdv' as DepartmentRole, label: 'PKDV', theme: roleThemeClasses.pkdv }] : []),
+      ...(showPkdv
+        ? [{ role: 'pkdv' as DepartmentRole, label: 'PKDV', theme: roleThemeClasses.pkdv }]
+        : []),
     ];
 
     return (
@@ -278,11 +280,11 @@ const DepartmentDayCell: React.FC<DepartmentDayCellProps> = ({
         {/* Top Header Row of Day Card */}
         <div className="flex items-center justify-between mb-2">
           {isHoliday ? (
-            <span className="text-[10px] px-1.5 py-0.5 bg-rose-100 dark:bg-rose-900/50 text-rose-600 dark:text-rose-400 rounded-full font-bold">
+            <span className="text-xs px-1.5 py-0.5 bg-rose-100 dark:bg-rose-900/50 text-rose-600 dark:text-rose-400 rounded-full font-bold">
               🎊 Lễ
             </span>
           ) : day.isWeekend ? (
-            <span className="text-[10px] px-1.5 py-0.5 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-full font-semibold">
+            <span className="text-xs px-1.5 py-0.5 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-full font-semibold">
               T7/CN
             </span>
           ) : (
@@ -301,35 +303,40 @@ const DepartmentDayCell: React.FC<DepartmentDayCellProps> = ({
         {/* Content Section */}
         <div className="flex-grow space-y-3">
           {/* Trực chính - Simplified */}
-          {day.isCurrentMonth && !isBeforeStartDate && onCallDoctors && onCallDoctors.length > 0 && (
-            <div className="bg-slate-50 dark:bg-slate-900/40 p-2 rounded-lg border border-slate-100 dark:border-slate-800">
-              <div className="text-slate-700 dark:text-slate-200 font-semibold text-xs sm:text-sm leading-relaxed space-y-0.5">
-                {(() => {
-                  const chunks = [];
-                  for (let i = 0; i < onCallDoctors.length; i += 2) {
-                    chunks.push(onCallDoctors.slice(i, i + 2));
-                  }
-                  return chunks.map((rowDocs, rowIndex) => (
-                    <div key={rowIndex} className="flex flex-wrap gap-x-1">
-                      {rowDocs.map((doc, docIndex) => {
-                        const isAbsoluteLast = (rowIndex * 2 + docIndex) === onCallDoctors.length - 1;
-                        return (
-                          <span 
-                            key={doc} 
-                            onMouseEnter={() => onHoverDoctor(doc)}
-                            onMouseLeave={() => onHoverDoctor(null)}
-                            className={`whitespace-nowrap px-1 rounded cursor-pointer transition-all duration-200 ${getDoctorHighlightClass(doc, "text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800")}`}
-                          >
-                            {doc}{!isAbsoluteLast ? ',' : ''}
-                          </span>
-                        );
-                      })}
-                    </div>
-                  ));
-                })()}
+          {day.isCurrentMonth &&
+            !isBeforeStartDate &&
+            onCallDoctors &&
+            onCallDoctors.length > 0 && (
+              <div className="bg-slate-50 dark:bg-slate-900/40 p-2 rounded-lg border border-slate-100 dark:border-slate-800">
+                <div className="text-slate-700 dark:text-slate-200 font-semibold text-xs sm:text-sm leading-relaxed space-y-0.5">
+                  {(() => {
+                    const chunks = [];
+                    for (let i = 0; i < onCallDoctors.length; i += 2) {
+                      chunks.push(onCallDoctors.slice(i, i + 2));
+                    }
+                    return chunks.map((rowDocs, rowIndex) => (
+                      <div key={rowIndex} className="flex flex-wrap gap-x-1">
+                        {rowDocs.map((doc, docIndex) => {
+                          const isAbsoluteLast =
+                            rowIndex * 2 + docIndex === onCallDoctors.length - 1;
+                          return (
+                            <span
+                              key={doc}
+                              onMouseEnter={() => onHoverDoctor(doc)}
+                              onMouseLeave={() => onHoverDoctor(null)}
+                              className={`whitespace-nowrap px-1 rounded cursor-pointer transition-all duration-200 ${getDoctorHighlightClass(doc, 'text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800')}`}
+                            >
+                              {doc}
+                              {!isAbsoluteLast ? ',' : ''}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    ));
+                  })()}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
           {day.isCurrentMonth && isBeforeStartDate && (
             <div className="text-slate-400 dark:text-slate-500 text-center text-xs italic py-2">
@@ -343,12 +350,12 @@ const DepartmentDayCell: React.FC<DepartmentDayCellProps> = ({
               {roleInfo.map(({ role, label, theme }) => {
                 const docs = assignments?.[role] || [];
                 return (
-                  <div 
-                    key={role} 
+                  <div
+                    key={role}
                     className={`group flex flex-col p-1.5 rounded-lg border ${theme.bg} ${theme.border} transition-all-app`}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className="flex items-center gap-1 text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                      <span className="flex items-center gap-1 text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                         <span className={`w-1.5 h-1.5 rounded-full ${theme.dot}`} />
                         {label}
                       </span>
@@ -375,7 +382,7 @@ const DepartmentDayCell: React.FC<DepartmentDayCellProps> = ({
                           </span>
                         ))
                       ) : (
-                        <span 
+                        <span
                           onClick={(e) => onOpenEditor(e, day.date, role)}
                           className="text-slate-400 dark:text-slate-500 italic text-xs cursor-pointer hover:underline"
                         >
@@ -409,7 +416,7 @@ const DepartmentDayCell: React.FC<DepartmentDayCellProps> = ({
     >
       {/* Holiday indicator */}
       {isHoliday && (
-        <span className="absolute top-1.5 left-1.5 text-[10px] px-1.5 py-0.5 bg-rose-100 dark:bg-rose-900/50 text-rose-600 dark:text-rose-400 rounded-full font-medium">
+        <span className="absolute top-1.5 left-1.5 text-xs px-1.5 py-0.5 bg-rose-100 dark:bg-rose-900/50 text-rose-600 dark:text-rose-400 rounded-full font-medium">
           🎊 Lễ
         </span>
       )}
@@ -431,11 +438,11 @@ const DepartmentDayCell: React.FC<DepartmentDayCellProps> = ({
                 <h5 className="font-bold text-slate-600 dark:text-slate-500 mb-1">Trực chính</h5>
                 <ul className="space-y-0.5 text-slate-600 dark:text-slate-400 pl-2">
                   {onCallDoctors.map((doctor, docIndex) => (
-                    <li 
-                      key={docIndex} 
+                    <li
+                      key={docIndex}
                       onMouseEnter={() => onHoverDoctor(doctor)}
                       onMouseLeave={() => onHoverDoctor(null)}
-                      className={`truncate cursor-pointer transition-all duration-200 ${getDoctorHighlightClass(doctor, "text-slate-600 dark:text-slate-400")}`} 
+                      className={`truncate cursor-pointer transition-all duration-200 ${getDoctorHighlightClass(doctor, 'text-slate-600 dark:text-slate-400')}`}
                       title={doctor}
                     >
                       <span className="font-medium text-slate-400 dark:text-slate-500">

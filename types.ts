@@ -35,6 +35,8 @@ export interface ScheduleCalendarDay extends CalendarDay {
   doctors: string[] | undefined;
   tourName: string | undefined;
   isModified: boolean;
+  postDutyWarningDoctors: string[];
+  fatigueWarningDoctors: string[];
 }
 
 export interface ScheduleSnapshotEntry {

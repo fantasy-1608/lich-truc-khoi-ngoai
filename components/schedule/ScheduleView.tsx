@@ -26,6 +26,7 @@ import ExportICSModal from '../department/ExportICSModal';
 import StatsModal from '../department/StatsModal';
 import { PlusIcon } from '../icons/PlusIcon';
 import { LockIcon } from '../icons/LockIcon';
+import { FatigueAlertIcon } from '../icons/FatigueAlertIcon';
 import { generateDoctorICS, downloadICSFile } from '../../utils/icsExport';
 import { DepartmentAssignments } from '../../types';
 
@@ -96,6 +97,8 @@ interface MobileWeekGroup {
   hasHoliday: boolean;
   hasModified: boolean;
   hasToday: boolean;
+  hasPostDutyWarning: boolean;
+  hasFatigueWarning: boolean;
   id: string;
   index: number;
   pendingRequestCount: number;
@@ -156,6 +159,8 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
   const [selectedMobileWeekId, setSelectedMobileWeekId] = useState<string>('');
   const [selectedMobileDayString, setSelectedMobileDayString] = useState<string>('');
   const [isCompactSchedule, setIsCompactSchedule] = useState(false);
+  const [hoveredDoctor, setHoveredDoctor] = useState<string | null>(null);
+  const [doctorQuery, setDoctorQuery] = useState('');
 
   const scheduleShellRef = useRef<HTMLDivElement>(null);
   const calendarRef = useRef<HTMLDivElement>(null);
@@ -182,6 +187,43 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
     getDoctorsForDate,
     rotationStartDate,
     scheduleSnapshots,
+  );
+
+  const doctorNamesInMonth = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          calendarGrid.filter((day) => day.isCurrentMonth).flatMap((day) => day.doctors || []),
+        ),
+      ).sort((a, b) => a.localeCompare(b, 'vi')),
+    [calendarGrid],
+  );
+
+  const searchedDoctor = useMemo(() => {
+    const query = doctorQuery.trim().toLocaleLowerCase('vi-VN');
+    if (!query) return null;
+    return (
+      doctorNamesInMonth.find((name) => name.toLocaleLowerCase('vi-VN') === query) ||
+      doctorNamesInMonth.find((name) => name.toLocaleLowerCase('vi-VN').includes(query)) ||
+      null
+    );
+  }, [doctorNamesInMonth, doctorQuery]);
+
+  const focusedDoctor = hoveredDoctor || searchedDoctor || selectedDoctor?.doctorName || null;
+  const focusedDoctorDays = useMemo(
+    () =>
+      focusedDoctor
+        ? calendarGrid.filter((day) => day.isCurrentMonth && day.doctors?.includes(focusedDoctor))
+        : [],
+    [calendarGrid, focusedDoctor],
+  );
+  const postDutyWarningCount = calendarGrid.reduce(
+    (total, day) => total + day.postDutyWarningDoctors.length,
+    0,
+  );
+  const fatigueWarningCount = calendarGrid.reduce(
+    (total, day) => total + day.fatigueWarningDoctors.length,
+    0,
   );
 
   const handleExportPDF = async () => {
@@ -326,6 +368,8 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
         hasHoliday: days.some((day) => isHolidayDate(day.date)),
         hasModified: days.some((day) => day.isModified),
         hasToday: days.some((day) => day.isToday),
+        hasPostDutyWarning: days.some((day) => day.postDutyWarningDoctors.length > 0),
+        hasFatigueWarning: days.some((day) => day.fatigueWarningDoctors.length > 0),
         id: `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-week-${index}`,
         index,
         pendingRequestCount,
@@ -398,15 +442,16 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
 
   return (
     <>
-      <div
-        ref={scheduleShellRef}
-        data-compact={isCompactSchedule}
-        className="schedule-shell glass-card rounded-2xl p-3 sm:mt-20 sm:rounded-3xl sm:p-8 mt-28"
-      >
+      <div ref={scheduleShellRef} data-compact={isCompactSchedule} className="schedule-shell">
         <ScheduleHeader
           currentDate={currentDate}
           selectedDoctor={selectedDoctor}
           selectedShiftDate={selectedTourDate}
+          doctorQuery={doctorQuery}
+          doctorNames={doctorNamesInMonth}
+          postDutyWarningCount={postDutyWarningCount}
+          fatigueWarningCount={fatigueWarningCount}
+          onDoctorQueryChange={setDoctorQuery}
           onPrevMonth={handlePrevMonth}
           onNextMonth={handleNextMonth}
           onCancelSelection={cancelSelection}
@@ -415,43 +460,125 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
           onExportICS={() => setIsICSModalOpen(true)}
         />
 
-        <div
-          ref={calendarRef}
-          className={`schedule-desktop ${isCompactSchedule ? 'hidden' : 'block'} bg-white/50 dark:bg-slate-800/50 rounded-2xl p-4 shadow-inner overflow-x-auto`}
-        >
-          <div className="min-w-[980px] xl:min-w-0">
-            <div className="grid grid-cols-7 gap-2 mb-2">
-              {weekDays.map((day) => (
-                <div
-                  key={day}
-                  className="text-center font-bold text-sm text-indigo-900/70 dark:text-indigo-100/70 py-2 uppercase tracking-wider"
-                >
-                  <span>{day}</span>
-                </div>
-              ))}
-            </div>
+        <div className={`schedule-workspace ${isCompactSchedule ? 'hidden' : 'grid'}`}>
+          <div ref={calendarRef} className="schedule-desktop overflow-x-auto">
+            <div className="min-w-[980px] xl:min-w-0">
+              <div className="weekday-row grid grid-cols-7">
+                {weekDays.map((day) => (
+                  <div key={day} className="weekday-label">
+                    <span>{day}</span>
+                  </div>
+                ))}
+              </div>
 
-            <div className="grid grid-cols-7 gap-2">
-              {calendarGrid.map((day, index) => (
-                <ScheduleDayCell
-                  key={index}
-                  day={day}
-                  selectedDoctor={selectedDoctor}
-                  selectedTourDate={selectedTourDate}
-                  onTourClick={handleTourClick}
-                  onDoctorClick={handleDoctorClick}
-                  onAddDoctorClick={openAddDoctor}
-                  onResetIconClick={handleResetIconClick}
-                  onRequestClick={handleRequestClick}
-                  onViewRequestsClick={handleViewRequestsClick}
-                  pendingRequestCount={pendingRequestCountsByDate[getDateString(day.date)] || 0}
-                  canManageRequests={canManageShiftRequests}
-                  showAddDoctorShortcut={canEdit && showAddDoctorShortcut}
-                  isHoliday={isHolidayDate(day.date)}
-                />
-              ))}
+              <div className="calendar-month-grid grid grid-cols-7">
+                {calendarGrid.map((day, index) => (
+                  <ScheduleDayCell
+                    key={index}
+                    day={day}
+                    selectedDoctor={selectedDoctor}
+                    selectedTourDate={selectedTourDate}
+                    onTourClick={handleTourClick}
+                    onDoctorClick={handleDoctorClick}
+                    onAddDoctorClick={openAddDoctor}
+                    onResetIconClick={handleResetIconClick}
+                    onRequestClick={handleRequestClick}
+                    onViewRequestsClick={handleViewRequestsClick}
+                    pendingRequestCount={pendingRequestCountsByDate[getDateString(day.date)] || 0}
+                    canManageRequests={canManageShiftRequests}
+                    showAddDoctorShortcut={canEdit && showAddDoctorShortcut}
+                    isHoliday={isHolidayDate(day.date)}
+                    hoveredDoctor={focusedDoctor}
+                    onHoverDoctor={setHoveredDoctor}
+                  />
+                ))}
+              </div>
             </div>
           </div>
+
+          <aside className="doctor-inspector" aria-label="Thông tin bác sĩ trong lịch tháng">
+            {focusedDoctor ? (
+              <>
+                <div className="inspector-heading">
+                  <span className="doctor-avatar" aria-hidden="true">
+                    {focusedDoctor
+                      .replace(/^Bs\.\s*/i, '')
+                      .split(/\s+/)
+                      .slice(-2)
+                      .map((part) => part[0])
+                      .join('')
+                      .toLocaleUpperCase('vi-VN')}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="inspector-kicker">Lịch tháng</p>
+                    <h3 className="truncate">{focusedDoctor}</h3>
+                    <p>{focusedDoctorDays.length} ngày trực trong tháng</p>
+                  </div>
+                </div>
+
+                <div className="inspector-alerts">
+                  {focusedDoctorDays.some((day) =>
+                    day.postDutyWarningDoctors.includes(focusedDoctor),
+                  ) && (
+                    <div className="inspector-alert is-critical">
+                      <FatigueAlertIcon className="h-5 w-5" />
+                      <div>
+                        <strong>Ra trực</strong>
+                        <span>Có lịch trực liền ngày</span>
+                      </div>
+                    </div>
+                  )}
+                  {focusedDoctorDays.some((day) =>
+                    day.fatigueWarningDoctors.includes(focusedDoctor),
+                  ) && (
+                    <div className="inspector-alert is-warning">
+                      <FatigueAlertIcon className="h-5 w-5" />
+                      <div>
+                        <strong>Mới ra trực</strong>
+                        <span>Trực lại sau một ngày nghỉ</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="inspector-list">
+                  <div className="inspector-list-title">
+                    <span>Các ngày trực</span>
+                    <span>{focusedDoctorDays.length}</span>
+                  </div>
+                  {focusedDoctorDays.map((day) => (
+                    <button
+                      type="button"
+                      key={getDateString(day.date)}
+                      onClick={() => {
+                        setSelectedMobileDayString(getDateString(day.date));
+                        if (day.date.getMonth() !== currentDate.getMonth()) {
+                          setCurrentDate(day.date);
+                        }
+                      }}
+                      className="inspector-duty-row"
+                    >
+                      <span>
+                        {day.date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })}
+                      </span>
+                      <span>{day.date.toLocaleDateString('vi-VN', { weekday: 'short' })}</span>
+                      <strong>Tua {day.tourName}</strong>
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="inspector-empty">
+                <div className="inspector-empty-mark" aria-hidden="true">
+                  BS
+                </div>
+                <h3>Theo dõi một bác sĩ</h3>
+                <p>
+                  Rê chuột vào tên hoặc tìm bác sĩ để xem chuỗi ngày trực và cảnh báo trong tháng.
+                </p>
+              </div>
+            )}
+          </aside>
         </div>
 
         <div
@@ -482,7 +609,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
                   type="button"
                   role="tab"
                   aria-selected={isSelected}
-                  aria-label={`Tuần ${week.index}, ${formatShortDate(week.startDate)} - ${formatShortDate(week.endDate)}${week.hasModified ? ', có lịch đã chỉnh' : ''}`}
+                  aria-label={`Tuần ${week.index}, ${formatShortDate(week.startDate)} - ${formatShortDate(week.endDate)}${week.hasModified ? ', có lịch đã chỉnh' : ''}${week.hasPostDutyWarning ? ', có cảnh báo ra trực' : ''}${week.hasFatigueWarning ? ', có cảnh báo trực lại quá sớm' : ''}`}
                   onClick={() => selectMobileWeek(week)}
                   className={`relative min-w-[104px] snap-start rounded-2xl border px-3 py-2 text-left transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
                     isSelected
@@ -496,10 +623,15 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
                       aria-hidden="true"
                     />
                   )}
+                  {(week.hasPostDutyWarning || week.hasFatigueWarning) && (
+                    <FatigueAlertIcon
+                      className={`absolute bottom-2 right-2 h-3.5 w-3.5 ${week.hasPostDutyWarning ? 'text-rose-500' : 'text-amber-500'}`}
+                    />
+                  )}
                   <span className="block text-sm font-bold">Tuần {week.index}</span>
                   <span
-                    className={`mt-0.5 block text-[11px] font-semibold ${
-                      isSelected ? 'text-indigo-100' : 'text-slate-500 dark:text-slate-400'
+                    className={`mt-0.5 block text-xs font-semibold ${
+                      isSelected ? 'text-teal-950' : 'text-slate-500 dark:text-slate-400'
                     }`}
                   >
                     {formatShortDate(week.startDate)} - {formatShortDate(week.endDate)}
@@ -528,13 +660,13 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
                         : 'border-transparent bg-white/60 text-slate-600 dark:bg-slate-900/40 dark:text-slate-300'
                     }`}
                     aria-pressed={isSelected}
-                    aria-label={`Xem lịch ngày ${day.date.toLocaleDateString('vi-VN')}`}
+                    aria-label={`Xem lịch ngày ${day.date.toLocaleDateString('vi-VN')}${day.postDutyWarningDoctors.length > 0 ? ', có cảnh báo bác sĩ ra trực' : ''}${day.fatigueWarningDoctors.length > 0 ? ', có cảnh báo bác sĩ trực lại quá sớm' : ''}`}
                   >
-                    <span className="block text-[11px] font-bold uppercase">
+                    <span className="block text-xs font-bold uppercase">
                       {getWeekdayShortLabel(day.date)}
                     </span>
                     <span className="mt-0.5 block text-base font-bold">{day.date.getDate()}</span>
-                    <span className="mt-0.5 block truncate text-[10px] font-semibold leading-tight text-slate-500 dark:text-slate-400">
+                    <span className="mt-0.5 block truncate text-xs font-semibold leading-tight text-slate-500 dark:text-slate-400">
                       {day.tourName || '-'}
                     </span>
                     <span className="mt-0.5 block h-1.5">
@@ -551,6 +683,12 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
                       )}
                       {isHolidayDate(day.date) && (
                         <span className="h-1.5 w-1.5 rounded-full bg-rose-400" />
+                      )}
+                      {(day.postDutyWarningDoctors.length > 0 ||
+                        day.fatigueWarningDoctors.length > 0) && (
+                        <FatigueAlertIcon
+                          className={`h-3 w-3 ${day.postDutyWarningDoctors.length > 0 ? 'text-rose-500' : 'text-amber-500'}`}
+                        />
                       )}
                     </span>
                   </button>
@@ -593,6 +731,18 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
                     {selectedMobileDay.isModified && (
                       <span className="rounded-full bg-orange-100 px-2.5 py-1 text-xs font-bold text-orange-700 dark:bg-orange-900/40 dark:text-orange-300">
                         Đã chỉnh
+                      </span>
+                    )}
+                    {selectedMobileDay.postDutyWarningDoctors.length > 0 && (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-rose-300 bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-800 dark:border-rose-700 dark:bg-rose-900/30 dark:text-rose-200">
+                        <FatigueAlertIcon className="h-3.5 w-3.5" />
+                        {selectedMobileDay.postDutyWarningDoctors.length} BS ra trực
+                      </span>
+                    )}
+                    {selectedMobileDay.fatigueWarningDoctors.length > 0 && (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-800 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-200">
+                        <FatigueAlertIcon className="h-3.5 w-3.5" />
+                        {selectedMobileDay.fatigueWarningDoctors.length} BS trực lại quá sớm
                       </span>
                     )}
                     {canEdit && !shouldShowMobileEditNotice && selectedMobileDay.isModified && (
@@ -647,11 +797,25 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
                     selectedDoctor?.date.getTime() === selectedMobileDay.date.getTime() &&
                     selectedDoctor.doctorIndex === doctorIndex;
                   const canEditDoctorRow = canEdit && !shouldShowMobileEditNotice;
+                  const hasDoctorPostDutyWarning =
+                    selectedMobileDay.postDutyWarningDoctors.includes(doctor);
+                  const hasDoctorFatigueWarning =
+                    !hasDoctorPostDutyWarning &&
+                    selectedMobileDay.fatigueWarningDoctors.includes(doctor);
+                  const isHoveredDoctor = hoveredDoctor === doctor;
 
                   const rowClassName = `flex min-h-10 w-full items-center gap-3 border-b px-3 text-left transition-colors last:border-b-0 sm:min-h-12 ${
-                    isSelected
-                      ? 'border-green-100 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-900/20 dark:text-green-300'
-                      : 'border-slate-100 text-slate-700 dark:border-slate-700 dark:text-slate-200'
+                    isHoveredDoctor
+                      ? 'border-blue-600 bg-blue-600 text-white shadow-md ring-2 ring-inset ring-blue-500/30 dark:border-blue-500 dark:bg-blue-500'
+                      : hoveredDoctor
+                        ? 'border-slate-100 text-slate-700 opacity-20 blur-[0.2px] dark:border-slate-700 dark:text-slate-200'
+                        : isSelected
+                          ? 'border-green-100 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-900/20 dark:text-green-300'
+                          : hasDoctorPostDutyWarning
+                            ? 'border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-800 dark:bg-rose-900/20 dark:text-rose-100'
+                            : hasDoctorFatigueWarning
+                              ? 'border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-100'
+                              : 'border-slate-100 text-slate-700 dark:border-slate-700 dark:text-slate-200'
                   }`;
                   const rowContent = (
                     <>
@@ -661,6 +825,19 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
                       <span className="min-w-0 flex-1 truncate text-sm font-semibold sm:text-base">
                         {doctor}
                       </span>
+                      {(hasDoctorPostDutyWarning || hasDoctorFatigueWarning) && (
+                        <span
+                          className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-1 text-xs font-bold ${hasDoctorPostDutyWarning ? 'border-rose-300 bg-rose-100 text-rose-800 dark:border-rose-700 dark:bg-rose-800/40 dark:text-rose-100' : 'border-amber-300 bg-amber-100 text-amber-800 dark:border-amber-700 dark:bg-amber-800/40 dark:text-amber-100'}`}
+                          title={
+                            hasDoctorPostDutyWarning
+                              ? 'Bác sĩ này cũng trực ngày hôm trước và đang trong ngày ra trực'
+                              : 'Bác sĩ này trực cách đây 2 ngày và mới có 1 ngày ra trực'
+                          }
+                        >
+                          <FatigueAlertIcon className="h-3.5 w-3.5" />
+                          {hasDoctorPostDutyWarning ? 'Ra trực' : 'Mới ra trực 1 ngày'}
+                        </span>
+                      )}
                     </>
                   );
 
@@ -670,9 +847,13 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
                         <button
                           type="button"
                           onClick={() => handleDoctorClick(selectedMobileDay, doctorIndex, doctor)}
+                          onMouseEnter={() => setHoveredDoctor(doctor)}
+                          onMouseLeave={() => setHoveredDoctor(null)}
+                          onFocus={() => setHoveredDoctor(doctor)}
+                          onBlur={() => setHoveredDoctor(null)}
                           className={`${rowClassName} hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500 dark:hover:bg-slate-800`}
                           aria-pressed={isSelected}
-                          aria-label={`Chọn ${doctor} ngày ${selectedMobileDay.date.getDate()} để hoán đổi hoặc thay thế`}
+                          aria-label={`Chọn ${doctor} ngày ${selectedMobileDay.date.getDate()} để hoán đổi hoặc thay thế${hasDoctorPostDutyWarning ? '. Cảnh báo bác sĩ đang ra trực' : hasDoctorFatigueWarning ? '. Cảnh báo bác sĩ mới ra trực một ngày' : ''}`}
                         >
                           {rowContent}
                         </button>

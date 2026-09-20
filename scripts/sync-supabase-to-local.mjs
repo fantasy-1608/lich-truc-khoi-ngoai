@@ -20,7 +20,10 @@ if (fs.existsSync(envPath)) {
       supabaseUrl = trimmed.replace('VITE_SUPABASE_URL=', '').replace(/^#\s*/, '').trim();
     }
     if (trimmed.startsWith('VITE_SUPABASE_PUBLISHABLE_KEY=')) {
-      supabaseKey = trimmed.replace('VITE_SUPABASE_PUBLISHABLE_KEY=', '').replace(/^#\s*/, '').trim();
+      supabaseKey = trimmed
+        .replace('VITE_SUPABASE_PUBLISHABLE_KEY=', '')
+        .replace(/^#\s*/, '')
+        .trim();
     }
   }
 }
@@ -84,7 +87,10 @@ async function syncToLocal() {
     .order('created_at', { ascending: false });
 
   if (shiftErr) {
-    console.log('   ⚠️ Could not fetch shift_requests from Supabase (or table empty):', shiftErr.message);
+    console.log(
+      '   ⚠️ Could not fetch shift_requests from Supabase (or table empty):',
+      shiftErr.message,
+    );
   } else if (Array.isArray(shiftRows) && shiftRows.length > 0) {
     const shiftFilePath = path.join(dataDir, 'shift_requests.json');
     fs.writeFileSync(shiftFilePath, JSON.stringify(shiftRows, null, 2));

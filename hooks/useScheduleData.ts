@@ -133,12 +133,6 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
 
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const ensureCanWrite = useCallback(() => {
-    if (canWrite) return true;
-    onErrorRef.current?.('Bạn đang ở chế độ chỉ xem. Hãy đăng nhập để chỉnh sửa lịch.');
-    return false;
-  }, [canWrite]);
-
   // Stabilize callbacks
   const onErrorRef = useRef(onError);
   const onSaveSuccessRef = useRef(onSaveSuccess);
@@ -146,6 +140,12 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
     onErrorRef.current = onError;
     onSaveSuccessRef.current = onSaveSuccess;
   }, [onError, onSaveSuccess]);
+
+  const ensureCanWrite = useCallback(() => {
+    if (canWrite) return true;
+    onErrorRef.current?.('Bạn đang ở chế độ chỉ xem. Hãy đăng nhập để chỉnh sửa lịch.');
+    return false;
+  }, [canWrite]);
 
   // Helper to get storage key for a month
   const getMonthKey = (date: Date) => {
@@ -237,36 +237,48 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
     loadBaseData();
   }, [applyBaseData, enabled]);
 
-  // Load Monthly Data when currentViewDate changes — cache-first
+  // Load the visible month and its previous month. The previous month is needed for
+  // recovery warnings on the first two days of the visible month.
   useEffect(() => {
     if (!enabled) return;
 
-    const filename = getMonthKey(currentViewDate);
+    const previousMonthDate = new Date(
+      currentViewDate.getFullYear(),
+      currentViewDate.getMonth() - 1,
+      1,
+    );
+    const filenames = [getMonthKey(currentViewDate), getMonthKey(previousMonthDate)];
 
     // 1. Instant: apply cached month data
-    if (!loadedMonthsRef.current.has(filename)) {
-      const cached = loadCachedMonthData(filename);
-      if (cached?.data) {
-        applyMonthData(filename, cached.data);
-        monthUpdatedAtRef.current[filename] = cached.updatedAt;
+    filenames.forEach((filename) => {
+      if (!loadedMonthsRef.current.has(filename)) {
+        const cached = loadCachedMonthData(filename);
+        if (cached?.data) {
+          applyMonthData(filename, cached.data);
+          monthUpdatedAtRef.current[filename] = cached.updatedAt;
+        }
       }
-    }
+    });
 
     // 2. Background: fetch fresh from Supabase
     const loadMonthlyData = async () => {
-      if (loadedMonthsRef.current.has(filename)) return;
+      await Promise.all(
+        filenames.map(async (filename) => {
+          if (loadedMonthsRef.current.has(filename)) return;
 
-      try {
-        const record = await loadMonthScheduleData(filename);
-        monthUpdatedAtRef.current[filename] = record.updatedAt;
-        applyMonthData(filename, record.data);
-        loadedMonthsRef.current.add(filename);
-      } catch {
-        // File might not exist yet, that's fine
-        loadedMonthsRef.current.add(filename);
-      }
+          try {
+            const record = await loadMonthScheduleData(filename);
+            monthUpdatedAtRef.current[filename] = record.updatedAt;
+            applyMonthData(filename, record.data);
+          } catch {
+            // File might not exist yet, that's fine
+          } finally {
+            loadedMonthsRef.current.add(filename);
+          }
+        }),
+      );
     };
-    loadMonthlyData();
+    void loadMonthlyData();
   }, [applyMonthData, currentViewDate, enabled]);
 
   // Item 6: Editors use realtime WebSocket; read-only users use lightweight polling
@@ -411,7 +423,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
       if (error instanceof ScheduleConflictError) {
         const filename = conflictFilename ?? getMonthKey(currentViewDate);
         modifiedMonthsRef.current.delete(filename); // Ensure we don't loop if recovery fails
-        
+
         try {
           const [baseRecord, monthRecord] = await Promise.all([
             loadBaseScheduleData(),
@@ -883,11 +895,6 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
       return tourOrder[diffDays % tourOrder.length];
     },
     [rotationStartDate, tourOrder],
-  );
-
-  const getVisibleMonthEndExclusive = useCallback(
-    () => new Date(currentViewDate.getFullYear(), currentViewDate.getMonth() + 1, 1),
-    [currentViewDate],
   );
 
   const freezeScheduleBefore = useCallback(

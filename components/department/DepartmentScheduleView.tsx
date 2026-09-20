@@ -110,7 +110,7 @@ const DepartmentScheduleView: React.FC<DepartmentScheduleViewProps> = (props) =>
   const currentMonthDays = calendarGrid.filter((day) => day.isCurrentMonth);
 
   return (
-    <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-lg shadow-lg mt-32 sm:mt-20">
+    <div className="department-roster">
       <DepartmentHeader
         currentDate={currentDate}
         onPrevMonth={() =>
@@ -132,20 +132,17 @@ const DepartmentScheduleView: React.FC<DepartmentScheduleViewProps> = (props) =>
         onExportICS={() => setIsICSModalOpen(true)}
       />
       <div className="hidden overflow-x-auto sm:block">
-        <div className="min-w-[980px] space-y-3 xl:min-w-0">
-          <div className="grid grid-cols-7 gap-3 mb-2">
+        <div className="min-w-[980px] xl:min-w-0">
+          <div className="weekday-row grid grid-cols-7">
             {weekDays.map((day) => (
-              <div
-                key={day}
-                className="py-2 text-center text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider"
-              >
+              <div key={day} className="weekday-label">
                 {day}
               </div>
             ))}
           </div>
 
           {calendarWeeks.map((week, weekIndex) => (
-            <div key={weekIndex} className="grid grid-cols-7 gap-3 mb-3">
+            <div key={weekIndex} className="department-week grid grid-cols-7">
               {week.map((day, index) => (
                 <DepartmentDayCell
                   key={index}

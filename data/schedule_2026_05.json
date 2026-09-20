@@ -2,312 +2,157 @@
   "scheduleSnapshots": {
     "2026-05-01": {
       "tourId": "tour-3",
-      "doctors": [
-        "Bs. Tiến",
-        "Bs. Tân",
-        "Bs. Hiển",
-        "Bs. Minh"
-      ],
+      "doctors": ["Bs. Tiến", "Bs. Tân", "Bs. Hiển", "Bs. Minh"],
       "tourName": "Bs. Tiến"
     },
     "2026-05-02": {
       "tourId": "tour-1",
-      "doctors": [
-        "Bs. Anh",
-        "Bs. Luận",
-        "Bs. Phúc",
-        "Bs. Cảnh"
-      ],
+      "doctors": ["Bs. Anh", "Bs. Luận", "Bs. Phúc", "Bs. Cảnh"],
       "tourName": "Bs. Anh"
     },
     "2026-05-03": {
       "tourId": "tour-2",
-      "doctors": [
-        "Bs. Tòng",
-        "Bs. Loan",
-        "Bs. Đức",
-        "Bs. Kiệt"
-      ],
+      "doctors": ["Bs. Tòng", "Bs. Loan", "Bs. Đức", "Bs. Kiệt"],
       "tourName": "Bs. Tòng"
     },
     "2026-05-04": {
       "tourId": "tour-4",
-      "doctors": [
-        "Bs. Tuấn",
-        "Bs. Linh",
-        "Bs. Mẫn",
-        "Bs. An"
-      ],
+      "doctors": ["Bs. Tuấn", "Bs. Linh", "Bs. Mẫn", "Bs. An"],
       "tourName": "Bs. Tuấn"
     },
     "2026-05-05": {
       "tourId": "tour-3",
-      "doctors": [
-        "Bs. Tiến",
-        "Bs. Tân",
-        "Bs. Hiển",
-        "Bs. Minh"
-      ],
+      "doctors": ["Bs. Tiến", "Bs. Tân", "Bs. Hiển", "Bs. Minh"],
       "tourName": "Bs. Tiến"
     },
     "2026-05-06": {
       "tourId": "tour-1",
-      "doctors": [
-        "Bs. Anh",
-        "Bs. Luận",
-        "Bs. Phúc",
-        "Bs. Cảnh"
-      ],
+      "doctors": ["Bs. Anh", "Bs. Luận", "Bs. Phúc", "Bs. Cảnh"],
       "tourName": "Bs. Anh"
     },
     "2026-05-07": {
       "tourId": "tour-2",
-      "doctors": [
-        "Bs. Tòng",
-        "Bs. Loan",
-        "Bs. Đức",
-        "Bs. Kiệt"
-      ],
+      "doctors": ["Bs. Tòng", "Bs. Loan", "Bs. Đức", "Bs. Kiệt"],
       "tourName": "Bs. Tòng"
     },
     "2026-05-08": {
       "tourId": "tour-4",
-      "doctors": [
-        "Bs. Tuấn",
-        "Bs. Linh",
-        "Bs. Mẫn",
-        "Bs. An"
-      ],
+      "doctors": ["Bs. Tuấn", "Bs. Linh", "Bs. Mẫn", "Bs. An"],
       "tourName": "Bs. Tuấn"
     },
     "2026-05-09": {
       "tourId": "tour-3",
-      "doctors": [
-        "Bs. Tiến",
-        "Bs. Tân",
-        "Bs. Hiển",
-        "Bs. Minh"
-      ],
+      "doctors": ["Bs. Tiến", "Bs. Tân", "Bs. Hiển", "Bs. Minh"],
       "tourName": "Bs. Tiến"
     },
     "2026-05-10": {
       "tourId": "tour-1",
-      "doctors": [
-        "Bs. Anh",
-        "Bs. Luận",
-        "Bs. Phúc",
-        "Bs. Cảnh"
-      ],
+      "doctors": ["Bs. Anh", "Bs. Luận", "Bs. Phúc", "Bs. Cảnh"],
       "tourName": "Bs. Anh"
     },
     "2026-05-11": {
       "tourId": "tour-2",
-      "doctors": [
-        "Bs. Tòng",
-        "Bs. Loan",
-        "Bs. Đức",
-        "Bs. Kiệt"
-      ],
+      "doctors": ["Bs. Tòng", "Bs. Loan", "Bs. Đức", "Bs. Kiệt"],
       "tourName": "Bs. Tòng"
     },
     "2026-05-12": {
       "tourId": "tour-4",
-      "doctors": [
-        "Bs. Tuấn",
-        "Bs. Linh",
-        "Bs. Mẫn",
-        "Bs. An"
-      ],
+      "doctors": ["Bs. Tuấn", "Bs. Linh", "Bs. Mẫn", "Bs. An"],
       "tourName": "Bs. Tuấn"
     },
     "2026-05-13": {
       "tourId": "tour-3",
-      "doctors": [
-        "Bs. Tiến",
-        "Bs. Tân",
-        "Bs. Hiển",
-        "Bs. Minh"
-      ],
+      "doctors": ["Bs. Tiến", "Bs. Tân", "Bs. Hiển", "Bs. Minh"],
       "tourName": "Bs. Tiến"
     },
     "2026-05-14": {
       "tourId": "tour-1",
-      "doctors": [
-        "Bs. Anh",
-        "Bs. Luận",
-        "Bs. Phúc",
-        "Bs. Cảnh"
-      ],
+      "doctors": ["Bs. Anh", "Bs. Luận", "Bs. Phúc", "Bs. Cảnh"],
       "tourName": "Bs. Anh"
     },
     "2026-05-15": {
       "tourId": "tour-2",
-      "doctors": [
-        "Bs. Tòng",
-        "Bs. Loan",
-        "Bs. Đức",
-        "Bs. Kiệt"
-      ],
+      "doctors": ["Bs. Tòng", "Bs. Loan", "Bs. Đức", "Bs. Kiệt"],
       "tourName": "Bs. Tòng"
     },
     "2026-05-16": {
       "tourId": "tour-4",
-      "doctors": [
-        "Bs. Tuấn",
-        "Bs. Linh",
-        "Bs. Mẫn",
-        "Bs. An"
-      ],
+      "doctors": ["Bs. Tuấn", "Bs. Linh", "Bs. Mẫn", "Bs. An"],
       "tourName": "Bs. Tuấn"
     },
     "2026-05-17": {
       "tourId": "tour-3",
-      "doctors": [
-        "Bs. Tiến",
-        "Bs. Tân",
-        "Bs. Hiển",
-        "Bs. Minh"
-      ],
+      "doctors": ["Bs. Tiến", "Bs. Tân", "Bs. Hiển", "Bs. Minh"],
       "tourName": "Bs. Tiến"
     },
     "2026-05-18": {
       "tourId": "tour-1",
-      "doctors": [
-        "Bs. Anh",
-        "Bs. Luận",
-        "Bs. Phúc",
-        "Bs. Cảnh"
-      ],
+      "doctors": ["Bs. Anh", "Bs. Luận", "Bs. Phúc", "Bs. Cảnh"],
       "tourName": "Bs. Anh"
     },
     "2026-05-19": {
       "tourId": "tour-2",
-      "doctors": [
-        "Bs. Tòng",
-        "Bs. Loan",
-        "Bs. Đức",
-        "Bs. Kiệt"
-      ],
+      "doctors": ["Bs. Tòng", "Bs. Loan", "Bs. Đức", "Bs. Kiệt"],
       "tourName": "Bs. Tòng"
     },
     "2026-05-20": {
       "tourId": "tour-4",
-      "doctors": [
-        "Bs. Tuấn",
-        "Bs. Linh",
-        "Bs. Mẫn",
-        "Bs. An"
-      ],
+      "doctors": ["Bs. Tuấn", "Bs. Linh", "Bs. Mẫn", "Bs. An"],
       "tourName": "Bs. Tuấn"
     },
     "2026-05-21": {
       "tourId": "tour-3",
-      "doctors": [
-        "Bs. Tiến",
-        "Bs. Tân",
-        "Bs. Hiển",
-        "Bs. Minh"
-      ],
+      "doctors": ["Bs. Tiến", "Bs. Tân", "Bs. Hiển", "Bs. Minh"],
       "tourName": "Bs. Tiến"
     },
     "2026-05-22": {
       "tourId": "tour-1",
-      "doctors": [
-        "Bs. Anh",
-        "Bs. Luận",
-        "Bs. Phúc",
-        "Bs. Cảnh"
-      ],
+      "doctors": ["Bs. Anh", "Bs. Luận", "Bs. Phúc", "Bs. Cảnh"],
       "tourName": "Bs. Anh"
     },
     "2026-05-23": {
       "tourId": "tour-2",
-      "doctors": [
-        "Bs. Tòng",
-        "Bs. Loan",
-        "Bs. Đức",
-        "Bs. Kiệt"
-      ],
+      "doctors": ["Bs. Tòng", "Bs. Loan", "Bs. Đức", "Bs. Kiệt"],
       "tourName": "Bs. Tòng"
     },
     "2026-05-24": {
       "tourId": "tour-4",
-      "doctors": [
-        "Bs. Tuấn",
-        "Bs. Linh",
-        "Bs. Mẫn",
-        "Bs. An"
-      ],
+      "doctors": ["Bs. Tuấn", "Bs. Linh", "Bs. Mẫn", "Bs. An"],
       "tourName": "Bs. Tuấn"
     },
     "2026-05-25": {
       "tourId": "tour-3",
-      "doctors": [
-        "Bs. Tiến",
-        "Bs. Tân",
-        "Bs. Hiển",
-        "Bs. Minh"
-      ],
+      "doctors": ["Bs. Tiến", "Bs. Tân", "Bs. Hiển", "Bs. Minh"],
       "tourName": "Bs. Tiến"
     },
     "2026-05-26": {
       "tourId": "tour-1",
-      "doctors": [
-        "Bs. Anh",
-        "Bs. Luận",
-        "Bs. Phúc",
-        "Bs. Cảnh"
-      ],
+      "doctors": ["Bs. Anh", "Bs. Luận", "Bs. Phúc", "Bs. Cảnh"],
       "tourName": "Bs. Anh"
     },
     "2026-05-27": {
       "tourId": "tour-2",
-      "doctors": [
-        "Bs. Tòng",
-        "Bs. Loan",
-        "Bs. Đức",
-        "Bs. Kiệt"
-      ],
+      "doctors": ["Bs. Tòng", "Bs. Loan", "Bs. Đức", "Bs. Kiệt"],
       "tourName": "Bs. Tòng"
     },
     "2026-05-28": {
       "tourId": "tour-4",
-      "doctors": [
-        "Bs. Tuấn",
-        "Bs. Linh",
-        "Bs. Mẫn",
-        "Bs. An"
-      ],
+      "doctors": ["Bs. Tuấn", "Bs. Linh", "Bs. Mẫn", "Bs. An"],
       "tourName": "Bs. Tuấn"
     },
     "2026-05-29": {
       "tourId": "tour-3",
-      "doctors": [
-        "Bs. Tiến",
-        "Bs. Tân",
-        "Bs. Hiển",
-        "Bs. Minh"
-      ],
+      "doctors": ["Bs. Tiến", "Bs. Tân", "Bs. Hiển", "Bs. Minh"],
       "tourName": "Bs. Tiến"
     },
     "2026-05-30": {
       "tourId": "tour-1",
-      "doctors": [
-        "Bs. Anh",
-        "Bs. Luận",
-        "Bs. Phúc",
-        "Bs. Cảnh"
-      ],
+      "doctors": ["Bs. Anh", "Bs. Luận", "Bs. Phúc", "Bs. Cảnh"],
       "tourName": "Bs. Anh"
     },
     "2026-05-31": {
       "tourId": "tour-2",
-      "doctors": [
-        "Bs. Tòng",
-        "Bs. Loan",
-        "Bs. Đức",
-        "Bs. Kiệt"
-      ],
+      "doctors": ["Bs. Tòng", "Bs. Loan", "Bs. Đức", "Bs. Kiệt"],
       "tourName": "Bs. Tòng"
     }
   }

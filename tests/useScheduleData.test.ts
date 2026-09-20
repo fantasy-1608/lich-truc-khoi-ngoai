@@ -1,6 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useScheduleData } from '../hooks/useScheduleData';
+import { loadMonthScheduleData } from '../services/scheduleStorage';
 
 vi.mock('../services/scheduleStorage', () => ({
   ScheduleConflictError: class ScheduleConflictError extends Error {},
@@ -15,8 +16,19 @@ vi.mock('../services/scheduleStorage', () => ({
 
 describe('useScheduleData', () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     vi.useFakeTimers({ shouldAdvanceTime: true });
     vi.setSystemTime(new Date(2026, 7, 6)); // August 6, 2026
+  });
+
+  it('loads the previous month for recovery warnings at the month boundary', async () => {
+    const { result } = renderHook(() => useScheduleData({ canWrite: false }));
+
+    await waitFor(() => expect(result.current.isLoaded).toBe(true));
+    await waitFor(() => {
+      expect(loadMonthScheduleData).toHaveBeenCalledWith('schedule_2026_09.json');
+      expect(loadMonthScheduleData).toHaveBeenCalledWith('schedule_2026_08.json');
+    });
   });
 
   afterEach(() => {

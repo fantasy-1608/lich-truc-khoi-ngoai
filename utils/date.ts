@@ -3,6 +3,6 @@
  * relative to the current local time.
  */
 export const getNextMonthDate = (): Date => {
-    const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth() + 1, 1);
 };

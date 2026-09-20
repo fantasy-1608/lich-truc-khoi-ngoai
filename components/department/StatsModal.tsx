@@ -192,8 +192,6 @@ const StatsModal: React.FC<StatsModalProps> = ({
     ];
   }, [directCountThresholds, mode, sortedStats]);
 
-  const emptyColSpan = mode === 'directOnly' ? 2 : 6;
-
   return (
     <div
       className={`fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/30 transition-opacity duration-200 ${isVisible ? 'opacity-100' : 'opacity-0'}`}

@@ -34,37 +34,29 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({
   };
 
   return (
-    <div className="flex items-center justify-between mb-4">
-      <button
-        onClick={onPrevMonth}
-        className="p-2 rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transform hover:scale-105 transition-all-app"
-        aria-label="Previous month"
-      >
+    <div className="department-command-bar">
+      <button onClick={onPrevMonth} className="command-icon" aria-label="Tháng trước">
         <ArrowLeftIcon className="w-6 h-6" />
       </button>
-      <h2 className="text-xl sm:text-2xl font-bold text-center text-slate-800 dark:text-slate-200">
+      <h2 className="month-title">
         {`Tháng ${currentDate.getMonth() + 1}, ${currentDate.getFullYear()}`}
       </h2>
-      <div className="flex items-center space-x-2">
-        <button
-          onClick={onNextMonth}
-          className="p-2 rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transform hover:scale-105 transition-all-app"
-          aria-label="Next month"
-        >
+      <div className="command-actions">
+        <button onClick={onNextMonth} className="command-icon" aria-label="Tháng sau">
           <ArrowRightIcon className="w-6 h-6" />
         </button>
         <button
           onClick={onOpenStats}
-          className="p-2 rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transform hover:scale-105 transition-all-app"
-          aria-label="View Statistics"
+          className="command-icon"
+          aria-label="Xem thống kê"
           title="Xem thống kê"
         >
           <ChartBarIcon className="w-6 h-6" />
         </button>
         <button
           onClick={onExportICS}
-          className="p-2 rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transform hover:scale-105 transition-all-app"
-          aria-label="Export ICS"
+          className="command-icon"
+          aria-label="Lưu vào lịch điện thoại"
           title="Lưu vào lịch điện thoại (.ics)"
         >
           <CalendarIcon className="w-6 h-6" />
@@ -72,8 +64,8 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({
         <button
           onClick={handlePDFExport}
           disabled={isExporting}
-          className="p-2 rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transform hover:scale-105 transition-all-app disabled:opacity-50 disabled:cursor-wait"
-          aria-label="Export to PDF"
+          className="command-icon"
+          aria-label="Xuất PDF"
           title="Xuất ra file PDF"
         >
           {isExporting ? (

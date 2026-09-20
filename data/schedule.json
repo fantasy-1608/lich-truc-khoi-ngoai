@@ -109,47 +109,22 @@
   "tours": [
     {
       "id": "tour-1",
-      "doctorIds": [
-        "doc-a",
-        "doc-b",
-        "doc-c",
-        "doc-d"
-      ]
+      "doctorIds": ["doc-a", "doc-b", "doc-c", "doc-d"]
     },
     {
       "id": "tour-2",
-      "doctorIds": [
-        "doc-e",
-        "doc-f",
-        "doc-g",
-        "doc-h"
-      ]
+      "doctorIds": ["doc-e", "doc-f", "doc-g", "doc-h"]
     },
     {
       "id": "tour-3",
-      "doctorIds": [
-        "doc-i",
-        "doc-j",
-        "doc-k",
-        "doc-l"
-      ]
+      "doctorIds": ["doc-i", "doc-j", "doc-k", "doc-l"]
     },
     {
       "id": "tour-4",
-      "doctorIds": [
-        "doc-m",
-        "doc-n",
-        "doc-o",
-        "doc-p"
-      ]
+      "doctorIds": ["doc-m", "doc-n", "doc-o", "doc-p"]
     }
   ],
-  "tourOrder": [
-    "tour-1",
-    "tour-3",
-    "tour-2",
-    "tour-4"
-  ],
+  "tourOrder": ["tour-1", "tour-3", "tour-2", "tour-4"],
   "tourOverrides": {},
   "doctorOverrides": {},
   "showPkdv": true,

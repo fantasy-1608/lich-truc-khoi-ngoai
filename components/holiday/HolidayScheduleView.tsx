@@ -71,7 +71,7 @@ const HolidayScheduleView: React.FC<HolidayScheduleViewProps> = ({
       // Warn if period is too long
       const daysDiff = Math.floor(
         (new Date(endDateInput).getTime() - new Date(startDateInput).getTime()) /
-        (1000 * 60 * 60 * 24),
+          (1000 * 60 * 60 * 24),
       );
       if (daysDiff > 30) {
         const confirm = window.confirm(
@@ -97,7 +97,9 @@ const HolidayScheduleView: React.FC<HolidayScheduleViewProps> = ({
       if (!canEdit) return;
 
       const currentDoctors =
-        holidaySchedule.doctorOverrides[dateStr] || getDoctorsForDate(parseLocalDateString(dateStr)) || [];
+        holidaySchedule.doctorOverrides[dateStr] ||
+        getDoctorsForDate(parseLocalDateString(dateStr)) ||
+        [];
       if (currentDoctors.length >= 6) return;
       if (currentDoctors.includes(doctorName)) return;
       onUpdateHolidayDoctors(dateStr, [...currentDoctors, doctorName]);
@@ -110,7 +112,9 @@ const HolidayScheduleView: React.FC<HolidayScheduleViewProps> = ({
       if (!canEdit) return;
 
       const currentDoctors =
-        holidaySchedule.doctorOverrides[dateStr] || getDoctorsForDate(parseLocalDateString(dateStr)) || [];
+        holidaySchedule.doctorOverrides[dateStr] ||
+        getDoctorsForDate(parseLocalDateString(dateStr)) ||
+        [];
       const newDoctors = currentDoctors.filter((_, i) => i !== doctorIndex);
       onUpdateHolidayDoctors(dateStr, newDoctors);
     },
@@ -140,7 +144,7 @@ const HolidayScheduleView: React.FC<HolidayScheduleViewProps> = ({
   };
 
   return (
-    <div className="glass-card rounded-3xl p-6 sm:p-8 mt-32 sm:mt-20">
+    <div className="holiday-roster">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
@@ -163,10 +167,7 @@ const HolidayScheduleView: React.FC<HolidayScheduleViewProps> = ({
 
         {/* Export button */}
         {calendarGrid.length > 0 && (
-          <button
-            onClick={handleExportPDF}
-            className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white rounded-xl font-medium shadow-lg shadow-rose-500/25 transition-all"
-          >
+          <button onClick={handleExportPDF} className="holiday-export-button">
             <DownloadIcon className="h-4 w-4" />
             <span>Xuất PDF</span>
           </button>
@@ -174,7 +175,7 @@ const HolidayScheduleView: React.FC<HolidayScheduleViewProps> = ({
       </div>
 
       {/* Date Range Picker */}
-      <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-slate-800/80 dark:to-slate-800/60 rounded-2xl p-5 mb-6 border border-indigo-100 dark:border-slate-700">
+      <div className="holiday-period-panel rounded-lg p-5 mb-6 border">
         <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4 flex items-center gap-2">
           <span>📅</span>
           <span>Chọn kỳ nghỉ lễ</span>
@@ -212,7 +213,9 @@ const HolidayScheduleView: React.FC<HolidayScheduleViewProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={handleApplyPeriod}
-              disabled={!canEdit || !startDateInput || !endDateInput || !holidaySchedule.holidayTourId}
+              disabled={
+                !canEdit || !startDateInput || !endDateInput || !holidaySchedule.holidayTourId
+              }
               className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white rounded-xl font-medium transition-all shadow-lg shadow-indigo-500/25 disabled:shadow-none"
             >
               Áp dụng
@@ -287,33 +290,36 @@ const HolidayScheduleView: React.FC<HolidayScheduleViewProps> = ({
                 onClick={() => {
                   if (canEdit) setSelectedDay(isSelected ? null : dateStr);
                 }}
-                className={`relative p-4 rounded-2xl border-2 transition-all ${canEdit ? 'cursor-pointer' : 'cursor-default'} ${isSelected
-                  ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 shadow-lg shadow-indigo-500/20'
-                  : day.isModified
-                    ? 'border-amber-400 bg-amber-50 dark:bg-amber-900/20'
-                    : day.isWeekend
-                      ? 'border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-900/20'
-                      : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 hover:border-indigo-300'
-                  }`}
+                className={`relative p-4 rounded-2xl border-2 transition-all ${canEdit ? 'cursor-pointer' : 'cursor-default'} ${
+                  isSelected
+                    ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 shadow-lg shadow-indigo-500/20'
+                    : day.isModified
+                      ? 'border-amber-400 bg-amber-50 dark:bg-amber-900/20'
+                      : day.isWeekend
+                        ? 'border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-900/20'
+                        : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 hover:border-indigo-300'
+                }`}
               >
                 {/* Day header */}
                 <div className="flex justify-between items-center mb-3 pb-2 border-b border-slate-200 dark:border-slate-700">
                   <div className="flex items-center gap-2">
                     <span
-                      className={`text-lg font-bold ${day.isToday
-                        ? 'text-indigo-600 dark:text-indigo-400'
-                        : day.isWeekend
-                          ? 'text-rose-600 dark:text-rose-400'
-                          : 'text-slate-800 dark:text-slate-100'
-                        }`}
+                      className={`text-lg font-bold ${
+                        day.isToday
+                          ? 'text-indigo-600 dark:text-indigo-400'
+                          : day.isWeekend
+                            ? 'text-rose-600 dark:text-rose-400'
+                            : 'text-slate-800 dark:text-slate-100'
+                      }`}
                     >
                       {day.date.getDate()}
                     </span>
                     <span
-                      className={`text-xs px-2 py-0.5 rounded-full ${day.isWeekend
-                        ? 'bg-rose-100 text-rose-600 dark:bg-rose-900/50 dark:text-rose-400'
-                        : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400'
-                        }`}
+                      className={`text-xs px-2 py-0.5 rounded-full ${
+                        day.isWeekend
+                          ? 'bg-rose-100 text-rose-600 dark:bg-rose-900/50 dark:text-rose-400'
+                          : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400'
+                      }`}
                     >
                       {dayName}
                     </span>
@@ -365,7 +371,7 @@ const HolidayScheduleView: React.FC<HolidayScheduleViewProps> = ({
                   {/* Add doctor dropdown - only when selected */}
                   {day.doctors.length < 6 && isSelected && canEdit && (
                     <select
-                      className="w-full mt-2 px-3 py-2 text-sm rounded-lg border border-indigo-300 dark:border-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                      className="w-full mt-2 px-3 py-2 text-sm rounded-lg border border-indigo-300 dark:border-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-950 dark:text-indigo-100 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                       onChange={(e) => {
                         if (e.target.value) {
                           handleAddDoctor(dateStr, e.target.value);
@@ -408,7 +414,7 @@ const HolidayScheduleView: React.FC<HolidayScheduleViewProps> = ({
       )}
 
       {/* Instructions */}
-     {calendarGrid.length > 0 && (
+      {calendarGrid.length > 0 && (
         <div className="mt-6 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
           <p className="text-sm text-slate-600 dark:text-slate-400 text-center">
             💡 <strong>Hướng dẫn:</strong>{' '}

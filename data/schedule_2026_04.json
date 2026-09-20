@@ -2,12 +2,7 @@
   "scheduleSnapshots": {
     "2026-04-30": {
       "tourId": "tour-4",
-      "doctors": [
-        "Bs. Tuấn",
-        "Bs. Linh",
-        "Bs. Mẫn",
-        "Bs. An"
-      ],
+      "doctors": ["Bs. Tuấn", "Bs. Linh", "Bs. Mẫn", "Bs. An"],
       "tourName": "Bs. Tuấn"
     }
   }

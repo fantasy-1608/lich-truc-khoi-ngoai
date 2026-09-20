@@ -97,11 +97,11 @@ Dự án đã được tái cấu trúc theo hướng module hóa để tăng t�
 1. **Thêm State:** Mở `hooks/useScheduleData.ts`. Thêm một `useState` mới để lưu giá trị của tùy chọn. Đừng quên thêm `useEffect` để lưu nó vào `localStorage`.
 2. **Thêm Handler:** Vẫn trong `useScheduleData.ts`, tạo một hàm (handler) để cập nhật state mới này. Trả về cả state và handler trong object cuối cùng.
 3. **Tạo UI Component:**
-    - Tạo một component mới trong `components/settings/`, ví dụ: `NewSetting.tsx`.
-    - Component này nhận `state` và `handler` mới làm props và render ra UI (ví dụ: một switch, một input).
+   - Tạo một component mới trong `components/settings/`, ví dụ: `NewSetting.tsx`.
+   - Component này nhận `state` và `handler` mới làm props và render ra UI (ví dụ: một switch, một input).
 4. **Tích hợp vào SettingsView:** Mở `components/settings/SettingsView.tsx` và thêm component `NewSetting.tsx` vào.
 5. **Truyền props:**
-    - Mở `App.tsx`, lấy `state` và `handler` mới từ `useScheduleData`.
-    - Truyền chúng xuống cho `SettingsView`.
-    - `SettingsView` sẽ truyền tiếp xuống `NewSetting.tsx`.
+   - Mở `App.tsx`, lấy `state` và `handler` mới từ `useScheduleData`.
+   - Truyền chúng xuống cho `SettingsView`.
+   - `SettingsView` sẽ truyền tiếp xuống `NewSetting.tsx`.
 6. **Sử dụng tùy chọn:** Ở nơi cần áp dụng tùy chọn mới (ví dụ: trong `ScheduleView`), hãy lấy giá trị state của nó từ `App.tsx` và sử dụng để điều khiển logic hoặc hiển thị.

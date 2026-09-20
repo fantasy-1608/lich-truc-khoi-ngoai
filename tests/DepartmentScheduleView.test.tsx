@@ -20,7 +20,7 @@ describe('DepartmentScheduleView', () => {
     await waitFor(() => expect(onViewDateChange).toHaveBeenCalledTimes(1));
     const initialMonth = onViewDateChange.mock.calls[0][0] as Date;
 
-    fireEvent.click(screen.getByRole('button', { name: 'Next month' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Tháng sau' }));
 
     await waitFor(() => expect(onViewDateChange).toHaveBeenCalledTimes(2));
     const nextMonth = onViewDateChange.mock.calls[1][0] as Date;
