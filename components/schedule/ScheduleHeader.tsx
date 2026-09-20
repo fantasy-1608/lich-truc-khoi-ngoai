@@ -96,18 +96,24 @@ const ScheduleHeader: React.FC<ScheduleHeaderProps> = ({
         </datalist>
       </label>
 
-      <div className="warning-summary" aria-label="Tổng hợp cảnh báo">
-        <span className="warning-counter is-critical">
-          <FatigueAlertIcon className="h-4 w-4" />
-          <strong>{postDutyWarningCount}</strong>
-          <span>Ra trực</span>
-        </span>
-        <span className="warning-counter is-warning">
-          <FatigueAlertIcon className="h-4 w-4" />
-          <strong>{fatigueWarningCount}</strong>
-          <span>Mới ra trực</span>
-        </span>
-      </div>
+      {(postDutyWarningCount > 0 || fatigueWarningCount > 0) && (
+        <div className="warning-summary" aria-label="Tổng hợp cảnh báo">
+          {postDutyWarningCount > 0 && (
+            <span className="warning-counter is-critical">
+              <FatigueAlertIcon className="h-4 w-4" />
+              <strong>{postDutyWarningCount}</strong>
+              <span>Ra trực</span>
+            </span>
+          )}
+          {fatigueWarningCount > 0 && (
+            <span className="warning-counter is-warning">
+              <FatigueAlertIcon className="h-4 w-4" />
+              <strong>{fatigueWarningCount}</strong>
+              <span>Mới ra trực</span>
+            </span>
+          )}
+        </div>
+      )}
 
       <div className="command-actions">
         <button
