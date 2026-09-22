@@ -19,6 +19,7 @@ interface RoleAssignmentProps {
   variant?: 'grid' | 'list';
   showLabel?: boolean;
   colorTheme?: 'emerald' | 'sky' | 'violet' | 'blue';
+  onCallDoctors?: string[];
 }
 
 const themeClasses = {
@@ -48,6 +49,7 @@ export const RoleAssignment: React.FC<RoleAssignmentProps> = ({
   variant = 'grid',
   showLabel = true,
   colorTheme = 'blue',
+  onCallDoctors,
 }) => {
   const doctors = assignments?.[role] || [];
   const isList = variant === 'list';
@@ -66,15 +68,26 @@ export const RoleAssignment: React.FC<RoleAssignmentProps> = ({
       )}
       <div className="flex min-w-0 flex-grow flex-wrap items-center gap-1">
         {doctors.length > 0 ? (
-          doctors.map((doc) => (
-            <span
-              key={doc}
-              onClick={onEdit}
-              className={`font-medium px-1.5 py-0.5 rounded-md text-xs cursor-pointer transition-all-app ${theme.pill}`}
-            >
-              {doc}
-            </span>
-          ))
+          doctors.map((doc) => {
+            const isDocOnCall = onCallDoctors?.some(
+              (d) => d.trim().toLowerCase() === doc.trim().toLowerCase(),
+            );
+            return (
+              <span
+                key={doc}
+                onClick={onEdit}
+                title={isDocOnCall ? `${doc} (Trùng trực chính hôm nay)` : doc}
+                className={`font-medium px-1.5 py-0.5 rounded-md text-xs cursor-pointer transition-all-app ${theme.pill} ${
+                  isDocOnCall ? 'ring-1 ring-rose-500 font-semibold' : ''
+                }`}
+              >
+                {doc}
+                {isDocOnCall && (
+                  <span className="ml-1 text-rose-500 font-bold text-[10px]">⚠️</span>
+                )}
+              </span>
+            );
+          })
         ) : (
           <span className="text-slate-400 dark:text-slate-500 italic text-xs">Chưa có</span>
         )}
@@ -206,6 +219,7 @@ const DepartmentDayCell: React.FC<DepartmentDayCellProps> = ({
                   assignments={assignments}
                   onEdit={(e) => onOpenEditor(e, day.date, 'ungTruc')}
                   variant="list"
+                  onCallDoctors={onCallDoctors}
                 />
                 <RoleAssignment
                   role="pkdk"
@@ -213,6 +227,7 @@ const DepartmentDayCell: React.FC<DepartmentDayCellProps> = ({
                   assignments={assignments}
                   onEdit={(e) => onOpenEditor(e, day.date, 'pkdk')}
                   variant="list"
+                  onCallDoctors={onCallDoctors}
                 />
                 {showPkdv && (
                   <RoleAssignment
@@ -221,6 +236,7 @@ const DepartmentDayCell: React.FC<DepartmentDayCellProps> = ({
                     assignments={assignments}
                     onEdit={(e) => onOpenEditor(e, day.date, 'pkdv')}
                     variant="list"
+                    onCallDoctors={onCallDoctors}
                   />
                 )}
               </div>
@@ -369,18 +385,28 @@ const DepartmentDayCell: React.FC<DepartmentDayCellProps> = ({
                     </div>
                     <div className="flex flex-wrap gap-1 min-h-[1.25rem]">
                       {docs.length > 0 ? (
-                        docs.map((doc) => (
-                          <span
-                            key={doc}
-                            onClick={(e) => onOpenEditor(e, day.date, role)}
-                            onMouseEnter={() => onHoverDoctor(doc)}
-                            onMouseLeave={() => onHoverDoctor(null)}
-                            className={`font-semibold px-1.5 py-0.5 rounded text-xs cursor-pointer transition-all duration-200 truncate ${getDoctorHighlightClass(doc, theme.pill)}`}
-                            title={doc}
-                          >
-                            {doc}
-                          </span>
-                        ))
+                        docs.map((doc) => {
+                          const isDocOnCall = onCallDoctors?.some(
+                            (d) => d.trim().toLowerCase() === doc.trim().toLowerCase(),
+                          );
+                          return (
+                            <span
+                              key={doc}
+                              onClick={(e) => onOpenEditor(e, day.date, role)}
+                              onMouseEnter={() => onHoverDoctor(doc)}
+                              onMouseLeave={() => onHoverDoctor(null)}
+                              className={`font-semibold px-1.5 py-0.5 rounded text-xs cursor-pointer transition-all duration-200 truncate ${
+                                isDocOnCall ? 'ring-1 ring-rose-500 font-bold' : ''
+                              } ${getDoctorHighlightClass(doc, theme.pill)}`}
+                              title={isDocOnCall ? `${doc} (Trùng trực chính hôm nay)` : doc}
+                            >
+                              {doc}
+                              {isDocOnCall && (
+                                <span className="ml-1 text-rose-500 font-bold text-[10px]">⚠️</span>
+                              )}
+                            </span>
+                          );
+                        })
                       ) : (
                         <span
                           onClick={(e) => onOpenEditor(e, day.date, role)}
