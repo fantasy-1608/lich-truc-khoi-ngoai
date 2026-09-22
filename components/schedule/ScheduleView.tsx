@@ -24,6 +24,8 @@ import ShiftRequestsPanel from './ShiftRequestsPanel';
 import DayShiftRequestsModal from './DayShiftRequestsModal';
 import ExportICSModal from '../department/ExportICSModal';
 import StatsModal from '../department/StatsModal';
+import MyScheduleModal from './MyScheduleModal';
+import RestSafetyCheckerModal from './RestSafetyCheckerModal';
 import { PlusIcon } from '../icons/PlusIcon';
 import { LockIcon } from '../icons/LockIcon';
 import { FatigueAlertIcon } from '../icons/FatigueAlertIcon';
@@ -105,6 +107,8 @@ interface MobileWeekGroup {
   startDate: Date;
 }
 
+const MY_DOCTOR_STORAGE_KEY = 'roster_my_doctor_name';
+
 const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
   const {
     tourOrder,
@@ -161,6 +165,28 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
   const [isCompactSchedule, setIsCompactSchedule] = useState(false);
   const [hoveredDoctor, setHoveredDoctor] = useState<string | null>(null);
   const [doctorQuery, setDoctorQuery] = useState('');
+  const [isMyScheduleOpen, setIsMyScheduleOpen] = useState(false);
+  const [isSafetyCheckerOpen, setIsSafetyCheckerOpen] = useState(false);
+  const [myDoctorName, setMyDoctorName] = useState<string>(() => {
+    try {
+      return localStorage.getItem(MY_DOCTOR_STORAGE_KEY) || '';
+    } catch {
+      return '';
+    }
+  });
+
+  const handleSelectMyDoctor = (doctorName: string) => {
+    setMyDoctorName(doctorName);
+    try {
+      if (doctorName) {
+        localStorage.setItem(MY_DOCTOR_STORAGE_KEY, doctorName);
+      } else {
+        localStorage.removeItem(MY_DOCTOR_STORAGE_KEY);
+      }
+    } catch (err) {
+      console.error('Failed to save myDoctorName to localStorage', err);
+    }
+  };
 
   const scheduleShellRef = useRef<HTMLDivElement>(null);
   const calendarRef = useRef<HTMLDivElement>(null);
@@ -440,6 +466,38 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
     );
   };
 
+  const handleJumpToDate = (targetDate: Date) => {
+    const dateStr = getDateString(targetDate);
+    const isDifferentMonth =
+      targetDate.getFullYear() !== currentDate.getFullYear() ||
+      targetDate.getMonth() !== currentDate.getMonth();
+
+    if (isDifferentMonth) {
+      const newMonth = new Date(targetDate.getFullYear(), targetDate.getMonth(), 1);
+      setCurrentDate(newMonth);
+      onViewDateChange?.(newMonth);
+    }
+
+    const matchingWeek = mobileWeekGroups.find((week) =>
+      week.days.some((day) => getDateString(day.date) === dateStr),
+    );
+    if (matchingWeek) {
+      setSelectedMobileWeekId(matchingWeek.id);
+    }
+    setSelectedMobileDayString(dateStr);
+
+    setTimeout(() => {
+      const cellElement = document.querySelector(`[data-date="${dateStr}"]`);
+      if (cellElement) {
+        cellElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        cellElement.classList.add('ring-4', 'ring-teal-500', 'ring-offset-2');
+        setTimeout(() => {
+          cellElement.classList.remove('ring-4', 'ring-teal-500', 'ring-offset-2');
+        }, 2500);
+      }
+    }, 150);
+  };
+
   return (
     <>
       <div ref={scheduleShellRef} data-compact={isCompactSchedule} className="schedule-shell">
@@ -458,17 +516,28 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
           onOpenStats={() => setIsStatsModalOpen(true)}
           onExportPDF={handleExportPDF}
           onExportICS={() => setIsICSModalOpen(true)}
+          myDoctorName={myDoctorName}
+          onOpenMySchedule={() => setIsMyScheduleOpen(true)}
+          onOpenSafetyChecker={() => setIsSafetyCheckerOpen(true)}
         />
 
         <div className={`schedule-workspace ${isCompactSchedule ? 'hidden' : 'grid'}`}>
           <div ref={calendarRef} className="schedule-desktop overflow-x-auto">
             <div className="min-w-[980px] xl:min-w-0">
               <div className="weekday-row grid grid-cols-7">
-                {weekDays.map((day) => (
-                  <div key={day} className="weekday-label">
-                    <span>{day}</span>
-                  </div>
-                ))}
+                {weekDays.map((day, index) => {
+                  const isSaturday = index === 5;
+                  const isSunday = index === 6;
+                  return (
+                    <div
+                      key={day}
+                      className={`weekday-label ${isSaturday ? 'is-saturday' : ''} ${isSunday ? 'is-sunday' : ''}`}
+                      data-weekend={isSaturday || isSunday ? 'true' : undefined}
+                    >
+                      <span>{day}</span>
+                    </div>
+                  );
+                })}
               </div>
 
               <div className="calendar-month-grid grid grid-cols-7">
@@ -509,12 +578,34 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
                       .join('')
                       .toLocaleUpperCase('vi-VN')}
                   </span>
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <p className="inspector-kicker">Lịch tháng</p>
                     <h3 className="truncate">{focusedDoctor}</h3>
                     <p>{focusedDoctorDays.length} ngày trực trong tháng</p>
                   </div>
+                  {doctorQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setDoctorQuery('')}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                      title="Bỏ xem riêng, trở lại xem toàn bộ lịch"
+                      aria-label="Bỏ xem riêng"
+                    >
+                      <span className="text-sm font-bold">✕</span>
+                    </button>
+                  )}
                 </div>
+
+                {doctorQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setDoctorQuery('')}
+                    className="w-full mt-2.5 py-1.5 px-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-center gap-1.5 shadow-xs transition-colors"
+                  >
+                    <span>✕</span>
+                    <span>Bỏ xem riêng (Hiện toàn bộ lịch)</span>
+                  </button>
+                )}
 
                 <div className="inspector-alerts">
                   {focusedDoctorDays.some((day) =>
@@ -652,6 +743,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
                 return (
                   <button
                     key={dateString}
+                    data-date={dateString}
                     type="button"
                     onClick={() => setSelectedMobileDayString(dateString)}
                     className={`relative min-h-[72px] min-w-0 flex-1 rounded-xl border px-1.5 py-1.5 text-center transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
@@ -960,6 +1052,43 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
         onClose={() => setIsICSModalOpen(false)}
         allDoctors={allDoctors}
         onExport={handleExportICS}
+      />
+
+      <MyScheduleModal
+        isOpen={isMyScheduleOpen}
+        onClose={() => setIsMyScheduleOpen(false)}
+        allDoctors={allDoctors}
+        calendarGrid={calendarGrid}
+        currentDate={currentDate}
+        myDoctorName={myDoctorName}
+        onSelectMyDoctor={handleSelectMyDoctor}
+        onSpotlightDoctor={(doctorName) => {
+          setDoctorQuery(doctorName);
+        }}
+        onRequestShiftChange={(day) => {
+          setIsMyScheduleOpen(false);
+          handleRequestClick(day);
+        }}
+        onJumpToDate={(date) => {
+          handleJumpToDate(date);
+        }}
+        getDoctorsForDate={getDoctorsForDate}
+        departmentAssignments={departmentAssignments}
+      />
+
+      <RestSafetyCheckerModal
+        isOpen={isSafetyCheckerOpen}
+        onClose={() => setIsSafetyCheckerOpen(false)}
+        calendarGrid={calendarGrid}
+        currentDate={currentDate}
+        onJumpToDate={(date) => {
+          handleJumpToDate(date);
+        }}
+        onDoctorClick={(day, docIndex, doctorName) => {
+          setIsSafetyCheckerOpen(false);
+          handleDoctorClick(day, docIndex, doctorName);
+        }}
+        canEdit={canEdit}
       />
     </>
   );

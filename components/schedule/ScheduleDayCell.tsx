@@ -71,9 +71,9 @@ const ScheduleDayCell: React.FC<ScheduleDayCellProps> = ({
         label: 'Ra trực',
         title: `${doctor} cũng trực ngày hôm trước và đang trong ngày ra trực.`,
         badgeClass:
-          'border-rose-300 bg-rose-100 text-rose-800 dark:border-rose-700 dark:bg-rose-800/40 dark:text-rose-100',
+          'border-rose-400 bg-rose-100 text-rose-950 font-bold dark:border-rose-500/70 dark:bg-rose-950 dark:text-rose-200',
         rowClass:
-          'border-rose-300 bg-rose-50 text-rose-900 dark:border-rose-700 dark:bg-rose-900/30 dark:text-rose-100',
+          'border-rose-400 bg-rose-50/90 text-rose-950 font-semibold dark:border-rose-600/70 dark:bg-rose-950/60 dark:text-rose-100',
       };
     }
 
@@ -82,9 +82,9 @@ const ScheduleDayCell: React.FC<ScheduleDayCellProps> = ({
         label: 'Mới ra trực',
         title: `${doctor} trực cách đây 2 ngày và mới có 1 ngày ra trực. Cân nhắc bố trí thêm thời gian nghỉ.`,
         badgeClass:
-          'border-amber-300 bg-amber-100 text-amber-800 dark:border-amber-700 dark:bg-amber-800/50 dark:text-amber-100',
+          'border-amber-400 bg-amber-100 text-amber-950 font-bold dark:border-amber-500/70 dark:bg-amber-950 dark:text-amber-200',
         rowClass:
-          'border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-100',
+          'border-amber-400 bg-amber-50/90 text-amber-950 font-semibold dark:border-amber-600/70 dark:bg-amber-950/60 dark:text-amber-100',
       };
     }
 
@@ -93,29 +93,32 @@ const ScheduleDayCell: React.FC<ScheduleDayCellProps> = ({
 
   const getDoctorRowClass = (doctor: string, isSelected: boolean, defaultClass: string): string => {
     if (hoveredDoctor === doctor) {
-      return 'border-blue-600 bg-blue-600 text-white shadow-md ring-2 ring-blue-500/30 dark:border-blue-500 dark:bg-blue-500';
+      return 'border-blue-600 bg-blue-600 text-white shadow-md ring-2 ring-blue-500/40 dark:border-blue-400 dark:bg-blue-600 dark:text-white dark:ring-blue-400/50';
     }
     if (hoveredDoctor) {
       return `${defaultClass} opacity-20 blur-[0.2px]`;
     }
     if (isSelected) {
-      return 'border-green-200 bg-green-50 text-green-700 shadow-sm dark:border-green-800 dark:bg-green-900/20 dark:text-green-300';
+      return 'border-emerald-500 bg-emerald-100 text-emerald-950 shadow-sm ring-2 ring-emerald-500/30 font-semibold dark:border-emerald-400 dark:bg-emerald-950/80 dark:text-emerald-200 dark:ring-emerald-400/30';
     }
     return getDoctorWarning(doctor)?.rowClass || defaultClass;
   };
+
+  const dateKey = `${day.date.getFullYear()}-${String(day.date.getMonth() + 1).padStart(2, '0')}-${String(day.date.getDate()).padStart(2, '0')}`;
 
   if (variant === 'list') {
     if (!day.isCurrentMonth || isBeforeStartDate || !day.doctors) return null;
 
     return (
       <article
+        data-date={dateKey}
         className={`
           rounded-xl border bg-white/90 dark:bg-slate-800/80 border-slate-200/80 dark:border-slate-700/70 p-3 shadow-sm
           ${day.isToday ? 'ring-2 ring-indigo-500 ring-offset-2 dark:ring-offset-slate-900' : ''}
           ${isHoliday ? 'ring-2 ring-rose-400 ring-offset-1' : ''}
           ${hasPostDutyWarning ? 'border-rose-300 dark:border-rose-700' : hasFatigueWarning ? 'border-amber-300 dark:border-amber-700' : ''}
           ${isDoctorActiveHere ? 'border-blue-400 shadow-md ring-2 ring-blue-500/20 dark:border-blue-500' : ''}
-          ${hoveredDoctor && !isDoctorActiveHere ? 'opacity-40' : ''}
+          ${hoveredDoctor && !isDoctorActiveHere ? 'opacity-50' : ''}
         `}
       >
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
@@ -150,17 +153,17 @@ const ScheduleDayCell: React.FC<ScheduleDayCellProps> = ({
               )}
             </span>
 
-            <span className="mt-1 flex min-w-0 items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+            <span className="mt-1 flex min-w-0 items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
               <span
                 className={`shrink-0 rounded-md border px-2 py-0.5 font-bold ${
                   isSelectedTour
-                    ? 'border-violet-300 bg-violet-100 text-violet-700 dark:border-violet-700 dark:bg-violet-900/40 dark:text-violet-300'
-                    : 'border-indigo-100 bg-indigo-50 text-indigo-700 dark:border-indigo-800/50 dark:bg-indigo-900/30 dark:text-indigo-300'
+                    ? 'border-indigo-600 bg-indigo-600 text-white dark:border-indigo-400 dark:bg-indigo-500 dark:text-white'
+                    : 'border-indigo-300 bg-indigo-100/90 text-indigo-950 dark:border-indigo-500/70 dark:bg-indigo-950 dark:text-indigo-200'
                 }`}
               >
                 Tua {day.tourName}
               </span>
-              <span className="truncate">
+              <span className="truncate font-medium text-slate-800 dark:text-slate-200">
                 {day.doctors.map((doctor, index) => `${index + 1} ${doctor}`).join(' · ')}
               </span>
             </span>
@@ -171,7 +174,7 @@ const ScheduleDayCell: React.FC<ScheduleDayCellProps> = ({
               <button
                 type="button"
                 onClick={() => onAddDoctorClick(day)}
-                className="grid h-9 min-w-9 place-items-center rounded-full border border-indigo-200 bg-indigo-50 px-2 text-xs font-bold text-indigo-700 transition-colors hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-300"
+                className="grid h-9 min-w-9 place-items-center rounded-full border border-teal-300 bg-teal-50 px-2 text-xs font-bold text-teal-800 transition-colors hover:bg-teal-100 focus:outline-none focus:ring-2 focus:ring-teal-500 dark:border-teal-700 dark:bg-teal-950/50 dark:text-teal-300"
                 aria-label={`Thêm bác sĩ trực cho ngày ${day.date.getDate()}`}
               >
                 BS
@@ -211,7 +214,7 @@ const ScheduleDayCell: React.FC<ScheduleDayCellProps> = ({
             <button
               type="button"
               onClick={() => onRequestClick(day)}
-              className="grid h-9 w-9 place-items-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 transition-colors hover:bg-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-300 dark:hover:bg-emerald-900/35"
+              className="grid h-9 w-9 place-items-center rounded-full border border-emerald-300 bg-emerald-50 text-emerald-800 transition-colors hover:bg-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 dark:hover:bg-emerald-900/60"
               aria-label={`Gửi yêu cầu trực cho ngày ${day.date.getDate()}`}
               title="Gửi yêu cầu đổi/nghỉ trực"
             >
@@ -221,19 +224,21 @@ const ScheduleDayCell: React.FC<ScheduleDayCellProps> = ({
         </div>
 
         {isExpanded && (
-          <div className="mt-3 border-t border-slate-200/70 pt-3 dark:border-slate-700/60">
-            <button
-              type="button"
-              onClick={() => onTourClick(day)}
-              className={`mb-2 inline-flex items-center rounded-md border px-2 py-1 text-xs font-bold transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
-                isSelectedTour
-                  ? 'border-violet-300 bg-violet-100 text-violet-700 dark:border-violet-700 dark:bg-violet-900/40 dark:text-violet-300'
-                  : 'border-indigo-100 bg-indigo-50 text-indigo-700 dark:border-indigo-800/50 dark:bg-indigo-900/30 dark:text-indigo-300'
-              }`}
-              aria-label={`Tua ${day.tourName}. Nhấn để chọn hoán đổi cả tua`}
-            >
-              Tua {day.tourName}
-            </button>
+          <div className="mt-3 border-t border-slate-200 pt-3 dark:border-slate-700">
+            <div className="mb-2 flex justify-center">
+              <button
+                type="button"
+                onClick={() => onTourClick(day)}
+                className={`inline-flex items-center justify-center rounded-md border px-3 py-1 text-xs sm:text-sm font-extrabold shadow-xs transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                  isSelectedTour
+                    ? 'border-indigo-600 bg-indigo-600 text-white dark:border-indigo-400 dark:bg-indigo-500 dark:text-white'
+                    : 'border-indigo-300 bg-indigo-100/90 text-indigo-950 hover:bg-indigo-200 hover:border-indigo-400 dark:border-indigo-500/70 dark:bg-indigo-950 dark:text-indigo-200 dark:hover:bg-indigo-900'
+                }`}
+                aria-label={`Tua ${day.tourName}. Nhấn để chọn hoán đổi cả tua`}
+              >
+                Tua {day.tourName}
+              </button>
+            </div>
 
             <div className="grid grid-cols-2 gap-2" aria-label="Danh sách bác sĩ trực">
               {day.doctors.map((doctor, docIndex) => {
@@ -250,15 +255,15 @@ const ScheduleDayCell: React.FC<ScheduleDayCellProps> = ({
                     onMouseLeave={() => onHoverDoctor(null)}
                     onFocus={() => onHoverDoctor(doctor)}
                     onBlur={() => onHoverDoctor(null)}
-                    className={`relative min-h-10 rounded-lg border py-2 pl-8 pr-2 text-left text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 ${getDoctorRowClass(doctor, isSelected, 'border-slate-100 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200')}`}
+                    className={`relative min-h-10 rounded-md border py-2 pl-8 pr-2 text-left text-sm transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-teal-500 ${getDoctorRowClass(doctor, isSelected, 'border-slate-300 bg-white text-slate-900 shadow-xs dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100')}`}
                     data-doctor-focused={hoveredDoctor === doctor ? 'true' : undefined}
                     aria-label={`${doctor}, bác sĩ số ${docIndex + 1}${doctorWarning ? `, cảnh báo ${doctorWarning.label.toLocaleLowerCase('vi-VN')}` : ''}. Nhấn để chọn hoán đổi`}
                   >
-                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500 dark:text-slate-400">
                       {docIndex + 1}
                     </span>
                     <span className="flex min-w-0 items-center gap-1.5">
-                      <span className="block min-w-0 flex-1 truncate font-medium">{doctor}</span>
+                      <span className="block min-w-0 flex-1 truncate font-semibold text-slate-900 dark:text-slate-100">{doctor}</span>
                       {doctorWarning && (
                         <span
                           className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-xs font-bold ${doctorWarning.badgeClass}`}
@@ -306,20 +311,27 @@ const ScheduleDayCell: React.FC<ScheduleDayCellProps> = ({
                 relative p-2 rounded-xl border min-h-[130px] sm:min-h-[150px] transition-all duration-300 ease-out group
                 ${
                   day.isCurrentMonth
-                    ? 'bg-white/60 dark:bg-slate-800/60 border-slate-200/60 dark:border-slate-700/60 hover:shadow-md hover:border-indigo-200 dark:hover:border-indigo-800'
-                    : 'bg-slate-50/30 dark:bg-slate-900/30 border-transparent'
+                    ? 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/80 hover:shadow-md hover:border-teal-400 dark:hover:border-teal-500'
+                    : 'bg-slate-100/60 dark:bg-slate-950/60 border-transparent'
                 }
-                ${day.isWeekend && day.isCurrentMonth ? 'bg-indigo-50/30 dark:bg-indigo-900/10' : ''}
-                ${day.isToday ? 'ring-2 ring-indigo-500 ring-offset-2 dark:ring-offset-slate-900 z-10' : ''}
-                ${isSelectedTour ? 'ring-2 ring-violet-500 ring-offset-2 dark:ring-offset-slate-900 z-10' : ''}
+                ${day.isWeekend && day.isCurrentMonth ? 'bg-slate-50/50 dark:bg-slate-900/50' : ''}
+                ${day.isToday ? 'ring-2 ring-teal-500 ring-offset-2 dark:ring-offset-slate-900 z-10' : ''}
+                ${isSelectedTour ? 'ring-2 ring-indigo-500 ring-offset-2 dark:ring-offset-slate-900 z-10' : ''}
                 ${isHoliday ? 'ring-2 ring-rose-400 ring-offset-1 z-10' : ''}
-                ${isDoctorActiveHere ? 'border-blue-400 shadow-md ring-2 ring-blue-500/20 dark:border-blue-500 z-10' : ''}
-                ${hoveredDoctor && !isDoctorActiveHere ? 'opacity-40' : ''}
+                ${isDoctorActiveHere ? 'border-teal-500 shadow-md ring-2 ring-teal-500/20 dark:border-teal-400 z-10' : ''}
+                ${hoveredDoctor && !isDoctorActiveHere ? 'opacity-50' : ''}
             `}
       role="gridcell"
       aria-label={dateLabel}
       aria-selected={isSelectedTour}
       aria-current={day.isToday ? 'date' : undefined}
+      data-date={dateKey}
+      data-current-month={day.isCurrentMonth ? 'true' : 'false'}
+      data-weekend={day.isWeekend ? 'true' : 'false'}
+      data-sunday={day.date.getDay() === 0 ? 'true' : 'false'}
+      data-saturday={day.date.getDay() === 6 ? 'true' : 'false'}
+      data-today={day.isToday ? 'true' : 'false'}
+      data-doctor-active={isDoctorActiveHere ? 'true' : 'false'}
     >
       {day.isModified && (
         <button
@@ -414,10 +426,10 @@ const ScheduleDayCell: React.FC<ScheduleDayCellProps> = ({
         )}
         <span
           className={`
-                    text-xs sm:text-sm font-semibold transition-colors rounded-full w-7 h-7 flex items-center justify-center
-                    ${day.isCurrentMonth ? 'text-slate-700 dark:text-slate-300' : 'text-slate-400 dark:text-slate-600'}
-                    ${day.isToday ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/30' : ''}
-                `}
+            text-sm sm:text-base font-bold transition-colors rounded-full w-7 h-7 flex items-center justify-center
+            ${day.isCurrentMonth ? 'text-slate-900 dark:text-slate-100' : 'text-slate-400 dark:text-slate-600 font-medium'}
+            ${day.isToday ? 'bg-teal-600 text-white font-extrabold shadow-sm shadow-teal-500/30 dark:bg-teal-500 dark:text-slate-950' : ''}
+          `}
         >
           {day.date.getDate()}
         </span>
@@ -427,7 +439,7 @@ const ScheduleDayCell: React.FC<ScheduleDayCellProps> = ({
         {day.isCurrentMonth && !isBeforeStartDate && day.doctors ? (
           <>
             <div
-              className="group/tour cursor-pointer mb-1"
+              className="group/tour cursor-pointer my-1.5 flex justify-center"
               onClick={(e) => {
                 e.stopPropagation();
                 onTourClick(day);
@@ -439,13 +451,13 @@ const ScheduleDayCell: React.FC<ScheduleDayCellProps> = ({
               title={`Tua ${day.tourName}. Click để chọn đổi cả tua.`}
             >
               <div
-                className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-bold border transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                className={`inline-flex max-w-full items-center justify-center px-3.5 py-1 rounded-md text-xs sm:text-sm font-extrabold tracking-wide border shadow-xs transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
                   isSelectedTour
-                    ? 'bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 border-violet-300 dark:border-violet-700'
-                    : 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border-indigo-100 dark:border-indigo-800/50 group-hover/tour:bg-indigo-100 dark:group-hover/tour:bg-indigo-900/50'
+                    ? 'bg-indigo-600 text-white border-indigo-700 shadow-sm ring-2 ring-indigo-500/40 dark:bg-indigo-500 dark:border-indigo-400 dark:text-white'
+                    : 'bg-indigo-100/90 border-indigo-300 text-indigo-950 group-hover/tour:bg-indigo-200 group-hover/tour:border-indigo-400 group-hover/tour:shadow-xs dark:bg-indigo-950 dark:border-indigo-500/70 dark:text-indigo-200 dark:group-hover/tour:bg-indigo-900 dark:group-hover/tour:border-indigo-400'
                 }`}
               >
-                Tua {day.tourName}
+                <span className="truncate">Tua {day.tourName}</span>
               </div>
             </div>
             <div className="space-y-1" role="list" aria-label="Danh sách bác sĩ trực">
@@ -469,20 +481,24 @@ const ScheduleDayCell: React.FC<ScheduleDayCellProps> = ({
                     aria-pressed={isSelected}
                     data-doctor-focused={hoveredDoctor === doctor ? 'true' : undefined}
                     className={`
-                                            relative pl-4 pr-1.5 py-1 rounded-lg text-xs sm:text-sm cursor-pointer transition-all duration-200 border
-                                            focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1
-                                            ${getDoctorRowClass(doctor, isSelected, 'bg-white text-slate-600 hover:border-indigo-200 hover:shadow-sm dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 dark:hover:border-indigo-800')}
-                                        `}
+                      relative pl-5 pr-1.5 py-1 rounded-md text-xs sm:text-sm cursor-pointer transition-all duration-150 border
+                      focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-1
+                      ${getDoctorRowClass(
+                        doctor,
+                        isSelected,
+                        'bg-white text-slate-900 border-slate-300 hover:border-teal-500 hover:bg-teal-50/60 shadow-xs dark:bg-slate-800 dark:text-slate-100 dark:border-slate-700 dark:hover:border-teal-400 dark:hover:bg-slate-700/80',
+                      )}
+                    `}
                     title={doctorWarning?.title || doctor}
                   >
                     <span
-                      className="absolute left-1.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 dark:text-slate-500"
+                      className="absolute left-1.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500 dark:text-slate-400"
                       aria-hidden="true"
                     >
                       {docIndex + 1}
                     </span>
                     <span className="flex min-w-0 items-center gap-1">
-                      <span className="min-w-0 flex-1 truncate font-medium">{doctor}</span>
+                      <span className="min-w-0 flex-1 truncate font-semibold text-slate-900 dark:text-slate-100">{doctor}</span>
                       {doctorWarning && (
                         <span
                           className={`inline-flex shrink-0 items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-xs font-bold ${doctorWarning.badgeClass}`}

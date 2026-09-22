@@ -24,20 +24,20 @@ interface RoleAssignmentProps {
 
 const themeClasses = {
   emerald: {
-    pill: 'text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-500/15 hover:bg-emerald-200 dark:hover:bg-emerald-500/25',
-    icon: 'text-emerald-600 dark:text-emerald-400',
+    pill: 'text-emerald-950 dark:text-emerald-200 bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-600/50 hover:bg-emerald-200 dark:hover:bg-emerald-900/80',
+    icon: 'text-emerald-700 dark:text-emerald-400',
   },
   sky: {
-    pill: 'text-sky-800 dark:text-sky-300 bg-sky-100 dark:bg-sky-500/15 hover:bg-sky-200 dark:hover:bg-sky-500/25',
-    icon: 'text-sky-600 dark:text-sky-400',
+    pill: 'text-sky-950 dark:text-sky-200 bg-sky-100 dark:bg-sky-950/80 border border-sky-300 dark:border-sky-600/50 hover:bg-sky-200 dark:hover:bg-sky-900/80',
+    icon: 'text-sky-700 dark:text-sky-400',
   },
   violet: {
-    pill: 'text-violet-800 dark:text-violet-300 bg-violet-100 dark:bg-violet-500/15 hover:bg-violet-200 dark:hover:bg-violet-500/25',
-    icon: 'text-violet-600 dark:text-violet-400',
+    pill: 'text-violet-950 dark:text-violet-200 bg-violet-100 dark:bg-violet-950/80 border border-violet-300 dark:border-violet-600/50 hover:bg-violet-200 dark:hover:bg-violet-900/80',
+    icon: 'text-violet-700 dark:text-violet-400',
   },
   blue: {
-    pill: 'text-blue-800 dark:text-blue-300 bg-blue-100 dark:bg-blue-500/15 hover:bg-blue-200 dark:hover:bg-blue-500/25',
-    icon: 'text-blue-600 dark:text-blue-400',
+    pill: 'text-blue-950 dark:text-blue-200 bg-blue-100 dark:bg-blue-950/80 border border-blue-300 dark:border-blue-600/50 hover:bg-blue-200 dark:hover:bg-blue-900/80',
+    icon: 'text-blue-700 dark:text-blue-400',
   },
 };
 
@@ -251,24 +251,24 @@ const DepartmentDayCell: React.FC<DepartmentDayCellProps> = ({
     const roleThemeClasses = {
       ungTruc: {
         dot: 'bg-emerald-500',
-        bg: 'bg-emerald-50/60 dark:bg-emerald-950/20',
-        border: 'border-emerald-100 dark:border-emerald-900/40',
-        text: 'text-emerald-700 dark:text-emerald-400',
-        pill: 'text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-500/15 hover:bg-emerald-200 dark:hover:bg-emerald-500/25',
+        bg: 'bg-emerald-50/70 dark:bg-emerald-950/30',
+        border: 'border-emerald-200 dark:border-emerald-800/60',
+        text: 'text-emerald-800 dark:text-emerald-300',
+        pill: 'text-emerald-950 dark:text-emerald-200 bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-600/50 hover:bg-emerald-200 dark:hover:bg-emerald-900/80',
       },
       pkdk: {
         dot: 'bg-sky-500',
-        bg: 'bg-sky-50/60 dark:bg-sky-950/20',
-        border: 'border-sky-100 dark:border-sky-900/40',
-        text: 'text-sky-700 dark:text-sky-400',
-        pill: 'text-sky-800 dark:text-sky-300 bg-sky-100 dark:bg-sky-500/15 hover:bg-sky-200 dark:hover:bg-sky-500/25',
+        bg: 'bg-sky-50/70 dark:bg-sky-950/30',
+        border: 'border-sky-200 dark:border-sky-800/60',
+        text: 'text-sky-800 dark:text-sky-300',
+        pill: 'text-sky-950 dark:text-sky-200 bg-sky-100 dark:bg-sky-950/80 border border-sky-300 dark:border-sky-600/50 hover:bg-sky-200 dark:hover:bg-sky-900/80',
       },
       pkdv: {
         dot: 'bg-violet-500',
-        bg: 'bg-violet-50/60 dark:bg-violet-950/20',
-        border: 'border-violet-100 dark:border-violet-900/40',
-        text: 'text-violet-700 dark:text-violet-400',
-        pill: 'text-violet-800 dark:text-violet-300 bg-violet-100 dark:bg-violet-500/15 hover:bg-violet-200 dark:hover:bg-violet-500/25',
+        bg: 'bg-violet-50/70 dark:bg-violet-950/30',
+        border: 'border-violet-200 dark:border-violet-800/60',
+        text: 'text-violet-800 dark:text-violet-300',
+        pill: 'text-violet-950 dark:text-violet-200 bg-violet-100 dark:bg-violet-950/80 border border-violet-300 dark:border-violet-600/50 hover:bg-violet-200 dark:hover:bg-violet-900/80',
       },
     };
 
@@ -296,11 +296,11 @@ const DepartmentDayCell: React.FC<DepartmentDayCellProps> = ({
         {/* Top Header Row of Day Card */}
         <div className="flex items-center justify-between mb-2">
           {isHoliday ? (
-            <span className="text-xs px-1.5 py-0.5 bg-rose-100 dark:bg-rose-900/50 text-rose-600 dark:text-rose-400 rounded-full font-bold">
+            <span className="text-xs px-1.5 py-0.5 bg-rose-50 dark:bg-rose-950/80 border border-rose-200 dark:border-rose-500/50 text-rose-950 dark:text-rose-200 rounded-full font-bold">
               🎊 Lễ
             </span>
           ) : day.isWeekend ? (
-            <span className="text-xs px-1.5 py-0.5 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-full font-semibold">
+            <span className="text-xs px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-950/80 border border-indigo-200 dark:border-indigo-500/50 text-indigo-950 dark:text-indigo-200 rounded-full font-semibold">
               T7/CN
             </span>
           ) : (
@@ -309,7 +309,7 @@ const DepartmentDayCell: React.FC<DepartmentDayCellProps> = ({
           <span
             className={`
               text-xs sm:text-sm font-bold h-6 w-6 flex items-center justify-center rounded-full
-              ${day.isToday ? 'bg-blue-500 text-white' : 'text-slate-700 dark:text-slate-300'}
+              ${day.isToday ? 'bg-blue-600 text-white shadow-xs dark:bg-blue-500' : 'text-slate-900 dark:text-slate-100'}
             `}
           >
             {day.date.getDate()}
@@ -442,15 +442,15 @@ const DepartmentDayCell: React.FC<DepartmentDayCellProps> = ({
     >
       {/* Holiday indicator */}
       {isHoliday && (
-        <span className="absolute top-1.5 left-1.5 text-xs px-1.5 py-0.5 bg-rose-100 dark:bg-rose-900/50 text-rose-600 dark:text-rose-400 rounded-full font-medium">
+        <span className="absolute top-1.5 left-1.5 text-xs px-1.5 py-0.5 bg-rose-50 dark:bg-rose-950/80 border border-rose-200 dark:border-rose-500/50 text-rose-950 dark:text-rose-200 rounded-full font-bold">
           🎊 Lễ
         </span>
       )}
       <span
         className={`
-                absolute top-1.5 right-1.5 text-xs sm:text-sm font-semibold transition-colors
-                ${day.isCurrentMonth ? 'text-slate-700 dark:text-slate-300' : 'text-slate-400 dark:text-slate-500'}
-                ${day.isToday ? 'bg-blue-500 text-white rounded-full h-6 w-6 flex items-center justify-center' : ''}
+                absolute top-1.5 right-1.5 text-xs sm:text-sm font-bold transition-colors
+                ${day.isCurrentMonth ? 'text-slate-900 dark:text-slate-100' : 'text-slate-400 dark:text-slate-500'}
+                ${day.isToday ? 'bg-blue-600 text-white rounded-full h-6 w-6 flex items-center justify-center font-extrabold shadow-xs dark:bg-blue-500' : ''}
             `}
       >
         {day.date.getDate()}
@@ -461,8 +461,8 @@ const DepartmentDayCell: React.FC<DepartmentDayCellProps> = ({
           <>
             {onCallDoctors && (
               <div>
-                <h5 className="font-bold text-slate-600 dark:text-slate-500 mb-1">Trực chính</h5>
-                <ul className="space-y-0.5 text-slate-600 dark:text-slate-400 pl-2">
+                <h5 className="font-bold text-slate-800 dark:text-slate-200 mb-1">Trực chính</h5>
+                <ul className="space-y-0.5 text-slate-900 dark:text-slate-100 pl-2 font-medium">
                   {onCallDoctors.map((doctor, docIndex) => (
                     <li
                       key={docIndex}
