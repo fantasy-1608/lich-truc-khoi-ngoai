@@ -7,20 +7,37 @@
         "doc-b",
         "doc-1781843100155-5r2bs6309",
         "doc-c",
-        "doc-1787216413445-h2sfvj7vw"
+        "doc-1781172266465-lduj3exl6"
       ]
     },
     {
       "id": "tour-2",
-      "doctorIds": ["doc-e", "doc-g", "doc-k", "doc-h", "doc-1781172266465-lduj3exl6"]
+      "doctorIds": [
+        "doc-e",
+        "doc-g",
+        "doc-k",
+        "doc-h",
+        "doc-1787216413445-h2sfvj7vw"
+      ]
     },
     {
       "id": "tour-3",
-      "doctorIds": ["doc-i", "doc-r", "doc-l", "doc-1767858780052-bp6s6jxwf"]
+      "doctorIds": [
+        "doc-i",
+        "doc-r",
+        "doc-l",
+        "doc-1767858780052-bp6s6jxwf"
+      ]
     },
     {
       "id": "tour-4",
-      "doctorIds": ["doc-m", "doc-a", "doc-1779073461104-0vvbsx882", "doc-p"]
+      "doctorIds": [
+        "doc-m",
+        "doc-a",
+        "doc-1779073461104-0vvbsx882",
+        "doc-p",
+        "doc-1787216422492-w2vhc2pmt"
+      ]
     }
   ],
   "doctors": [
@@ -135,9 +152,187 @@
       "isCtch": true
     }
   ],
-  "showPkdv": true,
-  "lastSaved": "2026-09-16T09:41:48.341Z",
-  "tourOrder": ["tour-3", "tour-4", "tour-1", "tour-2"],
+  "showPkdv": false,
+  "lastSaved": "2026-10-08T01:26:07.957Z",
+  "tourOrder": [
+    "tour-2",
+    "tour-4",
+    "tour-1",
+    "tour-3"
+  ],
+  "rotationConfig": {
+    "baseline": {
+      "tours": [
+        {
+          "id": "tour-1",
+          "doctorIds": [
+            "doc-1781172218764-4na7bmnak",
+            "doc-b",
+            "doc-1781843100155-5r2bs6309",
+            "doc-c",
+            "doc-1781172266465-lduj3exl6"
+          ]
+        },
+        {
+          "id": "tour-2",
+          "doctorIds": [
+            "doc-e",
+            "doc-g",
+            "doc-k",
+            "doc-h",
+            "doc-1787216413445-h2sfvj7vw"
+          ]
+        },
+        {
+          "id": "tour-3",
+          "doctorIds": [
+            "doc-i",
+            "doc-r",
+            "doc-l",
+            "doc-1767858780052-bp6s6jxwf"
+          ]
+        },
+        {
+          "id": "tour-4",
+          "doctorIds": [
+            "doc-m",
+            "doc-a",
+            "doc-1779073461104-0vvbsx882",
+            "doc-p",
+            "doc-1787216422492-w2vhc2pmt"
+          ]
+        }
+      ],
+      "doctors": [
+        {
+          "id": "doc-a",
+          "name": "Bs. Anh",
+          "isCtch": true
+        },
+        {
+          "id": "doc-b",
+          "name": "Bs. Luận",
+          "isCtch": false
+        },
+        {
+          "id": "doc-c",
+          "name": "Bs. Cảnh",
+          "isCtch": false
+        },
+        {
+          "id": "doc-e",
+          "name": "Bs. Tòng",
+          "isCtch": false
+        },
+        {
+          "id": "doc-f",
+          "name": "Bs. Loan",
+          "isCtch": false
+        },
+        {
+          "id": "doc-g",
+          "name": "Bs. Đức",
+          "isCtch": true
+        },
+        {
+          "id": "doc-h",
+          "name": "Bs. Kiệt",
+          "isCtch": false
+        },
+        {
+          "id": "doc-i",
+          "name": "Bs. Tiến",
+          "isCtch": false
+        },
+        {
+          "id": "doc-k",
+          "name": "Bs. Tôn",
+          "isCtch": true
+        },
+        {
+          "id": "doc-l",
+          "name": "Bs. Hiển",
+          "isCtch": false
+        },
+        {
+          "id": "doc-m",
+          "name": "Bs. Tuấn",
+          "isCtch": false
+        },
+        {
+          "id": "doc-p",
+          "name": "Bs. An",
+          "isCtch": false
+        },
+        {
+          "id": "doc-r",
+          "name": "Bs. Tân",
+          "isCtch": true
+        },
+        {
+          "id": "doc-1767400272875-fk6vmv74o",
+          "name": "Bs. Phúc",
+          "isCtch": false
+        },
+        {
+          "id": "doc-1767858780052-bp6s6jxwf",
+          "name": "Bs. Minh",
+          "isCtch": false
+        },
+        {
+          "id": "doc-1776647930212-7kuesf0tx",
+          "name": "Bs. Hiền",
+          "isCtch": true
+        },
+        {
+          "id": "doc-1779073461104-0vvbsx882",
+          "name": "Bs. Dung",
+          "isCtch": true
+        },
+        {
+          "id": "doc-1781172218764-4na7bmnak",
+          "name": "Bs. Thuận",
+          "isCtch": true
+        },
+        {
+          "id": "doc-1781172266465-lduj3exl6",
+          "name": "Bs. Tín",
+          "isCtch": true
+        },
+        {
+          "id": "doc-1781843100155-5r2bs6309",
+          "name": "Bs. Đạt",
+          "isCtch": true
+        },
+        {
+          "id": "doc-1787216413445-h2sfvj7vw",
+          "name": "Bs. Minh (CTCH)",
+          "isCtch": true
+        },
+        {
+          "id": "doc-1787216422492-w2vhc2pmt",
+          "name": "Bs. Hảo",
+          "isCtch": true
+        }
+      ],
+      "tourOrder": [
+        "tour-2",
+        "tour-4",
+        "tour-1",
+        "tour-3"
+      ],
+      "holidaySchedule": {
+        "endDate": null,
+        "startDate": null,
+        "holidayTourId": "reinforcement",
+        "doctorOverrides": {},
+        "holidayInsertionIndex": 1
+      },
+      "rotationStartDate": "2026-11-04"
+    },
+    "versions": [],
+    "baselineEffectiveDate": "2026-11-01"
+  },
   "holidaySchedule": {
     "endDate": null,
     "startDate": null,
@@ -145,6 +340,6 @@
     "doctorOverrides": {},
     "holidayInsertionIndex": 1
   },
-  "rotationStartDate": "2026-08-04",
+  "rotationStartDate": "2026-11-04",
   "showAddDoctorShortcut": true
 }

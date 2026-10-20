@@ -142,7 +142,7 @@ const DepartmentDayCell: React.FC<DepartmentDayCellProps> = ({
     if (hoveredDoctor === doc) {
       return 'bg-blue-600 text-white dark:bg-blue-500 border-blue-600 shadow-md transition-all duration-200 ring-2 ring-blue-500/30';
     }
-    return 'opacity-20 filter blur-[0.2px] transition-all duration-300 pointer-events-none';
+    return 'opacity-20 transition-opacity duration-200 pointer-events-none';
   };
   const isList = variant === 'list';
   const formattedDate = day.date.toLocaleDateString('vi-VN', {
@@ -283,13 +283,13 @@ const DepartmentDayCell: React.FC<DepartmentDayCellProps> = ({
     return (
       <div
         className={`
-          relative p-3 rounded-xl border transition-all duration-300 transform flex flex-col justify-between min-h-[220px]
+          relative p-3 rounded-xl border transition-all duration-200 flex flex-col justify-between min-h-[220px]
           ${day.isCurrentMonth ? 'bg-white dark:bg-slate-800' : 'bg-slate-50 dark:bg-slate-900/50'}
           ${day.isWeekend && day.isCurrentMonth ? 'bg-indigo-50/40 dark:bg-indigo-900/10' : ''}
           ${day.isToday ? 'border-2 border-blue-500 shadow-md ring-1 ring-blue-500/30' : 'border-slate-200 dark:border-slate-700'}
           ${isHoliday ? 'ring-2 ring-rose-400 ring-offset-1' : ''}
-          ${isDoctorActiveHere ? 'border-blue-400 dark:border-blue-500 shadow-xl scale-[1.03] z-10 bg-blue-50/30 dark:bg-blue-950/15 ring-4 ring-blue-500/10' : ''}
-          ${hoveredDoctor && !isDoctorActiveHere ? 'opacity-40 scale-[0.98]' : ''}
+          ${isDoctorActiveHere ? 'border-blue-400 dark:border-blue-500 shadow-lg z-10 bg-blue-50/30 dark:bg-blue-950/15 ring-2 ring-blue-500/20' : ''}
+          ${hoveredDoctor && !isDoctorActiveHere ? 'opacity-40' : ''}
         `}
         id={`department-day-${getDateString(day.date)}`}
       >
@@ -429,14 +429,13 @@ const DepartmentDayCell: React.FC<DepartmentDayCellProps> = ({
   return (
     <div
       className={`
-                relative p-2 rounded-lg border transition-all duration-300 transform
-                hover:shadow-lg hover:scale-[1.02] hover:z-10
+                relative p-2 rounded-lg border transition-all duration-200
                 ${day.isCurrentMonth ? 'bg-white dark:bg-slate-800' : 'bg-slate-50 dark:bg-slate-900/50'}
                 ${day.isWeekend && day.isCurrentMonth ? 'bg-indigo-50/70 dark:bg-indigo-900/20' : ''}
                 ${day.isToday ? 'border-2 border-blue-500' : 'border-slate-200 dark:border-slate-700'}
                 ${isHoliday ? 'ring-2 ring-rose-400 ring-offset-1' : ''}
-                ${isDoctorActiveHere ? 'border-blue-400 dark:border-blue-500 shadow-md bg-blue-50/30 dark:bg-blue-950/15 scale-[1.01] z-10' : ''}
-                ${hoveredDoctor && !isDoctorActiveHere ? 'opacity-40 scale-[0.98]' : ''}
+                ${isDoctorActiveHere ? 'border-blue-400 dark:border-blue-500 shadow-md bg-blue-50/30 dark:bg-blue-950/15 z-10' : ''}
+                ${hoveredDoctor && !isDoctorActiveHere ? 'opacity-40' : ''}
             `}
       id={`department-day-${getDateString(day.date)}`}
     >

@@ -43,6 +43,7 @@ interface ScheduleViewProps {
   doctorsById: Record<string, Doctor>;
   toursById: Record<string, Tour>;
   getDoctorsForDate: (date: Date) => string[] | undefined;
+  getTourNameForDate?: (date: Date) => string | undefined;
   rotationStartDate: string | null;
   onSwapTours: (date1: Date, date2: Date) => void;
   onSwapDoctors: (
@@ -125,6 +126,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
     doctorsById,
     toursById,
     getDoctorsForDate,
+    getTourNameForDate,
     rotationStartDate,
     onViewDateChange,
     holidaySchedule,
@@ -190,17 +192,25 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
 
   const scheduleShellRef = useRef<HTMLDivElement>(null);
   const calendarRef = useRef<HTMLDivElement>(null);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
 
   const handlePrevMonth = () => {
+    setSlideDirection('right');
     const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
     setCurrentDate(newDate);
     onViewDateChange?.(newDate);
   };
 
   const handleNextMonth = () => {
+    setSlideDirection('left');
     const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
     setCurrentDate(newDate);
     onViewDateChange?.(newDate);
+  };
+
+  const handleAnimationEnd = () => {
+    setSlideDirection(null);
   };
 
   const calendarGrid = useCalendarGrid(
@@ -213,6 +223,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
     getDoctorsForDate,
     rotationStartDate,
     scheduleSnapshots,
+    getTourNameForDate,
   );
 
   const doctorNamesInMonth = useMemo(
@@ -498,6 +509,54 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
     }, 150);
   };
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if ((e.target as HTMLElement)?.closest?.('[role="tablist"]')) {
+      touchStartRef.current = null;
+      return;
+    }
+    if (e.touches.length === 1) {
+      touchStartRef.current = {
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY,
+      };
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!touchStartRef.current || e.changedTouches.length === 0) return;
+    const deltaX = e.changedTouches[0].clientX - touchStartRef.current.x;
+    const deltaY = e.changedTouches[0].clientY - touchStartRef.current.y;
+    touchStartRef.current = null;
+
+    if (Math.abs(deltaX) > 45 && Math.abs(deltaX) > Math.abs(deltaY) * 1.5) {
+      if (deltaX < 0) {
+        if (isCompactSchedule) {
+          const currentWeekIdx = mobileWeekGroups.findIndex((w) => w.id === selectedMobileWeek?.id);
+          if (currentWeekIdx >= 0 && currentWeekIdx < mobileWeekGroups.length - 1) {
+            setSlideDirection('left');
+            selectMobileWeek(mobileWeekGroups[currentWeekIdx + 1]);
+          } else {
+            handleNextMonth();
+          }
+        } else {
+          handleNextMonth();
+        }
+      } else {
+        if (isCompactSchedule) {
+          const currentWeekIdx = mobileWeekGroups.findIndex((w) => w.id === selectedMobileWeek?.id);
+          if (currentWeekIdx > 0) {
+            setSlideDirection('right');
+            selectMobileWeek(mobileWeekGroups[currentWeekIdx - 1]);
+          } else {
+            handlePrevMonth();
+          }
+        } else {
+          handlePrevMonth();
+        }
+      }
+    }
+  };
+
   return (
     <>
       <div ref={scheduleShellRef} data-compact={isCompactSchedule} className="schedule-shell">
@@ -522,7 +581,12 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
         />
 
         <div className={`schedule-workspace ${isCompactSchedule ? 'hidden' : 'grid'}`}>
-          <div ref={calendarRef} className="schedule-desktop overflow-x-auto">
+          <div
+            ref={calendarRef}
+            className="schedule-desktop overflow-x-auto"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          >
             <div className="min-w-[980px] xl:min-w-0">
               <div className="weekday-row grid grid-cols-7">
                 {weekDays.map((day, index) => {
@@ -540,7 +604,16 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
                 })}
               </div>
 
-              <div className="calendar-month-grid grid grid-cols-7">
+              <div
+                className={`calendar-month-grid grid grid-cols-7 ${
+                  slideDirection === 'left'
+                    ? 'spatial-slide-left'
+                    : slideDirection === 'right'
+                      ? 'spatial-slide-right'
+                      : ''
+                }`}
+                onAnimationEnd={handleAnimationEnd}
+              >
                 {calendarGrid.map((day, index) => (
                   <ScheduleDayCell
                     key={index}
@@ -674,6 +747,8 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
 
         <div
           className={`schedule-compact ${isCompactSchedule ? 'block' : 'hidden'} mt-3 space-y-3`}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
         >
           {shouldShowMobileEditNotice && (
             <div className="flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-amber-800 dark:border-amber-800/70 dark:bg-amber-900/20 dark:text-amber-200">
@@ -733,7 +808,16 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
           </div>
 
           {selectedMobileWeek && (
-            <div className="flex gap-1.5 rounded-2xl border border-slate-200/80 bg-slate-50/80 p-2 dark:border-slate-700/70 dark:bg-slate-800/60">
+            <div
+              className={`flex gap-1.5 rounded-2xl border border-slate-200/80 bg-slate-50/80 p-2 dark:border-slate-700/70 dark:bg-slate-800/60 ${
+                slideDirection === 'left'
+                  ? 'spatial-slide-left'
+                  : slideDirection === 'right'
+                    ? 'spatial-slide-right'
+                    : ''
+              }`}
+              onAnimationEnd={handleAnimationEnd}
+            >
               {selectedMobileWeek.days.map((day) => {
                 const dateString = getDateString(day.date);
                 const isSelected =
@@ -900,7 +984,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
                     isHoveredDoctor
                       ? 'border-blue-600 bg-blue-600 text-white shadow-md ring-2 ring-inset ring-blue-500/30 dark:border-blue-500 dark:bg-blue-500'
                       : hoveredDoctor
-                        ? 'border-slate-100 text-slate-700 opacity-20 blur-[0.2px] dark:border-slate-700 dark:text-slate-200'
+                        ? 'border-slate-100 text-slate-700 opacity-20 dark:border-slate-700 dark:text-slate-200'
                         : isSelected
                           ? 'border-green-100 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-900/20 dark:text-green-300'
                           : hasDoctorPostDutyWarning

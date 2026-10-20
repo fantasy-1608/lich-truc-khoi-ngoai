@@ -8,9 +8,20 @@ import {
   ImportData,
   HolidayScheduleData,
   ScheduleSnapshotEntry,
+  RotationConfig,
+  RotationVersion,
+  RotationRoster,
 } from '../types';
 import { INITIAL_DOCTORS, INITIAL_TOURS, INITIAL_TOUR_ORDER } from '../components/data';
 import { START_DATE } from '../constants';
+import {
+  dateKey,
+  resolveDay,
+  rosterAt,
+  earliestRotationDate,
+  validateRoster,
+  previewRotation,
+} from '../utils/rotation';
 import {
   ScheduleConflictError,
   ScheduleBaseStorageData,
@@ -22,6 +33,7 @@ import {
   subscribeToScheduleChanges,
   loadCachedBaseData,
   loadCachedMonthData,
+  appendRotationVersion,
 } from '../services/scheduleStorage';
 
 // Helper to get date string in YYYY-MM-DD format using local time components
@@ -30,11 +42,6 @@ const getDateString = (date: Date): string => {
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
-};
-
-const parseLocalDateString = (dateString: string): Date => {
-  const [year, month, day] = dateString.split('-').map(Number);
-  return new Date(year, month - 1, day);
 };
 
 const getMonthKeyFromDateString = (dateString: string): string =>
@@ -68,6 +75,7 @@ interface ScheduleData {
   departmentAssignments: Record<string, Partial<DepartmentAssignments>>;
   holidaySchedule: HolidayScheduleData;
   rotationStartDate: string | null; // New field
+  rotationConfig?: RotationConfig;
   lastSaved: string | null;
 }
 
@@ -122,6 +130,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
   const [rotationStartDate, setRotationStartDate] = useState<string | null>(
     DEFAULT_DATA.rotationStartDate,
   );
+  const [rotationConfig, setRotationConfig] = useState<RotationConfig | undefined>();
   const [isLoaded, setIsLoaded] = useState(false);
   const [currentViewDate, setCurrentViewDate] = useState<Date>(getNextMonthDate());
   const loadedMonthsRef = useRef<Set<string>>(new Set());
@@ -172,6 +181,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
 
   const applyBaseData = useCallback((data: ScheduleBaseStorageData | null) => {
     if (!data) return;
+    setRotationConfig(data.rotationConfig);
     if (Array.isArray(data.doctors) && data.doctors.length > 0) setDoctors(data.doctors);
     if (Array.isArray(data.tours) && data.tours.length > 0) setTours(data.tours);
     if (Array.isArray(data.tourOrder) && data.tourOrder.length > 0) {
@@ -270,10 +280,9 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
             const record = await loadMonthScheduleData(filename);
             monthUpdatedAtRef.current[filename] = record.updatedAt;
             applyMonthData(filename, record.data);
-          } catch {
-            // File might not exist yet, that's fine
-          } finally {
             loadedMonthsRef.current.add(filename);
+          } catch {
+            onErrorRef.current?.('Không tải được dữ liệu tháng. Hãy tải lại trước khi chỉnh sửa.');
           }
         }),
       );
@@ -364,6 +373,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
       showAddDoctorShortcut,
       holidaySchedule,
       rotationStartDate,
+      rotationConfig,
       lastSaved: new Date().toISOString(),
     };
 
@@ -455,6 +465,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
     holidaySchedule,
     rotationStartDate,
     currentViewDate,
+    rotationConfig,
   ]);
 
   // Auto-save logic remains similar
@@ -500,206 +511,93 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
     saveData,
   ]);
 
-  const doctorsById = useMemo(
-    () =>
-      doctors.reduce(
-        (acc, doc) => {
-          acc[doc.id] = doc;
-          return acc;
-        },
-        {} as Record<string, Doctor>,
-      ),
-    [doctors],
+  const baseRoster: RotationRoster = useMemo(
+    () => ({ doctors, tours, tourOrder, rotationStartDate, holidaySchedule }),
+    [doctors, tours, tourOrder, rotationStartDate, holidaySchedule],
   );
-  const toursById = useMemo(
-    () =>
-      tours.reduce(
-        (acc, tour) => {
-          acc[tour.id] = tour;
-          return acc;
-        },
-        {} as Record<string, Tour>,
-      ),
-    [tours],
+  const activeRotationConfig = useMemo(
+    () => rotationConfig ?? { baseline: baseRoster, versions: [] },
+    [rotationConfig, baseRoster],
   );
-
   const getDoctorsForDate = useCallback(
     (date: Date): string[] | undefined => {
-      // Helper to get YYYY-MM-DD in local time
-      const dateString = getDateString(date);
-
-      // 1. Priority: Manual Doctor Override (Global)
-      if (doctorOverrides[dateString]) {
-        return doctorOverrides[dateString];
-      }
-
-      // 2. Priority: Holiday Doctor Override
-      if (holidaySchedule.doctorOverrides[dateString]) {
-        return holidaySchedule.doctorOverrides[dateString];
-      }
-
-      // 3. Priority: Manual Tour Override (Global)
-      if (tourOverrides[dateString]) {
-        const tourId = tourOverrides[dateString];
-        const tour = tourId ? toursById[tourId] : undefined;
-        return tour?.doctorIds.map((id) => doctorsById[id]?.name).filter(Boolean) as string[];
-      }
-
-      // 4. Priority: Frozen monthly snapshot
-      if (scheduleSnapshots[dateString]) {
-        return scheduleSnapshots[dateString].doctors;
-      }
-
-      // Define effective start date for calculations
-      // If date is before rotationStartDate, fall back to START_DATE
-      const rotationStartDateParsed = rotationStartDate
-        ? parseLocalDateString(rotationStartDate)
-        : START_DATE;
-      const startDateRaw = date < rotationStartDateParsed ? START_DATE : rotationStartDateParsed;
-      const startDate = new Date(
-        startDateRaw.getFullYear(),
-        startDateRaw.getMonth(),
-        startDateRaw.getDate(),
-      );
-
-      // Check for Holiday Schedule
-      const holidayStart = holidaySchedule.startDate
-        ? parseLocalDateString(holidaySchedule.startDate)
-        : null;
-      const holidayEnd = holidaySchedule.endDate
-        ? parseLocalDateString(holidaySchedule.endDate)
-        : null;
-      const holidayTourId = holidaySchedule.holidayTourId;
-
-      if (holidayStart && holidayEnd && holidayTourId) {
-        holidayStart.setHours(0, 0, 0, 0);
-        holidayEnd.setHours(0, 0, 0, 0);
-        const currentDate = new Date(date);
-        currentDate.setHours(0, 0, 0, 0);
-
-        // CASE 1: Before Holiday -> Standard 4-tour logic
-        if (currentDate < holidayStart) {
-          const diffTime = currentDate.getTime() - startDate.getTime();
-          if (diffTime >= 0) {
-            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-            const tourIndex = diffDays % tourOrder.length;
-            const tourId = tourOrder[tourIndex];
-            return toursById[tourId]?.doctorIds
-              .map((id) => doctorsById[id]?.name)
-              .filter(Boolean) as string[];
-          }
-        }
-
-        // Create the 5-tour list with custom insertion
-        const rawInsertionIndex =
-          holidaySchedule.holidayInsertionIndex !== undefined
-            ? holidaySchedule.holidayInsertionIndex
-            : tourOrder.length; // Default to end
-        const insertionIndex = Math.max(0, Math.min(rawInsertionIndex, tourOrder.length));
-
-        const holidayTourOrder = [...tourOrder];
-        holidayTourOrder.splice(insertionIndex, 0, holidayTourId);
-
-        // CASE 2: During Holiday -> 5-tour logic (Standard Tours + Holiday Tour)
-        if (currentDate >= holidayStart && currentDate <= holidayEnd) {
-          // Calculate the last tour index before holiday started
-          const diffTimePre = holidayStart.getTime() - startDate.getTime();
-          const diffDaysPre = Math.floor(diffTimePre / (1000 * 60 * 60 * 24));
-
-          // Calculate displacement into the holiday
-          const diffTimeInHoliday = currentDate.getTime() - holidayStart.getTime();
-          const diffDaysInHoliday = Math.floor(diffTimeInHoliday / (1000 * 60 * 60 * 24));
-
-          const standardStartIndex = diffDaysPre % tourOrder.length;
-          const standardTourId = tourOrder[standardStartIndex];
-
-          // Find where this standard tour is in the new 5-tour order
-          // This ensures we start counting from the correct "logical" tour
-          const adjustedStartIndex = holidayTourOrder.indexOf(standardTourId);
-
-          // Current index in 5-tour rotation
-          const currentIndex = (adjustedStartIndex + diffDaysInHoliday) % holidayTourOrder.length;
-          const tourId = holidayTourOrder[currentIndex];
-
-          if (tourId === 'reinforcement') return []; // Reinforcement tour is empty
-
-          return toursById[tourId]?.doctorIds
-            .map((id) => doctorsById[id]?.name)
-            .filter(Boolean) as string[];
-        }
-
-        // CASE 3: After Holiday -> Return to 4-tour logic
-        if (currentDate > holidayEnd) {
-          const diffTimePre = holidayStart.getTime() - startDate.getTime();
-          const diffDaysPre = Math.floor(diffTimePre / (1000 * 60 * 60 * 24));
-
-          const holidayDuration =
-            Math.floor((holidayEnd.getTime() - holidayStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-
-          const standardStartIndex = diffDaysPre % tourOrder.length;
-          const standardTourId = tourOrder[standardStartIndex];
-          const adjustedStartIndex = holidayTourOrder.indexOf(standardTourId);
-
-          // Index of the LAST day of holiday in the 5-tour cycle
-          const lastHolidayIndex =
-            (adjustedStartIndex + holidayDuration - 1) % holidayTourOrder.length;
-          // lastHolidayTourId removed as it was unused
-
-          // We need to find the "logical next" tour in the standard 4-tour cycle.
-          const nextIndex5 = (lastHolidayIndex + 1) % holidayTourOrder.length;
-          const nextTourId5 = holidayTourOrder[nextIndex5];
-
-          let nextStandardIndex = -1;
-
-          if (nextTourId5 === holidayTourId) {
-            // If next is the holiday tour, skip it and take the one after
-            const nextNextIndex5 = (nextIndex5 + 1) % holidayTourOrder.length;
-            nextStandardIndex = tourOrder.indexOf(holidayTourOrder[nextNextIndex5]);
-          } else {
-            nextStandardIndex = tourOrder.indexOf(nextTourId5);
-          }
-
-          // Fallback: if tour not found, start from beginning
-          if (nextStandardIndex === -1) {
-            nextStandardIndex = 0;
-          }
-
-          const daysSinceHolidayEnd = Math.floor(
-            (currentDate.getTime() - holidayEnd.getTime()) / (1000 * 60 * 60 * 24),
-          ); // 1 for first day
-
-          const effectiveIndex = (nextStandardIndex + (daysSinceHolidayEnd - 1)) % tourOrder.length;
-          const tourId = tourOrder[effectiveIndex];
-          return toursById[tourId]?.doctorIds
-            .map((id) => doctorsById[id]?.name)
-            .filter(Boolean) as string[];
-        }
-      }
-
-      // Default Standard Logic (Fallback if no holiday configured)
-      const diffTime = date.getTime() - startDate.getTime();
-
-      if (diffTime >= 0) {
-        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-        const tourIndex = diffDays % tourOrder.length;
-        const tourId = tourOrder[tourIndex];
-        return toursById[tourId]?.doctorIds
-          .map((id) => doctorsById[id]?.name)
-          .filter(Boolean) as string[];
-      }
-
-      return undefined;
+      const key = dateKey(date);
+      const today = new Date();
+      const historical = date < new Date(today.getFullYear(), today.getMonth(), 1);
+      if (
+        historical &&
+        !(
+          activeRotationConfig.baselineEffectiveDate &&
+          key >= activeRotationConfig.baselineEffectiveDate
+        ) &&
+        !scheduleSnapshots[key] &&
+        !doctorOverrides[key] &&
+        !activeRotationConfig.baseline.holidaySchedule.doctorOverrides[key]
+      )
+        return undefined;
+      const resolved = resolveDay(key, activeRotationConfig, {
+        doctorOverrides,
+        tourOverrides,
+        scheduleSnapshots,
+      });
+      return resolved.doctors.length ? resolved.doctors : undefined;
     },
-    [
-      tourOrder,
-      toursById,
-      doctorsById,
-      doctorOverrides,
-      tourOverrides,
-      scheduleSnapshots,
-      holidaySchedule,
-      rotationStartDate,
-    ],
+    [activeRotationConfig, doctorOverrides, tourOverrides, scheduleSnapshots],
+  );
+
+  const getTourNameForDate = useCallback(
+    (date: Date) =>
+      getDoctorsForDate(date)
+        ? resolveDay(dateKey(date), activeRotationConfig, {
+            doctorOverrides,
+            tourOverrides,
+            scheduleSnapshots,
+          }).tourName
+        : undefined,
+    [getDoctorsForDate, activeRotationConfig, doctorOverrides, tourOverrides, scheduleSnapshots],
+  );
+  const displayRoster = rosterAt(
+    activeRotationConfig,
+    dateKey(new Date(currentViewDate.getFullYear(), currentViewDate.getMonth() + 1, 0)),
+  );
+  const availableDoctors = displayRoster.doctors;
+  const displayDoctorsById = useMemo(
+    () => Object.fromEntries(availableDoctors.map((d) => [d.id, d])),
+    [availableDoctors],
+  );
+  const displayToursById = useMemo(
+    () => Object.fromEntries(displayRoster.tours.map((t) => [t.id, t])),
+    [displayRoster.tours],
+  );
+
+  const handleApplyRotationVersion = useCallback(
+    async (
+      version: RotationVersion,
+      expectedBase: string | null,
+      expectedMonths: Record<string, string | null>,
+      monthData: ScheduleMonthStorageData,
+    ) => {
+      if (!ensureCanWrite()) throw new Error('Hãy mở khóa chỉnh sửa trước khi áp dụng.');
+      if (baseModifiedRef.current || modifiedMonthsRef.current.size)
+        throw new Error('Có dữ liệu đang chờ lưu. Hãy đợi lưu xong rồi xem trước lại.');
+      if (version.effectiveDate < earliestRotationDate())
+        throw new Error('Không được thay cấu hình của tháng đã chốt.');
+      validateRoster(version.roster);
+      const check = previewRotation(activeRotationConfig, version, monthData);
+      if (check.warnings.some((w) => w.kind === 'consecutive') && !version.exceptionReason?.trim())
+        throw new Error('Trực hai ngày liên tiếp cần xác nhận ngoại lệ và lý do.');
+      const saved = await appendRotationVersion(
+        activeRotationConfig.baseline,
+        version,
+        expectedBase,
+        expectedMonths,
+      );
+      // The direct RPC is read back before updating the UI; no optimistic success.
+      applyBaseData(saved.data);
+      baseUpdatedAtRef.current = saved.updatedAt;
+      onSaveSuccessRef.current?.();
+    },
+    [activeRotationConfig, ensureCanWrite, applyBaseData],
   );
 
   const getUpcomingMonthStart = useCallback(() => {
@@ -726,29 +624,11 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
       }
 
       const getEffectiveTourId = (date: Date): string | undefined => {
-        const dateString = getDateString(date);
-        if (tourOverrides[dateString]) return tourOverrides[dateString];
-        if (scheduleSnapshots[dateString]?.tourId) return scheduleSnapshots[dateString].tourId;
-
-        // Parse rotationStartDate as local date (YYYY-MM-DD format)
-        let startDate: Date;
-        if (rotationStartDate) {
-          const [y, m, d] = rotationStartDate.split('-').map(Number);
-          startDate = new Date(y, m - 1, d);
-        } else {
-          startDate = START_DATE;
-        }
-        startDate.setHours(0, 0, 0, 0);
-
-        const checkDate = new Date(date);
-        checkDate.setHours(0, 0, 0, 0);
-
-        const diffTime = checkDate.getTime() - startDate.getTime();
-        if (diffTime >= 0) {
-          const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-          return tourOrder[diffDays % tourOrder.length];
-        }
-        return undefined;
+        return resolveDay(dateKey(date), activeRotationConfig, {
+          tourOverrides,
+          doctorOverrides,
+          scheduleSnapshots,
+        }).tourId;
       };
 
       const date1Str = getDateString(date1);
@@ -762,13 +642,27 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
 
       markMonthModified(date1Str);
       markMonthModified(date2Str);
-      setTourOverrides((current) => ({ ...current, [date1Str]: tourId2, [date2Str]: tourId1 }));
+      const first = resolveDay(date1Str, activeRotationConfig, {
+        tourOverrides,
+        doctorOverrides,
+        scheduleSnapshots,
+      });
+      const second = resolveDay(date2Str, activeRotationConfig, {
+        tourOverrides,
+        doctorOverrides,
+        scheduleSnapshots,
+      });
+      setScheduleSnapshots((current) => ({
+        ...current,
+        [date1Str]: { doctors: second.doctors, tourId: second.tourId, tourName: second.tourName },
+        [date2Str]: { doctors: first.doctors, tourId: first.tourId, tourName: first.tourName },
+      }));
     },
     [
       tourOverrides,
+      doctorOverrides,
       scheduleSnapshots,
-      tourOrder,
-      rotationStartDate,
+      activeRotationConfig,
       ensureCanWrite,
       markMonthModified,
       isDateFrozen,
@@ -874,112 +768,26 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
         delete next[dateStr];
         return next;
       });
+      setScheduleSnapshots((current) => {
+        const next = { ...current };
+        delete next[dateStr];
+        return next;
+      });
     },
     [ensureCanWrite, markMonthModified, isDateFrozen],
   );
 
-  const getStandardTourIdForDate = useCallback(
-    (date: Date): string | undefined => {
-      const startDate = rotationStartDate
-        ? parseLocalDateString(rotationStartDate)
-        : new Date(START_DATE);
-      startDate.setHours(0, 0, 0, 0);
-
-      const checkDate = new Date(date);
-      checkDate.setHours(0, 0, 0, 0);
-
-      const diffTime = checkDate.getTime() - startDate.getTime();
-      if (diffTime < 0 || tourOrder.length === 0) return undefined;
-
-      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-      return tourOrder[diffDays % tourOrder.length];
-    },
-    [rotationStartDate, tourOrder],
-  );
-
-  const freezeScheduleBefore = useCallback(
-    (exclusiveEndDate: Date) => {
-      const startDate = rotationStartDate
-        ? parseLocalDateString(rotationStartDate)
-        : new Date(START_DATE);
-      startDate.setHours(0, 0, 0, 0);
-
-      const boundaryDate = new Date(
-        exclusiveEndDate.getFullYear(),
-        exclusiveEndDate.getMonth(),
-        exclusiveEndDate.getDate(),
-      );
-      boundaryDate.setHours(0, 0, 0, 0);
-
-      if (boundaryDate <= startDate) return;
-
-      const snapshotsToAdd: Record<string, ScheduleSnapshotEntry> = {};
-      const iterDate = new Date(startDate);
-
-      while (iterDate < boundaryDate) {
-        const dateStr = getDateString(iterDate);
-
-        if (!scheduleSnapshots[dateStr]) {
-          const doctorsForDate = getDoctorsForDate(iterDate);
-          if (doctorsForDate && doctorsForDate.length > 0) {
-            const tourId = tourOverrides[dateStr] || getStandardTourIdForDate(iterDate);
-            snapshotsToAdd[dateStr] = {
-              doctors: doctorsForDate,
-              tourId,
-              tourName: doctorsForDate[0],
-            };
-          }
-        }
-
-        iterDate.setDate(iterDate.getDate() + 1);
-      }
-
-      if (Object.keys(snapshotsToAdd).length > 0) {
-        markMonthsModifiedFromRecord(snapshotsToAdd);
-        setScheduleSnapshots((current) => ({ ...current, ...snapshotsToAdd }));
-      }
-    },
-    [
-      rotationStartDate,
-      scheduleSnapshots,
-      tourOverrides,
-      getDoctorsForDate,
-      getStandardTourIdForDate,
-      markMonthsModifiedFromRecord,
-    ],
-  );
-
   const handleUpdateDoctorInTour = useCallback(
-    (tourId: string, doctorIndex: number, newDoctorId: string) => {
-      if (!ensureCanWrite()) return;
-
-      freezeScheduleBefore(getUpcomingMonthStart());
-      markBaseModified();
-      setTours((current) =>
-        current.map((t) =>
-          t.id === tourId
-            ? { ...t, doctorIds: t.doctorIds.map((d, i) => (i === doctorIndex ? newDoctorId : d)) }
-            : t,
-        ),
-      );
+    (_tourId: string, _index: number, _doctorId: string) => {
+      void [_tourId, _index, _doctorId];
+      onErrorRef.current?.('Hãy dùng bản nháp cấu hình có ngày hiệu lực trong Cài đặt.');
     },
-    [ensureCanWrite, freezeScheduleBefore, getUpcomingMonthStart, markBaseModified],
+    [],
   );
-
-  const handleReorderTours = useCallback(
-    (newOrder: string[]) => {
-      if (!ensureCanWrite()) return;
-      const isSameOrder =
-        newOrder.length === tourOrder.length &&
-        newOrder.every((tourId, index) => tourId === tourOrder[index]);
-      if (isSameOrder) return;
-
-      freezeScheduleBefore(getUpcomingMonthStart());
-      markBaseModified();
-      setTourOrder(newOrder);
-    },
-    [ensureCanWrite, freezeScheduleBefore, getUpcomingMonthStart, markBaseModified, tourOrder],
-  );
+  const handleReorderTours = useCallback((_order: string[]) => {
+    void [_order];
+    onErrorRef.current?.('Hãy dùng Xoay tua định kỳ; không thay cấu hình dùng chung của lịch cũ.');
+  }, []);
   const handleTogglePkdvVisibility = useCallback(() => {
     if (!ensureCanWrite()) return;
     markBaseModified();
@@ -992,89 +800,30 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
     setShowAddDoctorShortcut((current) => !current);
   }, [ensureCanWrite, markBaseModified]);
 
-  const handleAddDoctor = useCallback(
-    (name: string, isCtch: boolean) => {
-      if (!ensureCanWrite()) return;
+  const handleAddDoctor = useCallback((_name: string, _isCtch: boolean) => {
+    void [_name, _isCtch];
+    onErrorRef.current?.('Hãy dùng bản nháp thành viên có ngày hiệu lực trong Cài đặt.');
+  }, []);
 
-      if (name.trim()) {
-        const newDoctor: Doctor = {
-          id: `doc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          name: name.trim(),
-          isCtch,
-        };
-        markBaseModified();
-        setDoctors((current) => [...current, newDoctor]);
-      }
-    },
-    [ensureCanWrite, markBaseModified],
-  );
+  const handleRemoveDoctor = useCallback((_id: string) => {
+    void [_id];
+    onErrorRef.current?.('Hãy dùng bản nháp thành viên có ngày hiệu lực trong Cài đặt.');
+  }, []);
 
-  const handleRemoveDoctor = useCallback(
-    (id: string) => {
-      if (!ensureCanWrite()) return;
+  const handleUpdateDoctor = useCallback((_id: string, _updates: Partial<Omit<Doctor, 'id'>>) => {
+    void [_id, _updates];
+    onErrorRef.current?.('Hãy dùng bản nháp thành viên có ngày hiệu lực trong Cài đặt.');
+  }, []);
 
-      markBaseModified();
-      setDoctors((current) => current.filter((d) => d.id !== id));
-      setTours((current) =>
-        current.map((t) => ({
-          ...t,
-          doctorIds: t.doctorIds.map((docId) => (docId === id ? '' : docId)),
-        })),
-      );
-    },
-    [ensureCanWrite, markBaseModified],
-  );
+  const handleAddDoctorToTour = useCallback((_tourId: string) => {
+    void [_tourId];
+    onErrorRef.current?.('Hãy dùng bản nháp thành viên có ngày hiệu lực trong Cài đặt.');
+  }, []);
 
-  const handleUpdateDoctor = useCallback(
-    (id: string, updatedDoctor: Partial<Omit<Doctor, 'id'>>) => {
-      if (!ensureCanWrite()) return;
-
-      markBaseModified();
-      setDoctors((current) =>
-        current.map((d) => {
-          if (d.id === id) {
-            const updates = { ...updatedDoctor };
-            if (updates.name !== undefined) {
-              updates.name = updates.name.trim();
-            }
-            return { ...d, ...updates };
-          }
-          return d;
-        }),
-      );
-    },
-    [ensureCanWrite, markBaseModified],
-  );
-
-  const handleAddDoctorToTour = useCallback(
-    (tourId: string) => {
-      if (!ensureCanWrite()) return;
-
-      freezeScheduleBefore(getUpcomingMonthStart());
-      markBaseModified();
-      setTours((current) =>
-        current.map((t) => (t.id === tourId ? { ...t, doctorIds: [...t.doctorIds, ''] } : t)),
-      );
-    },
-    [ensureCanWrite, freezeScheduleBefore, getUpcomingMonthStart, markBaseModified],
-  );
-
-  const handleRemoveDoctorFromTour = useCallback(
-    (tourId: string, doctorIndex: number) => {
-      if (!ensureCanWrite()) return;
-
-      freezeScheduleBefore(getUpcomingMonthStart());
-      markBaseModified();
-      setTours((current) =>
-        current.map((t) =>
-          t.id === tourId
-            ? { ...t, doctorIds: t.doctorIds.filter((_, i) => i !== doctorIndex) }
-            : t,
-        ),
-      );
-    },
-    [ensureCanWrite, freezeScheduleBefore, getUpcomingMonthStart, markBaseModified],
-  );
+  const handleRemoveDoctorFromTour = useCallback((_tourId: string, _index: number) => {
+    void [_tourId, _index];
+    onErrorRef.current?.('Hãy dùng bản nháp thành viên có ngày hiệu lực trong Cài đặt.');
+  }, []);
 
   const handleUpdateDepartmentAssignments = useCallback(
     (date: Date, role: DepartmentRole, doctors: string[]) => {
@@ -1108,6 +857,13 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
   const handleImportData = useCallback(
     (data: ImportData, onSuccess?: () => void) => {
       if (!ensureCanWrite()) return;
+
+      if (data.doctors || data.tours || data.tourOrder || data.rotationConfig) {
+        onErrorRef.current?.(
+          'Không nhập đè cấu hình tua. Hãy tạo phiên bản có ngày hiệu lực; lịch cũ được giữ nguyên.',
+        );
+        return;
+      }
 
       if (
         data.doctors ||
@@ -1221,76 +977,31 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
     [ensureCanWrite, markBaseModified],
   );
 
-  const handleSetRotationStartDate = useCallback(
-    (newDateStr: string | null) => {
-      if (!ensureCanWrite()) return;
-
-      if (!newDateStr) {
-        markBaseModified();
-        setRotationStartDate(null);
-        return;
-      }
-
-      const currentStartDateStr = rotationStartDate || START_DATE.toISOString();
-      const currentStartDate = new Date(currentStartDateStr);
-      const newStartDate = new Date(newDateStr);
-
-      // Only freeze history if we are moving the start date forward in time
-      if (newStartDate > currentStartDate) {
-        const overridesToAdd: Record<string, string> = {};
-        const iterDate = new Date(currentStartDate);
-
-        // Iterate day by day from current start date up to (but not including) the new start date
-        // Stop 1 day early to avoid freezing the "current" day of the new start date (due to key overlap)
-        const limitDate = new Date(newStartDate);
-        limitDate.setDate(limitDate.getDate() - 1);
-
-        while (iterDate < limitDate) {
-          // Construct a Local Date equivalent to match the key generation logic in getDoctorsForDate
-          // (which uses date.toISOString() on a Local Date, potentially causing a shift)
-          const localEquivalent = new Date(
-            iterDate.getFullYear(),
-            iterDate.getMonth(),
-            iterDate.getDate(),
-          );
-          const dateStr = getDateString(localEquivalent);
-
-          // If there's already an override, keep it. If not, calculate the tour.
-          if (!tourOverrides[dateStr]) {
-            // Calculate tour based on CURRENT settings
-            const diffTime = iterDate.getTime() - currentStartDate.getTime();
-            if (diffTime >= 0) {
-              const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-              const tourIndex = diffDays % tourOrder.length;
-              const tourId = tourOrder[tourIndex];
-              overridesToAdd[dateStr] = tourId;
-            }
-          }
-          // Move to next day
-          iterDate.setDate(iterDate.getDate() + 1);
-        }
-
-        // Apply overrides and update start date
-        if (Object.keys(overridesToAdd).length > 0) {
-          markMonthsModifiedFromRecord(overridesToAdd);
-          setTourOverrides((prev) => ({ ...prev, ...overridesToAdd }));
-        }
-      }
-
-      markBaseModified();
-      setRotationStartDate(newDateStr);
-    },
-    [
-      rotationStartDate,
-      tourOverrides,
-      tourOrder,
-      ensureCanWrite,
-      markBaseModified,
-      markMonthsModifiedFromRecord,
-    ],
-  );
+  const handleSetRotationStartDate = useCallback((_date: string | null) => {
+    void [_date];
+    onErrorRef.current?.('Hãy dùng bản nháp thành viên có ngày hiệu lực trong Cài đặt.');
+  }, []);
 
   return {
+    historicalCoverage: {
+      month: dateKey(currentViewDate).slice(0, 7),
+      isHistorical: currentViewDate < new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+      fixedDays:
+        activeRotationConfig.baselineEffectiveDate &&
+        dateKey(currentViewDate).slice(0, 7) >=
+          activeRotationConfig.baselineEffectiveDate.slice(0, 7)
+          ? new Date(currentViewDate.getFullYear(), currentViewDate.getMonth() + 1, 0).getDate()
+          : Object.keys({ ...scheduleSnapshots, ...doctorOverrides }).filter((k) =>
+              k.startsWith(dateKey(currentViewDate).slice(0, 7)),
+            ).length,
+      totalDays: new Date(
+        currentViewDate.getFullYear(),
+        currentViewDate.getMonth() + 1,
+        0,
+      ).getDate(),
+    },
+    rotationConfig: activeRotationConfig,
+    handleApplyRotationVersion,
     doctors,
     tours,
     tourOrder,
@@ -1302,8 +1013,10 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
     departmentAssignments,
     holidaySchedule,
     rotationStartDate,
-    doctorsById,
-    toursById,
+    doctorsById: displayDoctorsById,
+    toursById: displayToursById,
+    availableDoctors,
+    getTourNameForDate,
     isLoaded,
     getDoctorsForDate,
     handleSwapTours,

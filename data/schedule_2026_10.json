@@ -1,6 +1,597 @@
 {
-  "doctorOverrides": {
-    "2026-10-04": ["Bs. Tuấn", "Bs. Đạt", "Bs. Dung", "Bs. An"],
-    "2026-10-05": ["Bs. Thuận", "Bs. Luận", "Bs. Anh", "Bs. Cảnh", "Bs. Minh (CTCH)"]
+  "tourOverrides": {},
+  "doctorOverrides": {},
+  "scheduleSnapshots": {
+    "2026-10-01": {
+      "doctors": [
+        "Bs. Thuận",
+        "Bs. Luận",
+        "Bs. Đạt",
+        "Bs. Cảnh",
+        "Bs. Hảo"
+      ],
+      "tourName": "Bs. Thuận"
+    },
+    "2026-10-02": {
+      "doctors": [
+        "Bs. Tòng",
+        "Bs. Đức",
+        "Bs. Tôn",
+        "Bs. Kiệt",
+        "Bs. Tín"
+      ],
+      "tourName": "Bs. Tòng"
+    },
+    "2026-10-03": {
+      "doctors": [
+        "Bs. Tiến",
+        "Bs. Tân",
+        "Bs. Hiển",
+        "Bs. Minh"
+      ],
+      "tourName": "Bs. Tiến"
+    },
+    "2026-10-04": {
+      "doctors": [
+        "Bs. Tuấn",
+        "Bs. Đạt",
+        "Bs. Dung",
+        "Bs. An",
+        "Bs. Minh (CTCH)"
+      ],
+      "tourName": "Bs. Tuấn"
+    },
+    "2026-10-05": {
+      "doctors": [
+        "Bs. Thuận",
+        "Bs. Luận",
+        "Bs. Anh",
+        "Bs. Cảnh",
+        "Bs. Hảo"
+      ],
+      "tourName": "Bs. Thuận"
+    },
+    "2026-10-06": {
+      "doctors": [
+        "Bs. Tòng",
+        "Bs. Đức",
+        "Bs. Tôn",
+        "Bs. Kiệt",
+        "Bs. Tín"
+      ],
+      "tourName": "Bs. Tòng"
+    },
+    "2026-10-07": {
+      "doctors": [
+        "Bs. Tiến",
+        "Bs. Tân",
+        "Bs. Hiển",
+        "Bs. Minh"
+      ],
+      "tourName": "Bs. Tiến"
+    },
+    "2026-10-08": {
+      "doctors": [
+        "Bs. Tuấn",
+        "Bs. Anh",
+        "Bs. Dung",
+        "Bs. An",
+        "Bs. Minh (CTCH)"
+      ],
+      "tourName": "Bs. Tuấn"
+    },
+    "2026-10-09": {
+      "doctors": [
+        "Bs. Thuận",
+        "Bs. Luận",
+        "Bs. Đạt",
+        "Bs. Cảnh",
+        "Bs. Hảo"
+      ],
+      "tourName": "Bs. Thuận"
+    },
+    "2026-10-10": {
+      "doctors": [
+        "Bs. Tòng",
+        "Bs. Đức",
+        "Bs. Tôn",
+        "Bs. Kiệt",
+        "Bs. Tín"
+      ],
+      "tourName": "Bs. Tòng"
+    },
+    "2026-10-11": {
+      "doctors": [
+        "Bs. Tiến",
+        "Bs. Tân",
+        "Bs. Hiển",
+        "Bs. Minh"
+      ],
+      "tourName": "Bs. Tiến"
+    },
+    "2026-10-12": {
+      "doctors": [
+        "Bs. Tuấn",
+        "Bs. Anh",
+        "Bs. Dung",
+        "Bs. An",
+        "Bs. Minh (CTCH)"
+      ],
+      "tourName": "Bs. Tuấn"
+    },
+    "2026-10-13": {
+      "doctors": [
+        "Bs. Thuận",
+        "Bs. Luận",
+        "Bs. Đạt",
+        "Bs. Cảnh",
+        "Bs. Hảo"
+      ],
+      "tourName": "Bs. Thuận"
+    },
+    "2026-10-14": {
+      "doctors": [
+        "Bs. Tòng",
+        "Bs. Đức",
+        "Bs. Tôn",
+        "Bs. Kiệt",
+        "Bs. Tín"
+      ],
+      "tourName": "Bs. Tòng"
+    },
+    "2026-10-15": {
+      "doctors": [
+        "Bs. Tiến",
+        "Bs. Tân",
+        "Bs. Hiển",
+        "Bs. Minh"
+      ],
+      "tourName": "Bs. Tiến"
+    },
+    "2026-10-16": {
+      "doctors": [
+        "Bs. Tuấn",
+        "Bs. Anh",
+        "Bs. Dung",
+        "Bs. An",
+        "Bs. Minh (CTCH)"
+      ],
+      "tourName": "Bs. Tuấn"
+    },
+    "2026-10-17": {
+      "doctors": [
+        "Bs. Thuận",
+        "Bs. Luận",
+        "Bs. Đạt",
+        "Bs. Cảnh",
+        "Bs. Hảo"
+      ],
+      "tourName": "Bs. Thuận"
+    },
+    "2026-10-18": {
+      "doctors": [
+        "Bs. Tòng",
+        "Bs. Đức",
+        "Bs. Tôn",
+        "Bs. Kiệt",
+        "Bs. Tín"
+      ],
+      "tourName": "Bs. Tòng"
+    },
+    "2026-10-19": {
+      "doctors": [
+        "Bs. Tiến",
+        "Bs. Tân",
+        "Bs. Hiển",
+        "Bs. Minh"
+      ],
+      "tourName": "Bs. Tiến"
+    },
+    "2026-10-20": {
+      "doctors": [
+        "Bs. Tuấn",
+        "Bs. Anh",
+        "Bs. Dung",
+        "Bs. An",
+        "Bs. Minh (CTCH)"
+      ],
+      "tourName": "Bs. Tuấn"
+    },
+    "2026-10-21": {
+      "doctors": [
+        "Bs. Thuận",
+        "Bs. Luận",
+        "Bs. Đạt",
+        "Bs. Cảnh",
+        "Bs. Hảo"
+      ],
+      "tourName": "Bs. Thuận"
+    },
+    "2026-10-22": {
+      "doctors": [
+        "Bs. Tòng",
+        "Bs. Đức",
+        "Bs. Tôn",
+        "Bs. Kiệt",
+        "Bs. Tín"
+      ],
+      "tourName": "Bs. Tòng"
+    },
+    "2026-10-23": {
+      "doctors": [
+        "Bs. Tiến",
+        "Bs. Tân",
+        "Bs. Hiển",
+        "Bs. Minh"
+      ],
+      "tourName": "Bs. Tiến"
+    },
+    "2026-10-24": {
+      "doctors": [
+        "Bs. Tuấn",
+        "Bs. Anh",
+        "Bs. Dung",
+        "Bs. An",
+        "Bs. Minh (CTCH)"
+      ],
+      "tourName": "Bs. Tuấn"
+    },
+    "2026-10-25": {
+      "doctors": [
+        "Bs. Thuận",
+        "Bs. Luận",
+        "Bs. Đạt",
+        "Bs. Cảnh",
+        "Bs. Hảo"
+      ],
+      "tourName": "Bs. Thuận"
+    },
+    "2026-10-26": {
+      "doctors": [
+        "Bs. Tòng",
+        "Bs. Đức",
+        "Bs. Tôn",
+        "Bs. Kiệt",
+        "Bs. Tín"
+      ],
+      "tourName": "Bs. Tòng"
+    },
+    "2026-10-27": {
+      "doctors": [
+        "Bs. Tiến",
+        "Bs. Tân",
+        "Bs. Hiển",
+        "Bs. Minh"
+      ],
+      "tourName": "Bs. Tiến"
+    },
+    "2026-10-28": {
+      "doctors": [
+        "Bs. Tuấn",
+        "Bs. Anh",
+        "Bs. Dung",
+        "Bs. An",
+        "Bs. Minh (CTCH)"
+      ],
+      "tourName": "Bs. Tuấn"
+    },
+    "2026-10-29": {
+      "doctors": [
+        "Bs. Thuận",
+        "Bs. Luận",
+        "Bs. Đạt",
+        "Bs. Cảnh",
+        "Bs. Hảo"
+      ],
+      "tourName": "Bs. Thuận"
+    },
+    "2026-10-30": {
+      "doctors": [
+        "Bs. Tòng",
+        "Bs. Đức",
+        "Bs. Tôn",
+        "Bs. Kiệt",
+        "Bs. Tín"
+      ],
+      "tourName": "Bs. Tòng"
+    },
+    "2026-10-31": {
+      "doctors": [
+        "Bs. Tiến",
+        "Bs. Tân",
+        "Bs. Hiển",
+        "Bs. Minh"
+      ],
+      "tourName": "Bs. Tiến"
+    }
+  },
+  "departmentAssignments": {
+    "2026-10-01": {
+      "ungTruc": [
+        "Bs. Đức",
+        "Bs. Tôn"
+      ],
+      "pkdk": [
+        "Bs. Tân",
+        "Bs. Hiền"
+      ],
+      "pkdv": []
+    },
+    "2026-10-02": {
+      "ungTruc": [
+        "Bs. Minh (CTCH)",
+        "Bs. Tân"
+      ],
+      "pkdk": [
+        "Bs. Dung",
+        "Bs. Hiền"
+      ],
+      "pkdv": []
+    },
+    "2026-10-03": {
+      "ungTruc": [],
+      "pkdk": [],
+      "pkdv": []
+    },
+    "2026-10-04": {
+      "ungTruc": [],
+      "pkdk": [],
+      "pkdv": []
+    },
+    "2026-10-05": {
+      "ungTruc": [
+        "Bs. Đức",
+        "Bs. Tín"
+      ],
+      "pkdk": [
+        "Bs. Tân",
+        "Bs. Tôn"
+      ],
+      "pkdv": []
+    },
+    "2026-10-06": {
+      "ungTruc": [
+        "Bs. Minh (CTCH)",
+        "Bs. Tân"
+      ],
+      "pkdk": [
+        "Bs. Đạt",
+        "Bs. Dung"
+      ],
+      "pkdv": []
+    },
+    "2026-10-07": {
+      "ungTruc": [
+        "Bs. Dung",
+        "Bs. Minh"
+      ],
+      "pkdk": [
+        "Bs. Anh",
+        "Bs. Hiền"
+      ],
+      "pkdv": []
+    },
+    "2026-10-08": {
+      "ungTruc": [
+        "Bs. Đạt",
+        "Bs. Hảo"
+      ],
+      "pkdk": [
+        "Bs. Đức",
+        "Bs. Tín"
+      ],
+      "pkdv": []
+    },
+    "2026-10-09": {
+      "ungTruc": [
+        "Bs. Tôn",
+        "Bs. Tín"
+      ],
+      "pkdk": [
+        "Bs. Tân",
+        "Bs. Hiền"
+      ],
+      "pkdv": []
+    },
+    "2026-10-10": {
+      "ungTruc": [],
+      "pkdk": [],
+      "pkdv": []
+    },
+    "2026-10-11": {
+      "ungTruc": [],
+      "pkdk": [],
+      "pkdv": []
+    },
+    "2026-10-12": {
+      "ungTruc": [
+        "Bs. Đạt",
+        "Bs. Hảo"
+      ],
+      "pkdk": [
+        "Bs. Tôn",
+        "Bs. Hiền"
+      ],
+      "pkdv": []
+    },
+    "2026-10-13": {
+      "ungTruc": [
+        "Bs. Tín",
+        "Bs. Tôn"
+      ],
+      "pkdk": [
+        "Bs. Tân",
+        "Bs. Hiền"
+      ],
+      "pkdv": []
+    },
+    "2026-10-14": {
+      "ungTruc": [
+        "Bs. Minh (CTCH)",
+        "Bs. Hiền"
+      ],
+      "pkdk": [
+        "Bs. Anh",
+        "Bs. Dung"
+      ],
+      "pkdv": []
+    },
+    "2026-10-15": {
+      "ungTruc": [
+        "Bs. Dung",
+        "Bs. Minh"
+      ],
+      "pkdk": [
+        "Bs. Đạt",
+        "Bs. Hiền"
+      ],
+      "pkdv": []
+    },
+    "2026-10-16": {
+      "ungTruc": [
+        "Bs. Đạt",
+        "Bs. Hảo"
+      ],
+      "pkdk": [
+        "Bs. Tôn",
+        "Bs. Tín"
+      ],
+      "pkdv": []
+    },
+    "2026-10-17": {
+      "ungTruc": [],
+      "pkdk": [],
+      "pkdv": []
+    },
+    "2026-10-18": {
+      "ungTruc": [],
+      "pkdk": [],
+      "pkdv": []
+    },
+    "2026-10-19": {
+      "ungTruc": [
+        "Bs. Dung",
+        "Bs. Minh"
+      ],
+      "pkdk": [
+        "Bs. Đạt",
+        "Bs. Hiền"
+      ],
+      "pkdv": []
+    },
+    "2026-10-20": {
+      "ungTruc": [
+        "Bs. Đạt",
+        "Bs. Hảo"
+      ],
+      "pkdk": [
+        "Bs. Đức",
+        "Bs. Tín"
+      ],
+      "pkdv": []
+    },
+    "2026-10-21": {
+      "ungTruc": [
+        "Bs. Tín",
+        "Bs. Đức"
+      ],
+      "pkdk": [
+        "Bs. Hiền",
+        "Bs. Tôn"
+      ],
+      "pkdv": []
+    },
+    "2026-10-22": {
+      "ungTruc": [
+        "Bs. Tân",
+        "Bs. Minh (CTCH)"
+      ],
+      "pkdk": [
+        "Bs. Anh",
+        "Bs. Dung"
+      ],
+      "pkdv": []
+    },
+    "2026-10-23": {
+      "ungTruc": [
+        "Bs. Dung",
+        "Bs. Hảo"
+      ],
+      "pkdk": [
+        "Bs. Đạt",
+        "Bs. Hiền"
+      ],
+      "pkdv": []
+    },
+    "2026-10-24": {
+      "ungTruc": [],
+      "pkdk": [],
+      "pkdv": []
+    },
+    "2026-10-25": {
+      "ungTruc": [],
+      "pkdk": [],
+      "pkdv": []
+    },
+    "2026-10-26": {
+      "ungTruc": [
+        "Bs. Tân",
+        "Bs. Minh (CTCH)"
+      ],
+      "pkdk": [
+        "Bs. Anh",
+        "Bs. Dung"
+      ],
+      "pkdv": []
+    },
+    "2026-10-27": {
+      "ungTruc": [
+        "Bs. Anh",
+        "Bs. Minh (CTCH)"
+      ],
+      "pkdk": [
+        "Bs. Đạt",
+        "Bs. Dung"
+      ],
+      "pkdv": []
+    },
+    "2026-10-28": {
+      "ungTruc": [
+        "Bs. Đạt",
+        "Bs. Hảo"
+      ],
+      "pkdk": [
+        "Bs. Đức",
+        "Bs. Tôn"
+      ],
+      "pkdv": []
+    },
+    "2026-10-29": {
+      "ungTruc": [
+        "Bs. Tôn",
+        "Bs. Đức"
+      ],
+      "pkdk": [
+        "Bs. Tân",
+        "Bs. Tín"
+      ],
+      "pkdv": []
+    },
+    "2026-10-30": {
+      "ungTruc": [
+        "Bs. Tân",
+        "Bs. Minh (CTCH)"
+      ],
+      "pkdk": [
+        "Bs. Anh",
+        "Bs. Dung"
+      ],
+      "pkdv": []
+    },
+    "2026-10-31": {
+      "ungTruc": [],
+      "pkdk": [],
+      "pkdv": []
+    }
   }
 }

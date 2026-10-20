@@ -24,38 +24,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
   onTogglePkdvVisibility,
   onToggleAddDoctorShortcut,
   rotationStartDate,
-  onSetRotationStartDate,
 }) => {
-  // Format the date for input[type="date"] (YYYY-MM-DD)
-  // If rotationStartDate is null, use the constant START_DATE default
-  const defaultDate = START_DATE;
-  const currentDateVal = rotationStartDate ? new Date(rotationStartDate) : defaultDate;
-
-  // Handles timezone offset issues for display
-  // We want to display the local date string "YYYY-MM-DD"
-  const formatDateForInput = (date: Date) => {
-    // This trick ensures we get the YYYY-MM-DD of the local time
-    const offset = date.getTimezoneOffset();
-    const localDate = new Date(date.getTime() - offset * 60 * 1000);
-    return getDateString(localDate);
-  };
-
-  const inputValue = formatDateForInput(currentDateVal);
-
-  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    if (!val) {
-      onSetRotationStartDate(null);
-      return;
-    }
-    // e.target.value is YYYY-MM-DD
-    // new Date(val) will parse it as UTC if no timezone info, or local if browser specific.
-    // To ensure we store a consistent YYYY-MM-DD string representing the local date,
-    // we parse it and then format it back using getDateString.
-    const date = new Date(val);
-    onSetRotationStartDate(getDateString(date));
-  };
-
   return (
     <div>
       <h3 className="text-xl font-bold mb-2 text-slate-800 dark:text-slate-200">Cấu hình chung</h3>
@@ -64,23 +33,10 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
       </p>
 
       <div className="space-y-4">
-        {/* Rotation Start Date Setting */}
-        <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700/50">
-          <label className="block mb-2 font-medium text-slate-800 dark:text-slate-200">
-            Ngày bắt đầu xoay tua
-          </label>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <span className="text-xs text-slate-500 dark:text-slate-400">
-              Chọn ngày mốc để tính toán thứ tự tua trực.
-            </span>
-            <input
-              type="date"
-              value={inputValue}
-              onChange={handleDateChange}
-              className="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
-        </div>
+        <p className="text-sm text-slate-600 dark:text-slate-300">
+          Điểm neo lịch hiện tại: {rotationStartDate || getDateString(START_DATE)}. Đổi thứ tự qua
+          mục Xoay tua định kỳ, không đổi điểm neo.
+        </p>
 
         {/* PKDV Visibility Toggle */}
         <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700/50">

@@ -96,7 +96,7 @@ const ScheduleDayCell: React.FC<ScheduleDayCellProps> = ({
       return 'border-blue-600 bg-blue-600 text-white shadow-md ring-2 ring-blue-500/40 dark:border-blue-400 dark:bg-blue-600 dark:text-white dark:ring-blue-400/50';
     }
     if (hoveredDoctor) {
-      return `${defaultClass} opacity-20 blur-[0.2px]`;
+      return `${defaultClass} opacity-20`;
     }
     if (isSelected) {
       return 'border-emerald-500 bg-emerald-100 text-emerald-950 shadow-sm ring-2 ring-emerald-500/30 font-semibold dark:border-emerald-400 dark:bg-emerald-950/80 dark:text-emerald-200 dark:ring-emerald-400/30';
@@ -255,7 +255,7 @@ const ScheduleDayCell: React.FC<ScheduleDayCellProps> = ({
                     onMouseLeave={() => onHoverDoctor(null)}
                     onFocus={() => onHoverDoctor(doctor)}
                     onBlur={() => onHoverDoctor(null)}
-                    className={`relative min-h-10 rounded-md border py-2 pl-8 pr-2 text-left text-sm transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-teal-500 ${getDoctorRowClass(doctor, isSelected, 'border-slate-300 bg-white text-slate-900 shadow-xs dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100')}`}
+                    className={`relative min-h-10 rounded-md border py-2 pl-8 pr-2 text-left text-sm transition-all duration-150 active:scale-[0.98] active:brightness-95 focus:outline-none focus:ring-2 focus:ring-teal-500 ${getDoctorRowClass(doctor, isSelected, 'border-slate-300 bg-white text-slate-900 shadow-xs dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100')}`}
                     data-doctor-focused={hoveredDoctor === doctor ? 'true' : undefined}
                     aria-label={`${doctor}, bác sĩ số ${docIndex + 1}${doctorWarning ? `, cảnh báo ${doctorWarning.label.toLocaleLowerCase('vi-VN')}` : ''}. Nhấn để chọn hoán đổi`}
                   >
@@ -311,11 +311,11 @@ const ScheduleDayCell: React.FC<ScheduleDayCellProps> = ({
                 relative p-2 rounded-xl border min-h-[130px] sm:min-h-[150px] transition-all duration-300 ease-out group
                 ${
                   day.isCurrentMonth
-                    ? 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/80 hover:shadow-md hover:border-teal-400 dark:hover:border-teal-500'
-                    : 'bg-slate-100/60 dark:bg-slate-950/60 border-transparent'
+                    ? 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/80 hover:border-teal-400 dark:hover:border-teal-500'
+                    : 'bg-slate-100/60 dark:bg-slate-950/60 border-slate-200 dark:border-slate-700/80'
                 }
                 ${day.isWeekend && day.isCurrentMonth ? 'bg-slate-50/50 dark:bg-slate-900/50' : ''}
-                ${day.isToday ? 'ring-2 ring-teal-500 ring-offset-2 dark:ring-offset-slate-900 z-10' : ''}
+                ${day.isToday ? 'ring-2 ring-teal-500 ring-offset-2 dark:ring-offset-slate-900 z-10 today-breathing-ring' : ''}
                 ${isSelectedTour ? 'ring-2 ring-indigo-500 ring-offset-2 dark:ring-offset-slate-900 z-10' : ''}
                 ${isHoliday ? 'ring-2 ring-rose-400 ring-offset-1 z-10' : ''}
                 ${isDoctorActiveHere ? 'border-teal-500 shadow-md ring-2 ring-teal-500/20 dark:border-teal-400 z-10' : ''}

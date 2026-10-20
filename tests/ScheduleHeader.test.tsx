@@ -4,6 +4,9 @@ import ScheduleHeader from '../components/schedule/ScheduleHeader';
 
 describe('ScheduleHeader warning counters', () => {
   const defaultProps = {
+    selectedDoctor: null,
+    selectedShiftDate: null,
+    onCancelSelection: vi.fn(),
     currentDate: new Date(2026, 8, 1),
     doctorNames: ['BS An', 'BS Bình'],
     doctorQuery: '',

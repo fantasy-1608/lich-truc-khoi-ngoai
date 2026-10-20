@@ -152,7 +152,7 @@ const ScheduleHeader: React.FC<ScheduleHeaderProps> = ({
         <button
           type="button"
           onClick={onOpenSafetyChecker}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-emerald-300 bg-emerald-50 text-emerald-900 dark:border-emerald-700/60 dark:bg-emerald-950/40 dark:text-emerald-300 text-xs font-bold hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-colors shadow-xs"
+          className="shimmer-shield tactile-elevation inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-emerald-400/80 bg-emerald-50 text-emerald-950 dark:border-emerald-600/70 dark:bg-emerald-950/40 dark:text-emerald-200 text-xs font-bold hover:bg-emerald-100 dark:hover:bg-emerald-900/60 shadow-xs"
           title="Nhấp để xem báo cáo an toàn nghỉ ngơi"
         >
           <span>🛡️</span>

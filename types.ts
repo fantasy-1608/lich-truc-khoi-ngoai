@@ -7,6 +7,34 @@ export interface Doctor {
 export interface Tour {
   id: string;
   doctorIds: string[];
+  name?: string;
+}
+
+export interface RotationRoster {
+  doctors: Doctor[];
+  tours: Tour[];
+  tourOrder: string[];
+  rotationStartDate: string | null;
+  holidaySchedule: HolidayScheduleData;
+}
+
+export interface RotationVersion {
+  id: string;
+  effectiveDate: string;
+  kind: 'swap' | 'members';
+  roster: RotationRoster;
+  pivotTourId?: string;
+  partnerTourId?: string;
+  exceptionReason?: string;
+  createdAt: string;
+  createdBy: string;
+  cycleMonth: string;
+}
+
+export interface RotationConfig {
+  baselineEffectiveDate?: string;
+  baseline: RotationRoster;
+  versions: RotationVersion[];
 }
 
 export enum View {
@@ -106,6 +134,7 @@ export interface HolidayScheduleData {
 
 // Interface for importing/exporting data
 export interface ImportData {
+  rotationConfig?: RotationConfig;
   doctors?: Doctor[];
   tours?: Tour[];
   tourOrder?: string[];

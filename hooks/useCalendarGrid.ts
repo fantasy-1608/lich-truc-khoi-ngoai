@@ -24,6 +24,7 @@ export const useCalendarGrid = (
   getDoctorsForDate: (date: Date) => string[] | undefined,
   rotationStartDate: string | null,
   scheduleSnapshots: Record<string, ScheduleSnapshotEntry> = {},
+  getTourNameForDate?: (date: Date) => string | undefined,
 ) => {
   return useMemo(() => {
     const today = new Date();
@@ -96,31 +97,18 @@ export const useCalendarGrid = (
       const hasTourOverride = !!tourOverrides[dateString];
       const hasDoctorOverride = !!doctorOverrides[dateString];
       const snapshot = scheduleSnapshots[dateString];
-      if (hasTourOverride) {
-        tourId = tourOverrides[dateString];
-      } else if (hasDoctorOverride) {
+      if (hasDoctorOverride) {
         tourName = doctors?.[0];
       } else if (snapshot) {
         tourId = snapshot.tourId;
         tourName = snapshot.tourName || snapshot.doctors[0];
       } else {
-        const rotationStartDateParsed = rotationStartDate
-          ? new Date(rotationStartDate)
-          : START_DATE;
-        const startDateRaw = date < rotationStartDateParsed ? START_DATE : rotationStartDateParsed;
-        const startDate = new Date(
-          startDateRaw.getFullYear(),
-          startDateRaw.getMonth(),
-          startDateRaw.getDate(),
-        );
-        const diffTime = date.getTime() - startDate.getTime();
-        if (diffTime >= 0) {
-          const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-          const tourIndex = diffDays % tourOrder.length;
-          tourId = tourOrder[tourIndex];
-        }
+        // Names come from the centralized version-aware resolver. Never reconstruct
+        // a historical label from today's mutable tour IDs/order.
+        tourName = doctors?.[0];
       }
 
+      tourName = getTourNameForDate?.(date) ?? tourName;
       if (!tourName) {
         if (tourId === 'reinforcement') {
           tourName = 'trực tăng cường';
@@ -168,11 +156,10 @@ export const useCalendarGrid = (
     currentDate,
     doctorsById,
     toursById,
-    tourOrder,
     doctorOverrides,
     tourOverrides,
     getDoctorsForDate,
-    rotationStartDate,
+    getTourNameForDate,
     scheduleSnapshots,
   ]);
 };

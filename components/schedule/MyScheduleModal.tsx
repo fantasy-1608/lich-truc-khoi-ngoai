@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { Doctor, ScheduleCalendarDay, DepartmentAssignments } from '../../types';
 import { XIcon } from '../icons/XIcon';
 import { CalendarIcon } from '../icons/CalendarIcon';
@@ -37,6 +37,30 @@ export const MyScheduleModal: React.FC<MyScheduleModalProps> = ({
   const [isChangingDoctor, setIsChangingDoctor] = useState(false);
   const [doctorSearchQuery, setDoctorSearchQuery] = useState('');
   const [copiedNotification, setCopiedNotification] = useState(false);
+  const [dragY, setDragY] = useState(0);
+  const dragStartYRef = useRef<number | null>(null);
+
+  const handleDragTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      dragStartYRef.current = e.touches[0].clientY;
+    }
+  };
+
+  const handleDragTouchMove = (e: React.TouchEvent) => {
+    if (dragStartYRef.current === null) return;
+    const diff = e.touches[0].clientY - dragStartYRef.current;
+    if (diff > 0) {
+      setDragY(diff);
+    }
+  };
+
+  const handleDragTouchEnd = () => {
+    if (dragY > 80) {
+      onClose();
+    }
+    setDragY(0);
+    dragStartYRef.current = null;
+  };
 
   // Auto open selection if no doctor saved yet
   useEffect(() => {
@@ -134,10 +158,19 @@ export const MyScheduleModal: React.FC<MyScheduleModalProps> = ({
     >
       <div
         className="w-full max-w-lg rounded-t-2xl sm:rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl max-h-[92dvh] sm:max-h-[88vh] flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-6 duration-200"
+        style={{
+          transform: dragY > 0 ? `translate3d(0, ${dragY}px, 0)` : undefined,
+          transition: dragY === 0 ? 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)' : 'none',
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Mobile drag bar handle */}
-        <div className="sm:hidden flex justify-center pt-2.5 pb-1">
+        <div
+          className="sm:hidden flex justify-center pt-2.5 pb-2 cursor-grab active:cursor-grabbing touch-none select-none"
+          onTouchStart={handleDragTouchStart}
+          onTouchMove={handleDragTouchMove}
+          onTouchEnd={handleDragTouchEnd}
+        >
           <span className="h-1.5 w-12 rounded-full bg-slate-300 dark:bg-slate-700" />
         </div>
 

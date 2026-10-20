@@ -1,12 +1,21 @@
 import React from 'react';
-import { Doctor, Tour, ImportData } from '../../types';
+import { Doctor, Tour, ImportData, RotationConfig, RotationVersion } from '../../types';
 import { ToastType } from '../../hooks/useToast';
-import ReorderToursList from './ReorderToursList';
+import RotationSettings from './RotationSettings';
+import { ScheduleMonthStorageData } from '../../services/scheduleStorage';
 import GeneralSettings from './GeneralSettings';
-import DoctorManager from './DoctorManager';
+
 import DataManager from './DataManager';
 
 interface SettingsViewProps {
+  rotationConfig: RotationConfig;
+  canWrite: boolean;
+  onApplyRotation: (
+    version: RotationVersion,
+    base: string | null,
+    months: Record<string, string | null>,
+    data: ScheduleMonthStorageData,
+  ) => Promise<void>;
   doctors: Doctor[];
   tours: Tour[];
   tourOrder: string[];
@@ -51,49 +60,28 @@ const SettingsView: React.FC<SettingsViewProps> = (props) => {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        <div className="lg:col-span-5 space-y-8">
-          <div className="glass-card rounded-3xl p-6 sm:p-8">
-            <DoctorManager
-              doctors={restProps.doctors}
-              onAddDoctor={restProps.onAddDoctor}
-              onRemoveDoctor={restProps.onRemoveDoctor}
-              onUpdateDoctor={restProps.onUpdateDoctor}
-            />
-          </div>
-
-          <div className="glass-card rounded-3xl p-6 sm:p-8">
-            <GeneralSettings
-              showPkdv={restProps.showPkdv}
-              showAddDoctorShortcut={restProps.showAddDoctorShortcut}
-              onTogglePkdvVisibility={restProps.onTogglePkdvVisibility}
-              onToggleAddDoctorShortcut={restProps.onToggleAddDoctorShortcut}
-              rotationStartDate={restProps.rotationStartDate}
-              onSetRotationStartDate={restProps.onSetRotationStartDate}
-            />
-          </div>
+      <RotationSettings
+        config={props.rotationConfig}
+        canWrite={props.canWrite}
+        onApply={props.onApplyRotation}
+      />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+        <div className="glass-card p-6">
+          <GeneralSettings
+            showPkdv={restProps.showPkdv}
+            showAddDoctorShortcut={restProps.showAddDoctorShortcut}
+            onTogglePkdvVisibility={restProps.onTogglePkdvVisibility}
+            onToggleAddDoctorShortcut={restProps.onToggleAddDoctorShortcut}
+            rotationStartDate={restProps.rotationStartDate}
+            onSetRotationStartDate={restProps.onSetRotationStartDate}
+          />
         </div>
-
-        <div className="lg:col-span-7 space-y-8">
-          <div className="glass-card rounded-3xl p-6 sm:p-8">
-            <ReorderToursList
-              doctors={restProps.doctors}
-              tours={restProps.tours}
-              tourOrder={restProps.tourOrder}
-              onReorderTours={restProps.onReorderTours}
-              onUpdateDoctorInTour={restProps.onUpdateDoctorInTour}
-              onAddDoctorToTour={restProps.onAddDoctorToTour}
-              onRemoveDoctorFromTour={restProps.onRemoveDoctorFromTour}
-            />
-          </div>
-
-          <div className="glass-card rounded-3xl p-6 sm:p-8">
-            <DataManager
-              onImport={restProps.onImportData}
-              dataToExport={restProps.dataToExport}
-              showToast={showToast}
-            />
-          </div>
+        <div className="glass-card p-6">
+          <DataManager
+            onImport={restProps.onImportData}
+            dataToExport={restProps.dataToExport}
+            showToast={showToast}
+          />
         </div>
       </div>
     </div>

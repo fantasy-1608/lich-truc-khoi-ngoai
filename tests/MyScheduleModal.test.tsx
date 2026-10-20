@@ -5,8 +5,8 @@ import { Doctor, ScheduleCalendarDay } from '../types';
 
 describe('MyScheduleModal', () => {
   const mockDoctors: Doctor[] = [
-    { id: '1', name: 'BS An', phone: '0901', email: 'an@example.com' },
-    { id: '2', name: 'BS Bình', phone: '0902', email: 'binh@example.com' },
+    { id: '1', name: 'BS An', isCtch: false },
+    { id: '2', name: 'BS Bình', isCtch: false },
   ];
 
   const mockCalendarGrid: ScheduleCalendarDay[] = [

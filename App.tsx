@@ -62,6 +62,20 @@ const App: React.FC = () => {
         <main
           className={`app-main mx-auto w-full max-w-[1920px] transition-opacity duration-150 ${contentVisible ? 'opacity-100' : 'opacity-0'}`}
         >
+          {view !== View.SETTINGS &&
+            scheduleData.historicalCoverage.isHistorical &&
+            scheduleData.historicalCoverage.fixedDays <
+              scheduleData.historicalCoverage.totalDays && (
+              <p
+                role="status"
+                className="m-3 p-3 border border-amber-700 bg-amber-50 text-amber-900 dark:bg-slate-900 dark:text-amber-200"
+              >
+                Tháng {scheduleData.historicalCoverage.month}: chỉ có{' '}
+                {scheduleData.historicalCoverage.fixedDays}/
+                {scheduleData.historicalCoverage.totalDays} ngày lưu danh sách cố định. Ngày thiếu
+                dữ liệu gốc để trống; cần PDF hoặc bản sao lịch đã chốt để phục hồi.
+              </p>
+            )}
           {view === View.SCHEDULE && (
             <ScheduleView
               tours={scheduleData.tours}
@@ -72,13 +86,14 @@ const App: React.FC = () => {
               showAddDoctorShortcut={scheduleData.showAddDoctorShortcut}
               onSwapTours={scheduleData.handleSwapTours}
               onSwapDoctors={scheduleData.handleSwapDoctors}
-              allDoctors={scheduleData.doctors}
+              allDoctors={scheduleData.availableDoctors}
               onReplaceDoctor={scheduleData.handleReplaceDoctor}
               onAddDoctorToDate={scheduleData.handleAddDoctorToDate}
               onResetOverrides={scheduleData.handleResetOverrides}
               doctorsById={scheduleData.doctorsById}
               toursById={scheduleData.toursById}
               getDoctorsForDate={scheduleData.getDoctorsForDate}
+              getTourNameForDate={scheduleData.getTourNameForDate}
               rotationStartDate={scheduleData.rotationStartDate}
               onViewDateChange={scheduleData.handleSetViewDate}
               holidaySchedule={scheduleData.holidaySchedule}
@@ -97,7 +112,7 @@ const App: React.FC = () => {
           {view === View.DEPARTMENT_SCHEDULE && (
             <Suspense fallback={<LazyFallback />}>
               <DepartmentScheduleView
-                allDoctors={scheduleData.doctors}
+                allDoctors={scheduleData.availableDoctors}
                 getDoctorsForDate={scheduleData.getDoctorsForDate}
                 showPkdv={scheduleData.showPkdv}
                 departmentAssignments={scheduleData.departmentAssignments}
@@ -111,7 +126,7 @@ const App: React.FC = () => {
             <Suspense fallback={<LazyFallback />}>
               <HolidayScheduleView
                 holidaySchedule={scheduleData.holidaySchedule}
-                allDoctors={scheduleData.doctors}
+                allDoctors={scheduleData.availableDoctors}
                 tours={scheduleData.tours}
                 getDoctorsForDate={scheduleData.getDoctorsForDate}
                 onSetHolidayPeriod={scheduleData.handleSetHolidayPeriod}
@@ -126,6 +141,9 @@ const App: React.FC = () => {
           {view === View.SETTINGS && (
             <Suspense fallback={<LazyFallback />}>
               <SettingsView
+                rotationConfig={scheduleData.rotationConfig}
+                canWrite={canWrite}
+                onApplyRotation={scheduleData.handleApplyRotationVersion}
                 doctors={scheduleData.doctors}
                 tours={scheduleData.tours}
                 tourOrder={scheduleData.tourOrder}
@@ -144,6 +162,7 @@ const App: React.FC = () => {
                 onRemoveDoctorFromTour={scheduleData.handleRemoveDoctorFromTour}
                 onImportData={scheduleData.handleImportData}
                 dataToExport={{
+                  rotationConfig: scheduleData.rotationConfig,
                   doctors: scheduleData.doctors,
                   tours: scheduleData.tours,
                   tourOrder: scheduleData.tourOrder,

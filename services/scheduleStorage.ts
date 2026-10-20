@@ -6,7 +6,11 @@ import {
   HolidayScheduleData,
   ScheduleSnapshotEntry,
   Tour,
+  RotationConfig,
+  RotationRoster,
+  RotationVersion,
 } from '../types';
+import { canonicalJson } from '../utils/rotation';
 import { runRecoverableScheduleSave } from '../utils/scheduleSaveRecovery';
 
 const BASE_FILENAME = 'schedule_base.json';
@@ -18,6 +22,7 @@ let editorEmail = '';
 sessionStorage.removeItem(EDITOR_EMAIL_STORAGE_KEY);
 
 export interface ScheduleBaseStorageData {
+  rotationConfig?: RotationConfig;
   doctors?: Doctor[];
   tours?: Tour[];
   tourOrder?: string[];
@@ -225,7 +230,7 @@ export const saveBaseScheduleData = async (
       isConflictError: isScheduleConflictError,
     });
   } catch (error) {
-    throwStorageError(error);
+    return throwStorageError(error);
   }
 };
 
@@ -295,7 +300,7 @@ export const saveMonthScheduleData = async (
       isConflictError: isScheduleConflictError,
     });
   } catch (error) {
-    throwStorageError(error);
+    return throwStorageError(error);
   }
 };
 
@@ -358,4 +363,35 @@ export const subscribeToScheduleChanges = ({
       },
     )
     .subscribe();
+};
+
+export const appendRotationVersion = async (
+  baseline: RotationRoster,
+  version: RotationVersion,
+  expectedBase: string | null,
+  expectedMonths: Record<string, string | null>,
+): Promise<ScheduleStorageRecord<ScheduleBaseStorageData>> => {
+  if (!supabase)
+    throw new Error('Cấu hình có phiên bản cần kết nối máy chủ; chưa có dữ liệu nào được ghi.');
+  if (!editorEmail) throw new Error('Missing editor email');
+  const { error } = await supabase.rpc('append_rotation_version_by_email', {
+    input_email: editorEmail,
+    input_baseline: baseline,
+    input_version: version,
+    expected_updated_at: expectedBase,
+    input_expected_months: expectedMonths,
+  });
+  const record = await loadBaseScheduleData();
+  // A lost response may follow a committed transaction. An identical event ID is
+  // the only accepted success; never retry POST blindly.
+  const persisted = record.data?.rotationConfig?.versions.find((v) => v.id === version.id);
+  if (
+    !persisted ||
+    canonicalJson({ ...persisted, createdAt: version.createdAt, createdBy: version.createdBy }) !==
+      canonicalJson(version)
+  ) {
+    if (error) throwStorageError(error);
+    throw new Error('Chưa xác nhận được phiên bản đã lưu. Hãy tải lại và xem lịch sử.');
+  }
+  return record;
 };
