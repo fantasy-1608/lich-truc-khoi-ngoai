@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import ScheduleCommandPalette from './ScheduleCommandPalette';
 import { SelectedDoctor } from '../../types';
 import { ArrowLeftIcon } from '../icons/ArrowLeftIcon';
 import { ArrowRightIcon } from '../icons/ArrowRightIcon';
@@ -18,6 +19,7 @@ interface ScheduleHeaderProps {
   onDoctorQueryChange: (value: string) => void;
   onPrevMonth: () => void;
   onNextMonth: () => void;
+  onToday?: () => void;
   onCancelSelection: () => void;
   onOpenStats: () => void;
   onExportPDF: () => Promise<void>;
@@ -38,6 +40,7 @@ const ScheduleHeader: React.FC<ScheduleHeaderProps> = ({
   onDoctorQueryChange,
   onPrevMonth,
   onNextMonth,
+  onToday,
   onCancelSelection,
   onOpenStats,
   onExportPDF,
@@ -47,13 +50,34 @@ const ScheduleHeader: React.FC<ScheduleHeaderProps> = ({
   onOpenSafetyChecker,
 }) => {
   const [isExporting, setIsExporting] = useState(false);
+  const [exportResult, setExportResult] = useState<'idle' | 'success' | 'error'>('idle');
+  const exportBusy = useRef(false);
+  const resultTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      clearTimeout(resultTimer.current);
+    };
+  }, []);
 
   const handlePDFExport = async () => {
+    if (exportBusy.current) return;
+    exportBusy.current = true;
+    clearTimeout(resultTimer.current);
+    setExportResult('idle');
     setIsExporting(true);
     try {
       await onExportPDF();
+      if (!mounted.current) return;
+      setExportResult('success');
+      resultTimer.current = setTimeout(() => setExportResult('idle'), 3000);
+    } catch {
+      if (mounted.current) setExportResult('error');
     } finally {
-      setIsExporting(false);
+      exportBusy.current = false;
+      if (mounted.current) setIsExporting(false);
     }
   };
 
@@ -74,6 +98,11 @@ const ScheduleHeader: React.FC<ScheduleHeaderProps> = ({
         <button type="button" onClick={onNextMonth} className="command-icon" aria-label="Tháng sau">
           <ArrowRightIcon className="h-5 w-5" />
         </button>
+        {onToday && (
+          <button type="button" onClick={onToday} className="today-button">
+            Hôm nay
+          </button>
+        )}
       </div>
 
       <div className="doctor-search-group flex items-center gap-1.5">
@@ -155,12 +184,58 @@ const ScheduleHeader: React.FC<ScheduleHeaderProps> = ({
           className="shimmer-shield tactile-elevation inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-emerald-400/80 bg-emerald-50 text-emerald-950 dark:border-emerald-600/70 dark:bg-emerald-950/40 dark:text-emerald-200 text-xs font-bold hover:bg-emerald-100 dark:hover:bg-emerald-900/60 shadow-xs"
           title="Nhấp để xem báo cáo an toàn nghỉ ngơi"
         >
-          <span>🛡️</span>
-          <span className="hidden sm:inline">An toàn 100%</span>
+          <FatigueAlertIcon className="h-4 w-4" />
+          <span className="hidden sm:inline">Không có cảnh báo</span>
         </button>
       )}
 
       <div className="command-actions">
+        <ScheduleCommandPalette
+          commands={[
+            ...doctorNames.map((name) => ({
+              id: `person-${name}`,
+              label: name,
+              detail: 'Đánh dấu các ca trong tháng',
+              run: () => onDoctorQueryChange(name),
+            })),
+            { id: 'previous', label: 'Tháng trước', detail: 'Điều hướng lịch', run: onPrevMonth },
+            { id: 'next', label: 'Tháng sau', detail: 'Điều hướng lịch', run: onNextMonth },
+            ...(onToday
+              ? [{ id: 'today', label: 'Hôm nay', detail: 'Trở về tháng hiện tại', run: onToday }]
+              : []),
+            ...(onOpenMySchedule
+              ? [
+                  {
+                    id: 'personal',
+                    label: 'Ca của tôi',
+                    detail: 'Xem lịch cá nhân',
+                    run: onOpenMySchedule,
+                  },
+                ]
+              : []),
+            { id: 'stats', label: 'Thống kê', detail: 'Xem phân bố ca trực', run: onOpenStats },
+            {
+              id: 'ics',
+              label: 'Lưu vào lịch điện thoại',
+              detail: 'Xuất lịch ICS',
+              run: onExportICS,
+            },
+            {
+              id: 'pdf',
+              label: 'Xuất PDF',
+              detail: 'Tạo bản lịch để tải về',
+              run: () => {
+                void handlePDFExport();
+              },
+            },
+            {
+              id: 'clear',
+              label: 'Xem toàn bộ lịch',
+              detail: 'Xóa tìm kiếm',
+              run: () => onDoctorQueryChange(''),
+            },
+          ]}
+        />
         {onOpenMySchedule && (
           <button
             type="button"
@@ -169,7 +244,7 @@ const ScheduleHeader: React.FC<ScheduleHeaderProps> = ({
             aria-label="Mở Lịch của tôi"
             title="Xem lịch trực cá nhân của tôi"
           >
-            <span className="text-sm">👤</span>
+            <CalendarIcon className="h-4 w-4" />
             <span className="max-w-[120px] truncate">
               {myDoctorName ? myDoctorName : 'Lịch của tôi'}
             </span>
@@ -197,17 +272,43 @@ const ScheduleHeader: React.FC<ScheduleHeaderProps> = ({
           type="button"
           onClick={handlePDFExport}
           disabled={isExporting}
-          className="command-icon"
-          aria-label="Xuất PDF"
-          title="Xuất PDF"
+          className="command-icon pdf-export-button"
+          data-export-state={isExporting ? 'busy' : exportResult}
+          aria-busy={isExporting}
+          aria-label={
+            isExporting
+              ? 'Đang tạo PDF'
+              : exportResult === 'success'
+                ? 'Đã tạo PDF'
+                : exportResult === 'error'
+                  ? 'Thử xuất PDF lại'
+                  : 'Xuất PDF'
+          }
+          title={
+            isExporting ? 'Đang tạo PDF' : exportResult === 'success' ? 'Đã tạo PDF' : 'Xuất PDF'
+          }
         >
-          {isExporting ? (
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+          {exportResult === 'success' ? (
+            <svg className="pdf-success-check" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m5 12 4 4L19 6" />
+            </svg>
           ) : (
             <DownloadIcon className="h-5 w-5" />
           )}
         </button>
       </div>
+      {exportResult === 'error' && (
+        <p className="pdf-export-feedback" role="alert">
+          Chưa tạo được PDF. Hãy thử lại bằng nút xuất lịch.
+        </p>
+      )}
+      <span className="sr-only" role="status">
+        {isExporting
+          ? 'Đang tạo PDF'
+          : exportResult === 'success'
+            ? 'Đã tạo PDF và gửi yêu cầu tải về trình duyệt.'
+            : ''}
+      </span>
 
       {(selectedDoctor || selectedShiftDate) && (
         <div className="selection-status">

@@ -46,11 +46,25 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   const handleTabChange = (newView: View) => {
     if (view === newView) return;
-    if (document.startViewTransition) {
-      document.startViewTransition(() => onViewChange(newView));
-    } else {
-      onViewChange(newView);
-    }
+    onViewChange(newView);
+  };
+
+  const handleTabKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
+    const index = TAB_CONFIG.findIndex((tab) => tab.id === view);
+    const next =
+      event.key === 'Home'
+        ? 0
+        : event.key === 'End'
+          ? 2
+          : event.key === 'ArrowRight'
+            ? (index + 1) % 3
+            : event.key === 'ArrowLeft'
+              ? (index + 2) % 3
+              : -1;
+    if (next < 0) return;
+    event.preventDefault();
+    handleTabChange(TAB_CONFIG[next].id);
+    event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next]?.focus();
   };
 
   return (
@@ -77,14 +91,25 @@ const Header: React.FC<HeaderProps> = ({
               role="tablist"
               aria-label="Chọn loại lịch"
               className="hidden min-w-0 flex-1 sm:flex"
+              data-studio-tabs
+              style={
+                {
+                  '--active-tab': Math.max(
+                    0,
+                    TAB_CONFIG.findIndex((tab) => tab.id === view),
+                  ),
+                } as React.CSSProperties
+              }
+              onKeyDown={handleTabKeyDown}
             >
+              <span className="studio-tab-pill" aria-hidden="true" />
               {TAB_CONFIG.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => handleTabChange(tab.id)}
                   role="tab"
                   aria-selected={view === tab.id}
-                  aria-controls={`${tab.id}-panel`}
+                  tabIndex={view === tab.id ? 0 : -1}
                   aria-label={tab.ariaLabel}
                   className="roster-primary-tab"
                 >
@@ -136,7 +161,12 @@ const Header: React.FC<HeaderProps> = ({
       </header>
 
       {view !== View.SETTINGS && (
-        <nav role="tablist" aria-label="Chọn loại lịch" className="mobile-bottom-nav sm:hidden">
+        <nav
+          role="tablist"
+          aria-label="Chọn loại lịch"
+          className="mobile-bottom-nav sm:hidden"
+          onKeyDown={handleTabKeyDown}
+        >
           {TAB_CONFIG.map((tab) => (
             <button
               key={tab.id}
@@ -144,6 +174,7 @@ const Header: React.FC<HeaderProps> = ({
               onClick={() => handleTabChange(tab.id)}
               role="tab"
               aria-selected={view === tab.id}
+              tabIndex={view === tab.id ? 0 : -1}
               aria-label={tab.ariaLabel}
               className="mobile-bottom-tab"
             >

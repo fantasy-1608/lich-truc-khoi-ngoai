@@ -25,6 +25,8 @@ import DayShiftRequestsModal from './DayShiftRequestsModal';
 import ExportICSModal from '../department/ExportICSModal';
 import StatsModal from '../department/StatsModal';
 import MyScheduleModal from './MyScheduleModal';
+import PersonalShiftStrip from './PersonalShiftStrip';
+import MiniDutyCalendar from './MiniDutyCalendar';
 import RestSafetyCheckerModal from './RestSafetyCheckerModal';
 import { PlusIcon } from '../icons/PlusIcon';
 import { LockIcon } from '../icons/LockIcon';
@@ -166,9 +168,11 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
   const [selectedMobileDayString, setSelectedMobileDayString] = useState<string>('');
   const [isCompactSchedule, setIsCompactSchedule] = useState(false);
   const [hoveredDoctor, setHoveredDoctor] = useState<string | null>(null);
+  const [lastInspectedDoctor, setLastInspectedDoctor] = useState<string | null>(null);
   const [doctorQuery, setDoctorQuery] = useState('');
   const [isMyScheduleOpen, setIsMyScheduleOpen] = useState(false);
   const [isSafetyCheckerOpen, setIsSafetyCheckerOpen] = useState(false);
+  const [showMyShifts, setShowMyShifts] = useState(false);
   const [myDoctorName, setMyDoctorName] = useState<string>(() => {
     try {
       return localStorage.getItem(MY_DOCTOR_STORAGE_KEY) || '';
@@ -179,6 +183,8 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
 
   const handleSelectMyDoctor = (doctorName: string) => {
     setMyDoctorName(doctorName);
+    setSelectedMobileWeekId('');
+    setSelectedMobileDayString('');
     try {
       if (doctorName) {
         localStorage.setItem(MY_DOCTOR_STORAGE_KEY, doctorName);
@@ -246,13 +252,23 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
     );
   }, [doctorNamesInMonth, doctorQuery]);
 
-  const focusedDoctor = hoveredDoctor || searchedDoctor || selectedDoctor?.doctorName || null;
+  const focusedDoctor =
+    (showMyShifts && myDoctorName) ||
+    searchedDoctor ||
+    hoveredDoctor ||
+    selectedDoctor?.doctorName ||
+    null;
+  const myShiftDays = useMemo(
+    () => calendarGrid.filter((day) => day.isCurrentMonth && day.doctors?.includes(myDoctorName)),
+    [calendarGrid, myDoctorName],
+  );
+  const inspectorDoctor = focusedDoctor || lastInspectedDoctor;
   const focusedDoctorDays = useMemo(
     () =>
-      focusedDoctor
-        ? calendarGrid.filter((day) => day.isCurrentMonth && day.doctors?.includes(focusedDoctor))
+      inspectorDoctor
+        ? calendarGrid.filter((day) => day.isCurrentMonth && day.doctors?.includes(inspectorDoctor))
         : [],
-    [calendarGrid, focusedDoctor],
+    [calendarGrid, inspectorDoctor],
   );
   const postDutyWarningCount = calendarGrid.reduce(
     (total, day) => total + day.postDutyWarningDoctors.length,
@@ -424,7 +440,16 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
       return;
     }
 
-    const defaultWeek = mobileWeekGroups.find((group) => group.hasToday) || mobileWeekGroups[0];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const upcoming = myDoctorName ? myShiftDays.find((day) => day.date >= today) : undefined;
+    const defaultWeek =
+      (upcoming &&
+        mobileWeekGroups.find((group) =>
+          group.days.some((day) => getDateString(day.date) === getDateString(upcoming.date)),
+        )) ||
+      mobileWeekGroups.find((group) => group.hasToday) ||
+      mobileWeekGroups[0];
     const allDayStrings = new Set(
       mobileWeekGroups.flatMap((group) => group.days.map((day) => getDateString(day.date))),
     );
@@ -434,10 +459,11 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
     );
     setSelectedMobileDayString((current) => {
       if (allDayStrings.has(current)) return current;
-      const defaultDay = defaultWeek.days.find((day) => day.isToday) || defaultWeek.days[0];
+      const defaultDay =
+        upcoming || defaultWeek.days.find((day) => day.isToday) || defaultWeek.days[0];
       return getDateString(defaultDay.date);
     });
-  }, [mobileWeekGroups]);
+  }, [mobileWeekGroups, myDoctorName, myShiftDays]);
 
   useEffect(() => {
     const shell = scheduleShellRef.current;
@@ -463,6 +489,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
 
   const selectedMobileWeek =
     mobileWeekGroups.find((week) => week.id === selectedMobileWeekId) || mobileWeekGroups[0];
+
   const selectedMobileDay =
     selectedMobileWeek?.days.find((day) => getDateString(day.date) === selectedMobileDayString) ||
     selectedMobileWeek?.days[0];
@@ -568,9 +595,21 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
           doctorNames={doctorNamesInMonth}
           postDutyWarningCount={postDutyWarningCount}
           fatigueWarningCount={fatigueWarningCount}
-          onDoctorQueryChange={setDoctorQuery}
+          onDoctorQueryChange={(value) => {
+            setDoctorQuery(value);
+            setHoveredDoctor(null);
+            setLastInspectedDoctor(null);
+            setShowMyShifts(false);
+          }}
           onPrevMonth={handlePrevMonth}
           onNextMonth={handleNextMonth}
+          onToday={() => {
+            const today = new Date();
+            setSlideDirection(today < currentDate ? 'right' : 'left');
+            const month = new Date(today.getFullYear(), today.getMonth(), 1);
+            setCurrentDate(month);
+            onViewDateChange?.(month);
+          }}
           onCancelSelection={cancelSelection}
           onOpenStats={() => setIsStatsModalOpen(true)}
           onExportPDF={handleExportPDF}
@@ -578,6 +617,22 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
           myDoctorName={myDoctorName}
           onOpenMySchedule={() => setIsMyScheduleOpen(true)}
           onOpenSafetyChecker={() => setIsSafetyCheckerOpen(true)}
+        />
+
+        <PersonalShiftStrip
+          doctorNames={Array.from(
+            new Set([...doctorNamesInMonth, ...allDoctors.map((doctor) => doctor.name)]),
+          )}
+          selectedName={myDoctorName}
+          onSelectName={handleSelectMyDoctor}
+          active={showMyShifts}
+          onToggle={() => {
+            if (!showMyShifts) setDoctorQuery('');
+            setShowMyShifts((active) => !active);
+          }}
+          days={myShiftDays}
+          onOpenSchedule={() => setIsMyScheduleOpen(true)}
+          onJumpToDate={handleJumpToDate}
         />
 
         <div className={`schedule-workspace ${isCompactSchedule ? 'hidden' : 'grid'}`}>
@@ -605,6 +660,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
               </div>
 
               <div
+                key={`${currentDate.getFullYear()}-${currentDate.getMonth()}`}
                 className={`calendar-month-grid grid grid-cols-7 ${
                   slideDirection === 'left'
                     ? 'spatial-slide-left'
@@ -631,7 +687,10 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
                     showAddDoctorShortcut={canEdit && showAddDoctorShortcut}
                     isHoliday={isHolidayDate(day.date)}
                     hoveredDoctor={focusedDoctor}
-                    onHoverDoctor={setHoveredDoctor}
+                    onHoverDoctor={(name) => {
+                      setHoveredDoctor(name);
+                      if (name) setLastInspectedDoctor(name);
+                    }}
                   />
                 ))}
               </div>
@@ -639,109 +698,112 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
           </div>
 
           <aside className="doctor-inspector" aria-label="Thông tin bác sĩ trong lịch tháng">
-            {focusedDoctor ? (
-              <>
-                <div className="inspector-heading">
-                  <span className="doctor-avatar" aria-hidden="true">
-                    {focusedDoctor
-                      .replace(/^Bs\.\s*/i, '')
-                      .split(/\s+/)
-                      .slice(-2)
-                      .map((part) => part[0])
-                      .join('')
-                      .toLocaleUpperCase('vi-VN')}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="inspector-kicker">Lịch tháng</p>
-                    <h3 className="truncate">{focusedDoctor}</h3>
-                    <p>{focusedDoctorDays.length} ngày trực trong tháng</p>
+            <div key={inspectorDoctor || 'empty'} className="inspector-content">
+              {inspectorDoctor ? (
+                <>
+                  <div className="inspector-heading">
+                    <span className="doctor-avatar" aria-hidden="true">
+                      {inspectorDoctor
+                        .replace(/^Bs\.\s*/i, '')
+                        .split(/\s+/)
+                        .slice(-2)
+                        .map((part) => part[0])
+                        .join('')
+                        .toLocaleUpperCase('vi-VN')}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="inspector-kicker">Lịch tháng</p>
+                      <h3 className="truncate">{inspectorDoctor}</h3>
+                      <p>{focusedDoctorDays.length} ngày trực trong tháng</p>
+                    </div>
+                    {doctorQuery && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDoctorQuery('');
+                          setHoveredDoctor(null);
+                          setLastInspectedDoctor(null);
+                        }}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                        title="Bỏ xem riêng, trở lại xem toàn bộ lịch"
+                        aria-label="Bỏ xem riêng"
+                      >
+                        <span className="text-sm font-bold">✕</span>
+                      </button>
+                    )}
                   </div>
+
                   {doctorQuery && (
                     <button
                       type="button"
-                      onClick={() => setDoctorQuery('')}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                      title="Bỏ xem riêng, trở lại xem toàn bộ lịch"
-                      aria-label="Bỏ xem riêng"
-                    >
-                      <span className="text-sm font-bold">✕</span>
-                    </button>
-                  )}
-                </div>
-
-                {doctorQuery && (
-                  <button
-                    type="button"
-                    onClick={() => setDoctorQuery('')}
-                    className="w-full mt-2.5 py-1.5 px-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-center gap-1.5 shadow-xs transition-colors"
-                  >
-                    <span>✕</span>
-                    <span>Bỏ xem riêng (Hiện toàn bộ lịch)</span>
-                  </button>
-                )}
-
-                <div className="inspector-alerts">
-                  {focusedDoctorDays.some((day) =>
-                    day.postDutyWarningDoctors.includes(focusedDoctor),
-                  ) && (
-                    <div className="inspector-alert is-critical">
-                      <FatigueAlertIcon className="h-5 w-5" />
-                      <div>
-                        <strong>Ra trực</strong>
-                        <span>Có lịch trực liền ngày</span>
-                      </div>
-                    </div>
-                  )}
-                  {focusedDoctorDays.some((day) =>
-                    day.fatigueWarningDoctors.includes(focusedDoctor),
-                  ) && (
-                    <div className="inspector-alert is-warning">
-                      <FatigueAlertIcon className="h-5 w-5" />
-                      <div>
-                        <strong>Mới ra trực</strong>
-                        <span>Trực lại sau một ngày nghỉ</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="inspector-list">
-                  <div className="inspector-list-title">
-                    <span>Các ngày trực</span>
-                    <span>{focusedDoctorDays.length}</span>
-                  </div>
-                  {focusedDoctorDays.map((day) => (
-                    <button
-                      type="button"
-                      key={getDateString(day.date)}
                       onClick={() => {
-                        setSelectedMobileDayString(getDateString(day.date));
-                        if (day.date.getMonth() !== currentDate.getMonth()) {
-                          setCurrentDate(day.date);
-                        }
+                        setDoctorQuery('');
+                        setHoveredDoctor(null);
+                        setLastInspectedDoctor(null);
                       }}
-                      className="inspector-duty-row"
+                      className="w-full mt-2.5 py-1.5 px-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-center gap-1.5 shadow-xs transition-colors"
                     >
-                      <span>
-                        {day.date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })}
-                      </span>
-                      <span>{day.date.toLocaleDateString('vi-VN', { weekday: 'short' })}</span>
-                      <strong>Tua {day.tourName}</strong>
+                      <span>✕</span>
+                      <span>Bỏ xem riêng (Hiện toàn bộ lịch)</span>
                     </button>
-                  ))}
+                  )}
+
+                  <div className="inspector-alerts">
+                    {focusedDoctorDays.some((day) =>
+                      day.postDutyWarningDoctors.includes(inspectorDoctor),
+                    ) && (
+                      <div className="inspector-alert is-critical">
+                        <FatigueAlertIcon className="h-5 w-5" />
+                        <div>
+                          <strong>Ra trực</strong>
+                          <span>Có lịch trực liền ngày</span>
+                        </div>
+                      </div>
+                    )}
+                    {focusedDoctorDays.some((day) =>
+                      day.fatigueWarningDoctors.includes(inspectorDoctor),
+                    ) && (
+                      <div className="inspector-alert is-warning">
+                        <FatigueAlertIcon className="h-5 w-5" />
+                        <div>
+                          <strong>Mới ra trực</strong>
+                          <span>Trực lại sau một ngày nghỉ</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="inspector-list">
+                    <div className="inspector-list-title">
+                      <span>Các ngày trực</span>
+                      <span>{focusedDoctorDays.length}</span>
+                    </div>
+                    <MiniDutyCalendar
+                      key={`${inspectorDoctor}-${currentDate.getFullYear()}-${currentDate.getMonth()}`}
+                      month={currentDate}
+                      doctorName={inspectorDoctor}
+                      dutyDates={focusedDoctorDays.map((day) => day.date)}
+                      selectedDate={selectedMobileDayString}
+                      onSelectDate={(date) => {
+                        setDoctorQuery(inspectorDoctor);
+                        setShowMyShifts(false);
+                        handleJumpToDate(date);
+                      }}
+                    />
+                  </div>
+                </>
+              ) : (
+                <div className="inspector-empty">
+                  <div className="inspector-empty-mark" aria-hidden="true">
+                    BS
+                  </div>
+                  <h3>Lịch của bạn, trong tầm mắt</h3>
+                  <p>
+                    Chọn tên ở “Ca của tôi” hoặc tìm một người để xem các ngày trực trong tháng.
+                  </p>
                 </div>
-              </>
-            ) : (
-              <div className="inspector-empty">
-                <div className="inspector-empty-mark" aria-hidden="true">
-                  BS
-                </div>
-                <h3>Theo dõi một bác sĩ</h3>
-                <p>
-                  Rê chuột vào tên hoặc tìm bác sĩ để xem chuỗi ngày trực và cảnh báo trong tháng.
-                </p>
-              </div>
-            )}
+              )}
+            </div>
           </aside>
         </div>
 

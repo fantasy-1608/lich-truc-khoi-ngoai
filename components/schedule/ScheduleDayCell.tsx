@@ -96,7 +96,7 @@ const ScheduleDayCell: React.FC<ScheduleDayCellProps> = ({
       return 'border-blue-600 bg-blue-600 text-white shadow-md ring-2 ring-blue-500/40 dark:border-blue-400 dark:bg-blue-600 dark:text-white dark:ring-blue-400/50';
     }
     if (hoveredDoctor) {
-      return `${defaultClass} opacity-20`;
+      return `${defaultClass} opacity-70`;
     }
     if (isSelected) {
       return 'border-emerald-500 bg-emerald-100 text-emerald-950 shadow-sm ring-2 ring-emerald-500/30 font-semibold dark:border-emerald-400 dark:bg-emerald-950/80 dark:text-emerald-200 dark:ring-emerald-400/30';
@@ -263,7 +263,9 @@ const ScheduleDayCell: React.FC<ScheduleDayCellProps> = ({
                       {docIndex + 1}
                     </span>
                     <span className="flex min-w-0 items-center gap-1.5">
-                      <span className="block min-w-0 flex-1 truncate font-semibold text-slate-900 dark:text-slate-100">{doctor}</span>
+                      <span className="block min-w-0 flex-1 truncate font-semibold text-slate-900 dark:text-slate-100">
+                        {doctor}
+                      </span>
                       {doctorWarning && (
                         <span
                           className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-xs font-bold ${doctorWarning.badgeClass}`}
@@ -498,7 +500,9 @@ const ScheduleDayCell: React.FC<ScheduleDayCellProps> = ({
                       {docIndex + 1}
                     </span>
                     <span className="flex min-w-0 items-center gap-1">
-                      <span className="min-w-0 flex-1 truncate font-semibold text-slate-900 dark:text-slate-100">{doctor}</span>
+                      <span className="min-w-0 flex-1 truncate font-semibold text-slate-900 dark:text-slate-100">
+                        {doctor}
+                      </span>
                       {doctorWarning && (
                         <span
                           className={`inline-flex shrink-0 items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-xs font-bold ${doctorWarning.badgeClass}`}

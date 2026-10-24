@@ -107,6 +107,6 @@ describe('ScheduleDayCell fatigue warning', () => {
     expect(screen.getByRole('button', { name: /BS Bình, bác sĩ số 2/i })).toHaveClass(
       'bg-blue-600',
     );
-    expect(screen.getByRole('button', { name: /BS An, bác sĩ số 1/i })).toHaveClass('opacity-20');
+    expect(screen.getByRole('button', { name: /BS An, bác sĩ số 1/i })).toHaveClass('opacity-70');
   });
 });
