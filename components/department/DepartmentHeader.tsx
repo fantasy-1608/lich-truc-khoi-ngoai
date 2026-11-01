@@ -35,16 +35,18 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({
 
   return (
     <div className="department-command-bar">
-      <button onClick={onPrevMonth} className="command-icon" aria-label="Tháng trước">
-        <ArrowLeftIcon className="w-6 h-6" />
-      </button>
-      <h2 className="month-title">
-        {`Tháng ${currentDate.getMonth() + 1}, ${currentDate.getFullYear()}`}
-      </h2>
-      <div className="command-actions">
+      <div className="department-month-controller" role="group" aria-label="Chọn tháng">
+        <button onClick={onPrevMonth} className="command-icon" aria-label="Tháng trước">
+          <ArrowLeftIcon className="w-6 h-6" />
+        </button>
+        <h2 className="month-title">
+          {`Tháng ${currentDate.getMonth() + 1}, ${currentDate.getFullYear()}`}
+        </h2>
         <button onClick={onNextMonth} className="command-icon" aria-label="Tháng sau">
           <ArrowRightIcon className="w-6 h-6" />
         </button>
+      </div>
+      <div className="command-actions">
         <button
           onClick={onOpenStats}
           className="command-icon"

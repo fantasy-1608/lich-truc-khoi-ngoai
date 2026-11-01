@@ -1263,13 +1263,22 @@
   }
 
   .department-command-bar {
-    display: grid;
-    grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+    display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 0.5rem;
     min-height: 4.5rem;
     padding: 0.75rem;
     border-bottom: 1px solid var(--roster-border);
+  }
+
+  .department-month-controller {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+    max-width: 100%;
   }
 
   .department-week {

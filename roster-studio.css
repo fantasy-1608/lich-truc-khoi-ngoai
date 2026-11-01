@@ -183,6 +183,20 @@
   .ui-redesign .command-actions {
     margin-left: auto;
   }
+  .ui-redesign .department-month-controller .month-title {
+    order: 0;
+    margin: 0;
+    padding: 0;
+  }
+  .ui-redesign .department-command-bar .command-icon {
+    flex: none;
+    width: 42px;
+    min-width: 42px;
+    padding: 0.5rem;
+  }
+  .ui-redesign .department-command-bar .command-actions .command-icon {
+    display: inline-flex;
+  }
   .ui-redesign .command-actions .my-schedule-btn {
     display: none !important;
   }

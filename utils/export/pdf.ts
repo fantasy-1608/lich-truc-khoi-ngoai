@@ -31,6 +31,7 @@ type JsPDFDocument = {
   ) => void;
   splitTextToSize: (text: string, maxlen: number) => string[];
   output: (type: 'blob') => Blob;
+  addPage: () => void;
 };
 
 interface CalendarTableLayout {
@@ -103,19 +104,6 @@ const drawApprovalSection = (pdf: JsPDFDocument, y: number): void => {
   pdf.text('DUYỆT LÃNH ĐẠO KHOA', right, y + 26, { align: 'right' });
 };
 
-const drawWrappedText = (
-  pdf: JsPDFDocument,
-  text: string,
-  x: number,
-  y: number,
-  maxWidth: number,
-  lineHeight: number,
-  maxLines = 2,
-): void => {
-  const lines = pdf.splitTextToSize(text, maxWidth).slice(0, maxLines);
-  pdf.text(lines, x, y, { lineHeightFactor: lineHeight / 10 });
-};
-
 const doctorRows = (doctors: string[]): Array<[string, string]> => {
   const rows: Array<[string, string]> = [];
   for (let i = 0; i < doctors.length; i += 2) {
@@ -144,46 +132,136 @@ const drawDoctorGrid = (
   });
 };
 
-const drawDepartmentCellContent = (
+interface DepartmentCellLayout {
+  height: number;
+  blocks: Array<{
+    lines: string[];
+    x: number;
+    y: number;
+    fontSize: number;
+    lineHeight: number;
+    style: 'normal' | 'bold';
+  }>;
+}
+
+const measureDepartmentCell = (
   pdf: JsPDFDocument,
   cell: TableCell,
-  x: number,
-  y: number,
   colWidth: number,
-): void => {
+  doctorFontSize: number,
+): DepartmentCellLayout => {
+  const blocks: DepartmentCellLayout['blocks'] = [];
+  if (!cell.isCurrentMonth) return { height: 24, blocks };
+  const columnGap = 6;
+  const doctorColumnWidth = (colWidth - 8 - columnGap) / 2;
+  const doctorLineHeight = doctorFontSize * 1.18;
+  let cursor = 18;
+
   setPDFFont(pdf, 'bold');
-  pdf.setFontSize(14);
-  pdf.setTextColor(0, 0, 0);
-  pdf.text(String(cell.date), x + colWidth - 5, y + 15, { align: 'right' });
-
-  if (cell.doctors?.length) {
-    setPDFFont(pdf, 'bold');
-    pdf.setFontSize(7.8);
-    drawDoctorGrid(pdf, cell.doctors, x + 4, y + 28, colWidth - 8, 10.4);
+  pdf.setFontSize(doctorFontSize);
+  for (const pair of doctorRows(cell.doctors ?? [])) {
+    const columns = pair.map((name) => (name ? pdf.splitTextToSize(name, doctorColumnWidth) : []));
+    columns.forEach((lines, index) => {
+      if (lines.length)
+        blocks.push({
+          lines,
+          x: 4 + index * (doctorColumnWidth + columnGap),
+          y: cursor + doctorFontSize,
+          fontSize: doctorFontSize,
+          lineHeight: doctorLineHeight,
+          style: 'bold',
+        });
+    });
+    cursor += Math.max(1, ...columns.map((lines) => lines.length)) * doctorLineHeight;
   }
 
-  if (!cell.roles?.length) {
-    return;
-  }
-
+  if (cell.roles?.length) cursor += 3;
+  const roleFontSize = doctorFontSize - 0.6;
+  const roleLineHeight = roleFontSize * 1.18;
   setPDFFont(pdf, 'normal');
-  pdf.setFontSize(7);
-  let roleY = y + (cell.doctors && cell.doctors.length > 4 ? 60 : 56);
+  pdf.setFontSize(roleFontSize);
+  for (const role of cell.roles ?? []) {
+    const lines = pdf.splitTextToSize(`${role.label}: ${role.doctors.join(', ')}`, colWidth - 8);
+    blocks.push({
+      lines,
+      x: 4,
+      y: cursor + roleFontSize,
+      fontSize: roleFontSize,
+      lineHeight: roleLineHeight,
+      style: 'normal',
+    });
+    cursor += lines.length * roleLineHeight;
+  }
+  return { height: cursor + 5, blocks };
+};
 
-  cell.roles.forEach((role) => {
-    pdf.setTextColor(85, 85, 85);
-    pdf.text(`${role.label}:`, x + 4, roleY);
-    pdf.setTextColor(0, 0, 0);
-    drawWrappedText(pdf, role.doctors.join(', '), x + 19, roleY, colWidth - 23, 9, 1);
-    roleY += 9.2;
-  });
+const drawDepartmentTable = (pdf: JsPDFDocument, title: string, rows: TableCell[][]): void => {
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+  const x = 28;
+  const top = 56;
+  const colWidth = (pageWidth - x * 2) / 7;
+  // Reserve the date, approval heading, and bottom margin on every page.
+  const bodyHeight = pageHeight - top - HEADER_HEIGHT - 64;
+  let measured: DepartmentCellLayout[][] = [];
+  let rowHeights: number[] = [];
+  for (let step = 0; step <= 4; step++) {
+    const fontSize = 7.8 - step * 0.2;
+    measured = rows.map((row) =>
+      row.map((cell) => measureDepartmentCell(pdf, cell, colWidth, fontSize)),
+    );
+    rowHeights = measured.map((row) => Math.max(...row.map((cell) => cell.height)));
+    if (rowHeights.reduce((sum, height) => sum + height, 0) <= bodyHeight) break;
+  }
+
+  let rowIndex = 0;
+  while (rowIndex < rows.length) {
+    if (rowIndex > 0) pdf.addPage();
+    drawTitle(pdf, title, 38);
+    pdf.setLineWidth(0.75);
+    pdf.setDrawColor(110, 110, 110);
+    pdf.setFillColor(232, 232, 232);
+    setPDFFont(pdf, 'bold');
+    pdf.setFontSize(9);
+    WEEK_DAYS.forEach((day, index) => {
+      pdf.setFillColor(232, 232, 232);
+      pdf.rect(x + index * colWidth, top, colWidth, HEADER_HEIGHT, 'FD');
+      pdf.text(day, x + (index + 0.5) * colWidth, top + 12, { align: 'center' });
+    });
+    let y = top + HEADER_HEIGHT;
+    const pageStart = rowIndex;
+    while (rowIndex < rows.length && y + rowHeights[rowIndex] <= top + HEADER_HEIGHT + bodyHeight) {
+      const height = rowHeights[rowIndex];
+      rows[rowIndex].forEach((cell, colIndex) => {
+        const cellX = x + colIndex * colWidth;
+        if (cell.isWeekend) pdf.setFillColor(240, 240, 240);
+        pdf.rect(cellX, y, colWidth, height, cell.isWeekend ? 'FD' : 'S');
+        if (!cell.isCurrentMonth || !cell.date) return;
+        setPDFFont(pdf, 'bold');
+        pdf.setFontSize(12);
+        pdf.setTextColor(0, 0, 0);
+        pdf.text(String(cell.date), cellX + colWidth - 4, y + 14, { align: 'right' });
+        for (const block of measured[rowIndex][colIndex].blocks) {
+          setPDFFont(pdf, block.style);
+          pdf.setFontSize(block.fontSize);
+          pdf.text(block.lines, cellX + block.x, y + block.y, {
+            lineHeightFactor: block.lineHeight / block.fontSize,
+          });
+        }
+      });
+      y += height;
+      rowIndex++;
+    }
+    // Do not clip or drop assignments even if an exceptional week cannot fit on A4.
+    if (rowIndex === pageStart) throw new Error('Phân công một tuần vượt khổ giấy A4.');
+    drawApprovalSection(pdf, y + 24);
+  }
 };
 
 const drawCalendarTable = (
   pdf: JsPDFDocument,
   rows: TableCell[][],
   layout: CalendarTableLayout,
-  variant: 'schedule' | 'department' = 'schedule',
 ): number => {
   const colWidth = layout.width / 7;
   const tableHeight = layout.headerHeight + rows.length * layout.rowHeight;
@@ -217,11 +295,6 @@ const drawCalendarTable = (
       pdf.rect(x, y, colWidth, layout.rowHeight, fillStyle);
 
       if (!cell.isCurrentMonth || !cell.date) {
-        return;
-      }
-
-      if (variant === 'department') {
-        drawDepartmentCellContent(pdf, cell, x, y, colWidth);
         return;
       }
 
@@ -268,18 +341,23 @@ const exportPDF = async (
   variant: 'schedule' | 'department',
 ): Promise<void> => {
   const pdf = await createPDF();
-  const availableTableHeight = variant === 'department' ? 405 : 330;
+  if (variant === 'department') {
+    drawDepartmentTable(pdf, title, rows);
+    await savePDFBlob(pdf.output('blob'), filename);
+    return;
+  }
+  const availableTableHeight = 330;
   const rowHeight = availableTableHeight / rows.length;
   const layout: CalendarTableLayout = {
-    x: variant === 'department' ? 45 : TABLE_X,
-    y: variant === 'department' ? 100 : TABLE_Y,
-    width: variant === 'department' ? 752 : TABLE_WIDTH,
+    x: TABLE_X,
+    y: TABLE_Y,
+    width: TABLE_WIDTH,
     headerHeight: HEADER_HEIGHT,
     rowHeight,
   };
 
-  drawTitle(pdf, title, variant === 'department' ? 82 : 102);
-  const tableBottom = drawCalendarTable(pdf, rows, layout, variant);
+  drawTitle(pdf, title);
+  const tableBottom = drawCalendarTable(pdf, rows, layout);
   drawApprovalSection(pdf, tableBottom + APPROVAL_TOP_GAP);
   await savePDFBlob(pdf.output('blob'), filename);
 };
