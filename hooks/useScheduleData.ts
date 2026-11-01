@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { getNextMonthDate } from '../utils/date';
+import { isScheduleDateFrozen } from '../utils/scheduleEditing';
 import {
   Doctor,
   Tour,
@@ -600,20 +601,7 @@ export const useScheduleData = (options: UseScheduleDataOptions = {}) => {
     [activeRotationConfig, ensureCanWrite, applyBaseData],
   );
 
-  const getUpcomingMonthStart = useCallback(() => {
-    const today = new Date();
-    // Freeze everything before the 1st of the upcoming month (e.g. Sept 1st when today is in August)
-    return new Date(today.getFullYear(), today.getMonth() + 1, 1);
-  }, []);
-
-  const isDateFrozen = useCallback(
-    (date: Date): boolean => {
-      const boundary = getUpcomingMonthStart();
-      const checkDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      return checkDate < boundary;
-    },
-    [getUpcomingMonthStart],
-  );
+  const isDateFrozen = useCallback((date: Date): boolean => isScheduleDateFrozen(date), []);
 
   const handleSwapTours = useCallback(
     (date1: Date, date2: Date) => {

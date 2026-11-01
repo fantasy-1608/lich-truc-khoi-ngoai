@@ -66,6 +66,33 @@ describe('useScheduleData', () => {
     });
   });
 
+  it('allows November assignments while still rejecting October and read-only writes', async () => {
+    vi.setSystemTime(new Date('2026-11-01T00:00:00+07:00'));
+    const onError = vi.fn();
+    const { result, rerender } = renderHook(
+      ({ canWrite }) => useScheduleData({ canWrite, onError }),
+      { initialProps: { canWrite: true } },
+    );
+    await waitFor(() => expect(result.current.isLoaded).toBe(true));
+    act(() => result.current.handleSetViewDate(new Date(2026, 10, 1)));
+    await waitFor(() =>
+      expect(loadMonthScheduleData).toHaveBeenCalledWith('schedule_2026_11.json'),
+    );
+    act(() => result.current.handleAddDoctorToDate(new Date(2026, 10, 15), 'Test November'));
+    expect(result.current.getDoctorsForDate(new Date(2026, 10, 15))).toContain('Test November');
+
+    const octoberBefore = result.current.getDoctorsForDate(new Date(2026, 9, 31));
+    act(() => result.current.handleAddDoctorToDate(new Date(2026, 9, 31), 'Test October'));
+    expect(onError).toHaveBeenLastCalledWith(expect.stringContaining('đóng băng'));
+    expect(result.current.getDoctorsForDate(new Date(2026, 9, 31))).toEqual(octoberBefore);
+
+    rerender({ canWrite: false });
+    act(() => result.current.handleAddDoctorToDate(new Date(2026, 10, 15), 'Test read only'));
+    expect(result.current.getDoctorsForDate(new Date(2026, 10, 15))).not.toContain(
+      'Test read only',
+    );
+  });
+
   afterEach(() => {
     vi.useRealTimers();
   });
