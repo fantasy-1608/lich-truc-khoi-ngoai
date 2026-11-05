@@ -1,0 +1,109 @@
+{
+  "departmentAssignments": {
+    "2026-11-02": {
+      "pkdk": ["Bs. Tôn"],
+      "pkdv": ["Bs. Tân"],
+      "ungTruc": ["Bs. Đức", "Bs. Minh (CTCH)"]
+    },
+    "2026-11-03": {
+      "pkdk": ["Bs. Dung"],
+      "pkdv": ["Bs. Anh"],
+      "ungTruc": ["Bs. Tôn", "Bs. Hảo"]
+    },
+    "2026-11-04": {
+      "pkdk": ["Bs. Tín"],
+      "pkdv": ["Bs. Đạt"],
+      "ungTruc": ["Bs. Dung", "Bs. Hảo"]
+    },
+    "2026-11-05": {
+      "pkdk": ["Bs. Tín"],
+      "pkdv": ["Bs. Tân"],
+      "ungTruc": ["Bs. Đạt"]
+    },
+    "2026-11-06": {
+      "pkdk": ["Bs. Đức"],
+      "pkdv": ["Bs. Tôn"],
+      "ungTruc": ["Bs. Tân", "Bs. Minh (CTCH)"]
+    },
+    "2026-11-09": {
+      "pkdk": ["Bs. Tín"],
+      "pkdv": ["Bs. Tân"],
+      "ungTruc": ["Bs. Đạt"]
+    },
+    "2026-11-10": {
+      "pkdk": ["Bs. Tân"],
+      "pkdv": ["Bs. Tôn"],
+      "ungTruc": ["Bs. Đức", "Bs. Minh (CTCH)"]
+    },
+    "2026-11-11": {
+      "pkdk": ["Bs. Dung"],
+      "pkdv": ["Bs. Anh"],
+      "ungTruc": ["Bs. Đức", "Bs. Tôn"]
+    },
+    "2026-11-12": {
+      "pkdk": ["Bs. Tín"],
+      "pkdv": ["Bs. Đạt"],
+      "ungTruc": ["Bs. Anh", "Bs. Dung"]
+    },
+    "2026-11-13": {
+      "pkdk": ["Bs. Tín"],
+      "pkdv": ["Bs. Tân"],
+      "ungTruc": ["Bs. Đạt"]
+    },
+    "2026-11-16": {
+      "pkdk": ["Bs. Dung"],
+      "pkdv": ["Bs. Anh"],
+      "ungTruc": ["Bs. Đạt", "Bs. Tín"]
+    },
+    "2026-11-17": {
+      "pkdk": ["Bs. Tín"],
+      "pkdv": ["Bs. Đạt"],
+      "ungTruc": ["Bs. Tân"]
+    },
+    "2026-11-18": {
+      "pkdk": ["Bs. Tân"],
+      "pkdv": ["Bs. Tôn"],
+      "ungTruc": ["Bs. Đức", "Bs. Minh (CTCH)"]
+    },
+    "2026-11-19": {
+      "pkdk": ["Bs. Dung"],
+      "pkdv": ["Bs. Anh"],
+      "ungTruc": ["Bs. Tôn", "Bs. Hảo"]
+    },
+    "2026-11-20": {
+      "pkdk": ["Bs. Tín"],
+      "pkdv": ["Bs. Đạt"],
+      "ungTruc": ["Bs. Dung", "Bs. Hảo"]
+    },
+    "2026-11-23": {
+      "pkdk": ["Bs. Dung"],
+      "pkdv": ["Bs. Anh"],
+      "ungTruc": ["Bs. Tôn", "Bs. Minh (CTCH)"]
+    },
+    "2026-11-24": {
+      "pkdk": ["Bs. Tín"],
+      "pkdv": ["Bs. Đạt"],
+      "ungTruc": ["Bs. Dung", "Bs. Hảo"]
+    },
+    "2026-11-25": {
+      "pkdk": ["Bs. Tín"],
+      "pkdv": ["Bs. Tân"],
+      "ungTruc": ["Bs. Đạt"]
+    },
+    "2026-11-26": {
+      "pkdk": ["Bs. Đức"],
+      "pkdv": ["Bs. Tôn"],
+      "ungTruc": ["Bs. Tân", "Bs. Minh (CTCH)"]
+    },
+    "2026-11-27": {
+      "pkdk": ["Bs. Dung"],
+      "pkdv": ["Bs. Anh"],
+      "ungTruc": ["Bs. Đức", "Bs. Hảo"]
+    },
+    "2026-11-30": {
+      "pkdk": ["Bs. Đức"],
+      "pkdv": ["Bs. Tôn"],
+      "ungTruc": ["Bs. Tân", "Bs. Minh (CTCH)"]
+    }
+  }
+}

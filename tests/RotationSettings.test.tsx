@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor, cleanup } from '@testing-library/react';
-import { afterEach, describe, it, expect, vi } from 'vitest';
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 import RotationSettings from '../components/settings/RotationSettings';
 import base from '../data/schedule_base.json';
 import { RotationConfig } from '../types';
@@ -9,8 +9,13 @@ vi.mock('../services/scheduleStorage', () => ({
 }));
 import { loadBaseScheduleData, loadMonthScheduleData } from '../services/scheduleStorage';
 const config = base.rotationConfig as RotationConfig;
+beforeEach(() => {
+  vi.useFakeTimers({ shouldAdvanceTime: true });
+  vi.setSystemTime(new Date('2026-10-20T09:00:00+07:00'));
+});
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
   vi.restoreAllMocks();
 });
 function chooseDate(date: string) {
@@ -161,5 +166,10 @@ describe('rotation settings safety', () => {
     await screen.findByText(/schedule_conflict/);
     expect(screen.queryByRole('button', { name: /Áp dụng từ/ })).not.toBeInTheDocument();
     expect(screen.queryByText(/Đã lưu online và đọc lại/)).not.toBeInTheDocument();
+  });
+  it('locks November effective dates and starts at December 1 when today is in November 2026', () => {
+    vi.setSystemTime(new Date('2026-11-05T23:15:00+07:00'));
+    render(<RotationSettings config={config} canWrite onApply={vi.fn()} />);
+    expect(screen.getByText(/Chọn ngày từ 1\/12\/2026/)).toBeInTheDocument();
   });
 });

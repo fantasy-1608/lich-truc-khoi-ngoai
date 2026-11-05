@@ -10,9 +10,6 @@ export const isScheduleDateFrozen = (date: Date, now = new Date()): boolean => {
   const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
   const currentMonth = scheduleMonthFormatter.format(now).slice(0, 7);
 
-  // Explicitly reopen November only while it is the current month.
-  if (month === '2026-11' && currentMonth === '2026-11') return false;
-
-  // All other current/past months retain the existing freeze policy.
+  // Current and past months are frozen; only upcoming months remain editable.
   return month <= currentMonth;
 };
