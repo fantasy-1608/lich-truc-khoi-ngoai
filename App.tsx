@@ -107,6 +107,7 @@ const App: React.FC = () => {
               onSubmitShiftRequest={shiftRequests.submitRequest}
               onUpdateShiftRequestReview={shiftRequests.updateReview}
               departmentAssignments={scheduleData.departmentAssignments}
+              showPkdv={scheduleData.showPkdv}
             />
           )}
           {view === View.DEPARTMENT_SCHEDULE && (

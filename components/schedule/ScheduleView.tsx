@@ -1,5 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { getNextMonthDate } from '../../utils/date';
+import {
+  getCurrentMonthDate,
+  getInitialScheduleMonthDate,
+  isCompactScheduleViewport,
+} from '../../utils/date';
 import {
   Tour,
   SelectedDoctor,
@@ -13,12 +17,13 @@ import {
   ShiftRequestStatus,
 } from '../../types';
 import { useCalendarGrid } from '../../hooks/useCalendarGrid';
+import { useDepartmentCalendarGrid } from '../../hooks/useDepartmentCalendarGrid';
 import ScheduleHeader from './ScheduleHeader';
 import ScheduleDayCell from './ScheduleDayCell';
 import ReplaceDoctorPopup from './ReplaceDoctorPopup';
 import AddDoctorPopup from './AddDoctorPopup';
 import ResetPopover from './ResetPopover';
-import { exportScheduleToPDF } from '../../utils/export';
+import { exportDepartmentToPDF, exportScheduleToPDF } from '../../utils/export';
 import ShiftRequestModal from './ShiftRequestModal';
 import ShiftRequestsPanel from './ShiftRequestsPanel';
 import DayShiftRequestsModal from './DayShiftRequestsModal';
@@ -71,6 +76,7 @@ interface ScheduleViewProps {
     reviewNote: string,
   ) => Promise<void>;
   departmentAssignments: Record<string, Partial<DepartmentAssignments>>;
+  showPkdv?: boolean;
 }
 
 const getDateString = (date: Date): string => {
@@ -142,6 +148,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
     onSubmitShiftRequest,
     onUpdateShiftRequestReview,
     departmentAssignments,
+    showPkdv = true,
   } = props;
 
   const isHolidayDate = (date: Date): boolean => {
@@ -155,7 +162,10 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
     return check >= start && check <= end;
   };
 
-  const [currentDate, setCurrentDate] = useState(getNextMonthDate());
+  const [currentDate, setCurrentDate] = useState(() =>
+    getInitialScheduleMonthDate(isMobilePortrait || isCompactScheduleViewport()),
+  );
+  const hasUserNavigatedMonthRef = useRef(false);
   const [selectedDoctor, setSelectedDoctor] = useState<SelectedDoctor | null>(null);
   const [selectedTourDate, setSelectedTourDate] = useState<Date | null>(null);
   const [resetPopover, setResetPopover] = useState<ResetPopoverState | null>(null);
@@ -164,6 +174,11 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
   const [requestsDate, setRequestsDate] = useState<string | null>(null);
   const [isICSModalOpen, setIsICSModalOpen] = useState(false);
   const [isStatsModalOpen, setIsStatsModalOpen] = useState(false);
+  const [showMobileWeekDeptOverview, setShowMobileWeekDeptOverview] = useState(false);
+  const [isMobilePdfChooserOpen, setIsMobilePdfChooserOpen] = useState(false);
+  const [mobilePdfExporting, setMobilePdfExporting] = useState<'schedule' | 'department' | null>(
+    null,
+  );
   const [selectedMobileWeekId, setSelectedMobileWeekId] = useState<string>('');
   const [selectedMobileDayString, setSelectedMobileDayString] = useState<string>('');
   const [isCompactSchedule, setIsCompactSchedule] = useState(false);
@@ -198,10 +213,31 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
 
   const scheduleShellRef = useRef<HTMLDivElement>(null);
   const calendarRef = useRef<HTMLDivElement>(null);
+  const mobileWeekTablistRef = useRef<HTMLDivElement>(null);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
 
+  useEffect(() => {
+    onViewDateChange?.(currentDate);
+  }, [currentDate, onViewDateChange]);
+
+  useEffect(() => {
+    if (!(isCompactSchedule || isMobilePortrait) || hasUserNavigatedMonthRef.current) return;
+
+    const currentMonth = getCurrentMonthDate();
+    if (
+      currentDate.getFullYear() !== currentMonth.getFullYear() ||
+      currentDate.getMonth() !== currentMonth.getMonth()
+    ) {
+      setCurrentDate(currentMonth);
+      setSelectedMobileWeekId('');
+      setSelectedMobileDayString('');
+      onViewDateChange?.(currentMonth);
+    }
+  }, [isCompactSchedule, isMobilePortrait, currentDate, onViewDateChange]);
+
   const handlePrevMonth = () => {
+    hasUserNavigatedMonthRef.current = true;
     setSlideDirection('right');
     const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
     setCurrentDate(newDate);
@@ -209,6 +245,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
   };
 
   const handleNextMonth = () => {
+    hasUserNavigatedMonthRef.current = true;
     setSlideDirection('left');
     const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
     setCurrentDate(newDate);
@@ -231,6 +268,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
     scheduleSnapshots,
     getTourNameForDate,
   );
+  const departmentCalendarGrid = useDepartmentCalendarGrid(currentDate);
 
   const doctorNamesInMonth = useMemo(
     () =>
@@ -280,7 +318,32 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
   );
 
   const handleExportPDF = async () => {
+    if (isCompactSchedule) {
+      setIsMobilePdfChooserOpen(true);
+      return;
+    }
     return exportScheduleToPDF(calendarGrid, currentDate);
+  };
+
+  const handleMobilePdfChoice = async (target: 'schedule' | 'department') => {
+    if (mobilePdfExporting) return;
+    setMobilePdfExporting(target);
+    try {
+      if (target === 'schedule') {
+        await exportScheduleToPDF(calendarGrid, currentDate);
+      } else {
+        await exportDepartmentToPDF(
+          departmentCalendarGrid,
+          currentDate,
+          departmentAssignments,
+          getDoctorsForDate,
+          showPkdv,
+        );
+      }
+      setIsMobilePdfChooserOpen(false);
+    } finally {
+      setMobilePdfExporting(null);
+    }
   };
 
   const handleExportICS = (doctorName: string) => {
@@ -394,6 +457,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
   };
 
   const handleGoToRequestDate = (dateString: string) => {
+    hasUserNavigatedMonthRef.current = true;
     const nextDate = parseDateString(dateString);
     const monthDate = new Date(nextDate.getFullYear(), nextDate.getMonth(), 1);
     setCurrentDate(monthDate);
@@ -443,12 +507,13 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const upcoming = myDoctorName ? myShiftDays.find((day) => day.date >= today) : undefined;
+    const todayWeek = mobileWeekGroups.find((group) => group.hasToday);
     const defaultWeek =
+      todayWeek ||
       (upcoming &&
         mobileWeekGroups.find((group) =>
           group.days.some((day) => getDateString(day.date) === getDateString(upcoming.date)),
         )) ||
-      mobileWeekGroups.find((group) => group.hasToday) ||
       mobileWeekGroups[0];
     const allDayStrings = new Set(
       mobileWeekGroups.flatMap((group) => group.days.map((day) => getDateString(day.date))),
@@ -460,7 +525,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
     setSelectedMobileDayString((current) => {
       if (allDayStrings.has(current)) return current;
       const defaultDay =
-        upcoming || defaultWeek.days.find((day) => day.isToday) || defaultWeek.days[0];
+        defaultWeek.days.find((day) => day.isToday) || upcoming || defaultWeek.days[0];
       return getDateString(defaultDay.date);
     });
   }, [mobileWeekGroups, myDoctorName, myShiftDays]);
@@ -487,6 +552,23 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
     };
   }, []);
 
+  useEffect(() => {
+    if (!isCompactSchedule) return;
+    const container = mobileWeekTablistRef.current;
+    if (!container) return;
+    const activeTab = container.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]');
+    if (!activeTab) return;
+    const targetLeft = Math.max(
+      0,
+      activeTab.offsetLeft - (container.clientWidth - activeTab.offsetWidth) / 2,
+    );
+    if (typeof container.scrollTo === 'function') {
+      container.scrollTo({ left: targetLeft, behavior: 'smooth' });
+    } else {
+      container.scrollLeft = targetLeft;
+    }
+  }, [isCompactSchedule, selectedMobileWeekId, mobileWeekGroups]);
+
   const selectedMobileWeek =
     mobileWeekGroups.find((week) => week.id === selectedMobileWeekId) || mobileWeekGroups[0];
 
@@ -505,6 +587,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
   };
 
   const handleJumpToDate = (targetDate: Date) => {
+    hasUserNavigatedMonthRef.current = true;
     const dateStr = getDateString(targetDate);
     const isDifferentMonth =
       targetDate.getFullYear() !== currentDate.getFullYear() ||
@@ -604,10 +687,14 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
           onPrevMonth={handlePrevMonth}
           onNextMonth={handleNextMonth}
           onToday={() => {
+            hasUserNavigatedMonthRef.current = true;
             const today = new Date();
             setSlideDirection(today < currentDate ? 'right' : 'left');
             const month = new Date(today.getFullYear(), today.getMonth(), 1);
+            const todayWeek = mobileWeekGroups.find((group) => group.hasToday);
             setCurrentDate(month);
+            setSelectedMobileWeekId(todayWeek?.id || '');
+            setSelectedMobileDayString(getDateString(today));
             onViewDateChange?.(month);
           }}
           onCancelSelection={cancelSelection}
@@ -808,14 +895,14 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
         </div>
 
         <div
-          className={`schedule-compact ${isCompactSchedule ? 'block' : 'hidden'} mt-3 space-y-3`}
+          className={`schedule-compact ${isCompactSchedule ? 'block' : 'hidden'} mt-1.5 space-y-2`}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
         >
           {shouldShowMobileEditNotice && (
-            <div className="flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-amber-800 dark:border-amber-800/70 dark:bg-amber-900/20 dark:text-amber-200">
+            <div className="flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-amber-800 dark:border-amber-800/70 dark:bg-amber-900/20 dark:text-amber-200">
               <LockIcon className="mt-0.5 h-4 w-4 shrink-0" />
-              <p className="text-sm font-semibold leading-snug">
+              <p className="text-xs font-semibold leading-snug">
                 {showPortraitEditPause
                   ? 'Đang tạm khóa thao tác sửa trên mobile dọc. Xoay ngang điện thoại để chỉnh tiếp.'
                   : 'Mobile dọc chỉ để xem. Muốn chỉnh lịch, hãy xoay ngang điện thoại hoặc dùng máy tính.'}
@@ -824,7 +911,8 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
           )}
 
           <div
-            className="scrollbar-none -mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-1"
+            ref={mobileWeekTablistRef}
+            className="scrollbar-none -mx-1 flex snap-x gap-1.5 overflow-x-auto px-1 pb-0.5"
             role="tablist"
             aria-label="Chọn tuần trong tháng"
           >
@@ -839,31 +927,37 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
                   aria-selected={isSelected}
                   aria-label={`Tuần ${week.index}, ${formatShortDate(week.startDate)} - ${formatShortDate(week.endDate)}${week.hasModified ? ', có lịch đã chỉnh' : ''}${week.hasPostDutyWarning ? ', có cảnh báo ra trực' : ''}${week.hasFatigueWarning ? ', có cảnh báo trực lại quá sớm' : ''}`}
                   onClick={() => selectMobileWeek(week)}
-                  className={`relative min-w-[104px] snap-start rounded-2xl border px-3 py-2 text-left transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                  className={`relative flex shrink-0 snap-start items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-left transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
                     isSelected
                       ? 'border-indigo-500 bg-indigo-600 text-white shadow-sm'
                       : 'border-slate-200 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-200'
                   }`}
                 >
+                  {week.hasToday && (
+                    <span
+                      className={`h-2 w-2 shrink-0 rounded-full ${isSelected ? 'bg-emerald-300' : 'bg-indigo-500'}`}
+                      aria-hidden="true"
+                    />
+                  )}
+                  <span className="whitespace-nowrap text-xs font-bold">Tuần {week.index}</span>
+                  <span
+                    className={`whitespace-nowrap text-[11px] font-semibold ${
+                      isSelected ? 'text-indigo-100' : 'text-slate-500 dark:text-slate-400'
+                    }`}
+                  >
+                    ({formatShortDate(week.startDate)}–{formatShortDate(week.endDate)})
+                  </span>
                   {week.hasModified && (
                     <span
-                      className="absolute right-3 top-3 h-2 w-2 rounded-full bg-orange-400 ring-2 ring-white dark:ring-slate-800"
+                      className="h-1.5 w-1.5 shrink-0 rounded-full bg-orange-400"
                       aria-hidden="true"
                     />
                   )}
                   {(week.hasPostDutyWarning || week.hasFatigueWarning) && (
                     <FatigueAlertIcon
-                      className={`absolute bottom-2 right-2 h-3.5 w-3.5 ${week.hasPostDutyWarning ? 'text-rose-500' : 'text-amber-500'}`}
+                      className={`h-3.5 w-3.5 shrink-0 ${week.hasPostDutyWarning ? 'text-rose-400' : 'text-amber-400'}`}
                     />
                   )}
-                  <span className="block text-sm font-bold">Tuần {week.index}</span>
-                  <span
-                    className={`mt-0.5 block text-xs font-semibold ${
-                      isSelected ? 'text-teal-950' : 'text-slate-500 dark:text-slate-400'
-                    }`}
-                  >
-                    {formatShortDate(week.startDate)} - {formatShortDate(week.endDate)}
-                  </span>
                 </button>
               );
             })}
@@ -871,7 +965,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
 
           {selectedMobileWeek && (
             <div
-              className={`flex gap-1.5 rounded-2xl border border-slate-200/80 bg-slate-50/80 p-2 dark:border-slate-700/70 dark:bg-slate-800/60 ${
+              className={`flex gap-1 rounded-2xl border border-slate-200/80 bg-slate-50/80 p-1.5 dark:border-slate-700/70 dark:bg-slate-800/60 ${
                 slideDirection === 'left'
                   ? 'spatial-slide-left'
                   : slideDirection === 'right'
@@ -892,26 +986,31 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
                     data-date={dateString}
                     type="button"
                     onClick={() => setSelectedMobileDayString(dateString)}
-                    className={`relative min-h-[72px] min-w-0 flex-1 rounded-xl border px-1.5 py-1.5 text-center transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                    className={`relative min-h-[56px] min-w-0 flex-1 rounded-xl border px-1 py-1 text-center transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
                       isSelected
-                        ? 'border-indigo-500 bg-white text-indigo-700 shadow-sm dark:border-indigo-400 dark:bg-indigo-900/30 dark:text-indigo-200'
-                        : 'border-transparent bg-white/60 text-slate-600 dark:bg-slate-900/40 dark:text-slate-300'
+                        ? 'border-indigo-500 bg-white text-indigo-700 shadow-sm ring-1 ring-indigo-500/30 dark:border-indigo-400 dark:bg-indigo-900/30 dark:text-indigo-200'
+                        : day.isToday
+                          ? 'border-indigo-300 bg-indigo-50/70 text-indigo-800 dark:border-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-200'
+                          : 'border-transparent bg-white/60 text-slate-600 dark:bg-slate-900/40 dark:text-slate-300'
                     }`}
                     aria-pressed={isSelected}
                     aria-label={`Xem lịch ngày ${day.date.toLocaleDateString('vi-VN')}${day.postDutyWarningDoctors.length > 0 ? ', có cảnh báo bác sĩ ra trực' : ''}${day.fatigueWarningDoctors.length > 0 ? ', có cảnh báo bác sĩ trực lại quá sớm' : ''}`}
                   >
-                    <span className="block text-xs font-bold uppercase">
+                    <span className="block text-[11px] font-bold uppercase leading-none">
                       {getWeekdayShortLabel(day.date)}
                     </span>
-                    <span className="mt-0.5 block text-base font-bold">{day.date.getDate()}</span>
-                    <span className="mt-0.5 block truncate text-xs font-semibold leading-tight text-slate-500 dark:text-slate-400">
-                      {day.tourName || '-'}
+                    <span className="mt-1 block text-sm font-bold leading-none">
+                      {day.date.getDate()}
                     </span>
-                    <span className="mt-0.5 block h-1.5">
-                      {day.isToday && (
-                        <span className="mx-auto block h-1.5 w-1.5 rounded-full bg-indigo-500" />
-                      )}
+                    <span className="mt-1 block truncate text-[10px] font-semibold leading-tight text-slate-500 dark:text-slate-400">
+                      {(day.tourName || '-').replace(/^Bs\.\s*/i, '')}
                     </span>
+                    {day.isToday && (
+                      <span
+                        className="mx-auto mt-0.5 block h-1 w-3 rounded-full bg-indigo-500"
+                        aria-hidden="true"
+                      />
+                    )}
                     <span className="absolute right-1 top-1 flex gap-0.5" aria-hidden="true">
                       {day.isModified && (
                         <span className="h-1.5 w-1.5 rounded-full bg-orange-400" />
@@ -936,10 +1035,10 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
           )}
 
           {selectedMobileDay && selectedMobileDay.doctors && (
-            <section className="rounded-2xl border border-slate-200/80 bg-white p-3 shadow-sm dark:border-slate-700/70 dark:bg-slate-800/70 sm:p-4">
-              <div className="flex items-start justify-between gap-3">
+            <section className="rounded-2xl border border-slate-200/80 bg-white p-2.5 shadow-sm dark:border-slate-700/70 dark:bg-slate-800/70 sm:p-4">
+              <div className="flex items-start justify-between gap-2.5">
                 <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-1.5">
                     <h3 className="text-base font-bold leading-tight text-slate-900 dark:text-white sm:text-lg">
                       {selectedMobileDay.date.toLocaleDateString('vi-VN', {
                         weekday: 'long',
@@ -947,8 +1046,13 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
                         month: 'long',
                       })}
                     </h3>
+                    {selectedMobileDay.isToday && (
+                      <span className="rounded-full bg-indigo-600 px-2 py-0.5 text-[11px] font-bold text-white dark:bg-indigo-500">
+                        Hôm nay
+                      </span>
+                    )}
                   </div>
-                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                     {canEdit && !shouldShowMobileEditNotice ? (
                       <button
                         type="button"
@@ -1027,7 +1131,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
               )}
 
               <div
-                className="mt-3 overflow-hidden rounded-2xl border border-slate-100 bg-slate-50/80 dark:border-slate-700 dark:bg-slate-900/40 sm:mt-4"
+                className="mt-2.5 overflow-hidden rounded-2xl border border-slate-100 bg-slate-50/80 dark:border-slate-700 dark:bg-slate-900/40 sm:mt-4"
                 aria-label="Danh sách bác sĩ trực"
               >
                 {selectedMobileDay.doctors.map((doctor, doctorIndex) => {
@@ -1042,7 +1146,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
                     selectedMobileDay.fatigueWarningDoctors.includes(doctor);
                   const isHoveredDoctor = hoveredDoctor === doctor;
 
-                  const rowClassName = `flex min-h-10 w-full items-center gap-3 border-b px-3 text-left transition-colors last:border-b-0 sm:min-h-12 ${
+                  const rowClassName = `flex min-h-9 w-full items-center gap-2.5 border-b px-3 py-1.5 text-left transition-colors last:border-b-0 sm:min-h-12 ${
                     isHoveredDoctor
                       ? 'border-blue-600 bg-blue-600 text-white shadow-md ring-2 ring-inset ring-blue-500/30 dark:border-blue-500 dark:bg-blue-500'
                       : hoveredDoctor
@@ -1057,7 +1161,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
                   }`;
                   const rowContent = (
                     <>
-                      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white text-xs font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-300">
+                      <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-white text-xs font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-300 sm:h-7 sm:w-7">
                         {doctorIndex + 1}
                       </span>
                       <span className="min-w-0 flex-1 truncate text-sm font-semibold sm:text-base">
@@ -1103,22 +1207,202 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
                 })}
               </div>
 
-              <div className="mt-4 flex flex-wrap items-center gap-2">
-                {isHolidayDate(selectedMobileDay.date) && (
-                  <span className="rounded-full bg-rose-100 px-3 py-1 text-xs font-bold text-rose-700 dark:bg-rose-900/40 dark:text-rose-300">
-                    Có lịch lễ
-                  </span>
-                )}
-                {(pendingRequestCountsByDate[getDateString(selectedMobileDay.date)] || 0) > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => handleViewRequestsClick(selectedMobileDay)}
-                    className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
-                  >
-                    {pendingRequestCountsByDate[getDateString(selectedMobileDay.date)]} yêu cầu
-                  </button>
-                )}
-              </div>
+              {(() => {
+                const dayAssign = departmentAssignments[getDateString(selectedMobileDay.date)];
+                const hasDeptInfoFor = (assign?: Partial<DepartmentAssignments>) =>
+                  Boolean(
+                    assign &&
+                      ((assign.ungTruc && assign.ungTruc.length > 0) ||
+                        (assign.pkdk && assign.pkdk.length > 0) ||
+                        (showPkdv && assign.pkdv && assign.pkdv.length > 0)),
+                  );
+                const hasDeptInfo = hasDeptInfoFor(dayAssign);
+                const shouldRenderDeptSection =
+                  !selectedMobileDay.isWeekend || hasDeptInfo || showMobileWeekDeptOverview;
+                if (!shouldRenderDeptSection) return null;
+
+                const isDoctorOnCallToday = (doc: string, onCallDocs?: string[]) =>
+                  Boolean(
+                    onCallDocs?.some((d) => d.trim().toLowerCase() === doc.trim().toLowerCase()),
+                  );
+
+                const renderRolePills = (
+                  label: string,
+                  docs: string[] | undefined,
+                  pillClass: string,
+                  labelClass: string,
+                ) => {
+                  if (!docs || docs.length === 0) return null;
+                  return (
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className={`w-14 shrink-0 text-[11px] font-bold ${labelClass}`}>
+                        {label}:
+                      </span>
+                      <div className="flex min-w-0 flex-1 flex-wrap gap-1">
+                        {docs.map((doc) => {
+                          const onCallClash = isDoctorOnCallToday(doc, selectedMobileDay.doctors);
+                          return (
+                            <span
+                              key={doc}
+                              className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[11px] font-semibold ${pillClass} ${
+                                onCallClash ? 'ring-1 ring-rose-500' : ''
+                              }`}
+                              title={onCallClash ? `${doc} (Trùng trực chính hôm nay)` : doc}
+                            >
+                              {doc}
+                              {onCallClash && (
+                                <span className="ml-1 text-[10px] font-bold text-rose-500">
+                                  ⚠️
+                                </span>
+                              )}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                };
+
+                const weekDeptDays = (selectedMobileWeek?.days || []).filter(
+                  (day) =>
+                    !day.isWeekend || hasDeptInfoFor(departmentAssignments[getDateString(day.date)]),
+                );
+
+                return (
+                  <div className="mt-2.5 rounded-xl border border-slate-200/80 bg-slate-50/90 px-3 py-2 text-xs dark:border-slate-700 dark:bg-slate-900/50">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="font-bold text-slate-700 dark:text-slate-200">
+                        {showMobileWeekDeptOverview
+                          ? 'Hoạt động khoa tuần này'
+                          : 'Hoạt động khoa trong ngày'}
+                      </p>
+                      {weekDeptDays.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setShowMobileWeekDeptOverview((prev) => !prev)}
+                          className="rounded-lg border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-bold text-indigo-700 transition-colors hover:bg-indigo-50 dark:border-slate-600 dark:bg-slate-800 dark:text-indigo-300 dark:hover:bg-slate-700"
+                        >
+                          {showMobileWeekDeptOverview ? 'Xem theo ngày' : 'Xem cả tuần'}
+                        </button>
+                      )}
+                    </div>
+
+                    {!showMobileWeekDeptOverview ? (
+                      hasDeptInfo ? (
+                        <div className="mt-1.5 space-y-1.5">
+                          {renderRolePills(
+                            'Ứng trực',
+                            dayAssign?.ungTruc,
+                            'border-emerald-300 bg-emerald-100 text-emerald-950 dark:border-emerald-600/50 dark:bg-emerald-950/80 dark:text-emerald-200',
+                            'text-emerald-700 dark:text-emerald-300',
+                          )}
+                          {renderRolePills(
+                            'PKĐK',
+                            dayAssign?.pkdk,
+                            'border-sky-300 bg-sky-100 text-sky-950 dark:border-sky-600/50 dark:bg-sky-950/80 dark:text-sky-200',
+                            'text-sky-700 dark:text-sky-300',
+                          )}
+                          {showPkdv &&
+                            renderRolePills(
+                              'PKDV',
+                              dayAssign?.pkdv,
+                              'border-violet-300 bg-violet-100 text-violet-950 dark:border-violet-600/50 dark:bg-violet-950/80 dark:text-violet-200',
+                              'text-violet-700 dark:text-violet-300',
+                            )}
+                        </div>
+                      ) : (
+                        <p className="mt-1 text-[11px] italic text-slate-500 dark:text-slate-400">
+                          Chưa phân công
+                        </p>
+                      )
+                    ) : (
+                      <div className="mt-2 space-y-1.5">
+                        {weekDeptDays.map((day) => {
+                          const dayKey = getDateString(day.date);
+                          const assign = departmentAssignments[dayKey];
+                          const isDayActive = dayKey === getDateString(selectedMobileDay.date);
+                          const dayHasAssign = hasDeptInfoFor(assign);
+                          return (
+                            <button
+                              key={dayKey}
+                              type="button"
+                              onClick={() => setSelectedMobileDayString(dayKey)}
+                              className={`w-full rounded-lg border px-2.5 py-1.5 text-left transition-colors ${
+                                isDayActive
+                                  ? 'border-indigo-400 bg-indigo-50/70 dark:border-indigo-500/70 dark:bg-indigo-950/40'
+                                  : 'border-slate-200/80 bg-white dark:border-slate-700 dark:bg-slate-800/70'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="font-bold text-slate-800 dark:text-slate-100">
+                                  {getWeekdayShortLabel(day.date)} {formatShortDate(day.date)}
+                                </span>
+                                {day.isToday && (
+                                  <span className="rounded-full bg-indigo-600 px-1.5 py-0.5 text-[10px] font-bold text-white dark:bg-indigo-500">
+                                    Hôm nay
+                                  </span>
+                                )}
+                              </div>
+                              {dayHasAssign ? (
+                                <div className="mt-0.5 flex flex-wrap gap-x-2.5 gap-y-0.5 text-[11px] text-slate-600 dark:text-slate-300">
+                                  {assign?.ungTruc && assign.ungTruc.length > 0 && (
+                                    <span>
+                                      <strong className="text-emerald-700 dark:text-emerald-300">
+                                        ƯT:
+                                      </strong>{' '}
+                                      {assign.ungTruc.join(', ')}
+                                    </span>
+                                  )}
+                                  {assign?.pkdk && assign.pkdk.length > 0 && (
+                                    <span>
+                                      <strong className="text-sky-700 dark:text-sky-300">
+                                        PKĐK:
+                                      </strong>{' '}
+                                      {assign.pkdk.join(', ')}
+                                    </span>
+                                  )}
+                                  {showPkdv && assign?.pkdv && assign.pkdv.length > 0 && (
+                                    <span>
+                                      <strong className="text-violet-700 dark:text-violet-300">
+                                        PKDV:
+                                      </strong>{' '}
+                                      {assign.pkdv.join(', ')}
+                                    </span>
+                                  )}
+                                </div>
+                              ) : (
+                                <p className="mt-0.5 text-[11px] italic text-slate-400">
+                                  Chưa phân công
+                                </p>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {(isHolidayDate(selectedMobileDay.date) ||
+                (pendingRequestCountsByDate[getDateString(selectedMobileDay.date)] || 0) > 0) && (
+                <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                  {isHolidayDate(selectedMobileDay.date) && (
+                    <span className="rounded-full bg-rose-100 px-3 py-1 text-xs font-bold text-rose-700 dark:bg-rose-900/40 dark:text-rose-300">
+                      Có lịch lễ
+                    </span>
+                  )}
+                  {(pendingRequestCountsByDate[getDateString(selectedMobileDay.date)] || 0) > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => handleViewRequestsClick(selectedMobileDay)}
+                      className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
+                    >
+                      {pendingRequestCountsByDate[getDateString(selectedMobileDay.date)]} yêu cầu
+                    </button>
+                  )}
+                </div>
+              )}
             </section>
           )}
         </div>
@@ -1186,11 +1470,67 @@ const ScheduleView: React.FC<ScheduleViewProps> = (props) => {
           currentDate={currentDate}
           departmentAssignments={departmentAssignments}
           allDoctors={allDoctors.map((doctor) => doctor.name)}
+          ctchDoctors={allDoctors.filter((doctor) => doctor.isCtch).map((doctor) => doctor.name)}
           getDoctorsForDate={getDoctorsForDate}
           title="Thống kê toàn khối ngoại"
           mode="directOnly"
+          allowModeSwitch={isCompactSchedule}
           onClose={() => setIsStatsModalOpen(false)}
         />
+      )}
+
+      {isMobilePdfChooserOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-3 sm:items-center"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Chọn mẫu lịch xuất PDF"
+          onClick={() => !mobilePdfExporting && setIsMobilePdfChooserOpen(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-4 shadow-xl dark:border-slate-700 dark:bg-slate-800"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">
+              Chọn mẫu lịch xuất PDF
+            </h3>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              Tháng {currentDate.getMonth() + 1}/{currentDate.getFullYear()}
+            </p>
+            <div className="mt-3 space-y-2">
+              <button
+                type="button"
+                disabled={mobilePdfExporting !== null}
+                onClick={() => void handleMobilePdfChoice('schedule')}
+                className="flex w-full items-center justify-between rounded-xl border border-indigo-200 bg-indigo-50 px-3.5 py-2.5 text-left text-sm font-bold text-indigo-800 transition-colors hover:bg-indigo-100 disabled:opacity-60 dark:border-indigo-700/60 dark:bg-indigo-950/50 dark:text-indigo-200"
+              >
+                <span>Lịch trực Khối Ngoại (PDF)</span>
+                {mobilePdfExporting === 'schedule' && (
+                  <span className="text-xs font-semibold">Đang tạo…</span>
+                )}
+              </button>
+              <button
+                type="button"
+                disabled={mobilePdfExporting !== null}
+                onClick={() => void handleMobilePdfChoice('department')}
+                className="flex w-full items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-left text-sm font-bold text-emerald-800 transition-colors hover:bg-emerald-100 disabled:opacity-60 dark:border-emerald-700/60 dark:bg-emerald-950/50 dark:text-emerald-200"
+              >
+                <span>Lịch hoạt động Khoa CTCH (PDF)</span>
+                {mobilePdfExporting === 'department' && (
+                  <span className="text-xs font-semibold">Đang tạo…</span>
+                )}
+              </button>
+            </div>
+            <button
+              type="button"
+              disabled={mobilePdfExporting !== null}
+              onClick={() => setIsMobilePdfChooserOpen(false)}
+              className="mt-3 w-full rounded-xl border border-slate-200 bg-slate-50 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+            >
+              Đóng
+            </button>
+          </div>
+        </div>
       )}
 
       <ExportICSModal

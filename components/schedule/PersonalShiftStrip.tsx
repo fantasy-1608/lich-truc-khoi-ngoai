@@ -28,13 +28,17 @@ export default function PersonalShiftStrip({
   today.setHours(0, 0, 0, 0);
   const upcoming = days.find((day) => day.date >= today);
   return (
-    <section className="personal-shift-strip" aria-label="Ca của tôi">
+    <section
+      className="personal-shift-strip"
+      data-has-selection={selectedName ? 'true' : 'false'}
+      aria-label="Ca của tôi"
+    >
       <div className="personal-identity">
         <span className="personal-mark" aria-hidden="true">
-          <CalendarIcon className="h-5 w-5" />
+          <CalendarIcon className="h-4 w-4 sm:h-5 sm:w-5" />
         </span>
         <label htmlFor="personal-roster-name">
-          <strong>Ca của tôi</strong>
+          <strong className={selectedName ? 'hidden sm:inline' : ''}>Ca của tôi</strong>
           <select
             id="personal-roster-name"
             value={selectedName}
@@ -52,11 +56,11 @@ export default function PersonalShiftStrip({
           </select>
         </label>
       </div>
-      <div className="personal-summary" role="status">
+      <div className={`personal-summary ${selectedName ? '' : 'is-empty-hint'}`} role="status">
         {selectedName ? (
           <>
             <strong>{days.length} ca</strong>
-            <span>trong tháng đang xem</span>
+            <span className="hidden sm:inline">trong tháng đang xem</span>
           </>
         ) : (
           <span>Chọn tên một lần, xem ca nhanh mỗi ngày.</span>
@@ -69,7 +73,8 @@ export default function PersonalShiftStrip({
           onClick={() => onJumpToDate(upcoming.date)}
         >
           <span>
-            Ca sắp tới{' '}
+            <span className="sm:hidden">Tiếp:</span>
+            <span className="hidden sm:inline">Ca sắp tới</span>{' '}
             <strong>
               {upcoming.date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })}
             </strong>
@@ -82,14 +87,23 @@ export default function PersonalShiftStrip({
           type="button"
           className="personal-spotlight"
           aria-pressed={active && !!selectedName}
+          aria-label="Đánh dấu ca của tôi"
           disabled={!selectedName}
           onClick={onToggle}
         >
           <span className="spotlight-dot" aria-hidden="true" />
-          Đánh dấu ca của tôi
+          <span className="sm:hidden">Đánh dấu</span>
+          <span className="hidden sm:inline">Đánh dấu ca của tôi</span>
         </button>
-        <button type="button" className="personal-detail" onClick={onOpenSchedule}>
-          Xem chi tiết <ArrowRightIcon className="h-4 w-4" />
+        <button
+          type="button"
+          className="personal-detail"
+          aria-label="Xem chi tiết ca của tôi"
+          onClick={onOpenSchedule}
+        >
+          <span className="sm:hidden">Chi tiết</span>
+          <span className="hidden sm:inline">Xem chi tiết</span>
+          <ArrowRightIcon className="h-4 w-4" />
         </button>
       </div>
     </section>

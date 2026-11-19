@@ -60,6 +60,13 @@ export const useAppController = () => {
     return () => mediaQuery.removeEventListener('change', syncMobilePortrait);
   }, []);
 
+  useEffect(() => {
+    if (isMobilePortrait && view === View.DEPARTMENT_SCHEDULE) {
+      setView(View.SCHEDULE);
+      setLastScheduleView(View.SCHEDULE);
+    }
+  }, [isMobilePortrait, view]);
+
   const changeView = useCallback(
     (newView: View) => {
       if (view === newView) return;

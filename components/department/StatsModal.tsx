@@ -19,9 +19,11 @@ interface StatsModalProps {
   currentDate: Date;
   departmentAssignments: Record<string, Partial<DepartmentAssignments>>;
   allDoctors: string[];
+  ctchDoctors?: string[];
   getDoctorsForDate: (date: Date) => string[] | undefined;
   title?: string;
   mode?: 'score' | 'directOnly';
+  allowModeSwitch?: boolean;
   onClose: () => void;
 }
 
@@ -62,12 +64,29 @@ const StatsModal: React.FC<StatsModalProps> = ({
   currentDate,
   departmentAssignments,
   allDoctors,
+  ctchDoctors,
   getDoctorsForDate,
   title = 'Thống kê & Cân bằng công việc',
   mode = 'score',
+  allowModeSwitch = false,
   onClose,
 }) => {
   const [isVisible, setIsVisible] = useState(false);
+  const [activeMode, setActiveMode] = useState<'score' | 'directOnly'>(mode);
+
+  useEffect(() => {
+    setActiveMode(mode);
+  }, [mode]);
+
+  const targetDoctors = useMemo(
+    () => (activeMode === 'score' && ctchDoctors ? ctchDoctors : allDoctors),
+    [activeMode, ctchDoctors, allDoctors],
+  );
+  const displayTitle = allowModeSwitch
+    ? activeMode === 'directOnly'
+      ? 'Thống kê toàn khối ngoại'
+      : 'Thống kê Khoa CTCH'
+    : title;
 
   useEffect(() => {
     const timer = setTimeout(() => setIsVisible(true), 10);
@@ -81,7 +100,7 @@ const StatsModal: React.FC<StatsModalProps> = ({
 
   const { stats, averageScore } = useMemo(() => {
     const stats: Stats = {};
-    allDoctors.forEach((doc) => {
+    targetDoctors.forEach((doc) => {
       stats[doc] = { trucChinh: 0, ungTruc: 0, pkdk: 0, pkdv: 0, totalScore: 0 };
     });
 
@@ -120,14 +139,14 @@ const StatsModal: React.FC<StatsModalProps> = ({
 
     Object.entries(stats).forEach(([doc, data]) => {
       data.totalScore =
-        mode === 'directOnly'
+        activeMode === 'directOnly'
           ? data.trucChinh
           : data.trucChinh * SCORING.TRUC_CHINH +
             data.ungTruc * SCORING.UNG_TRUC +
             data.pkdk * SCORING.PK +
             data.pkdv * SCORING.PK;
 
-      if ((mode === 'directOnly' ? data.trucChinh : data.totalScore) > 0) {
+      if ((activeMode === 'directOnly' ? data.trucChinh : data.totalScore) > 0) {
         activeStats[doc] = data;
         totalScoreSum += data.totalScore;
       }
@@ -137,14 +156,16 @@ const StatsModal: React.FC<StatsModalProps> = ({
       Object.keys(activeStats).length > 0 ? totalScoreSum / Object.keys(activeStats).length : 0;
 
     return { stats: activeStats, averageScore: avg };
-  }, [currentDate, departmentAssignments, allDoctors, getDoctorsForDate, mode]);
+  }, [currentDate, departmentAssignments, targetDoctors, getDoctorsForDate, activeMode]);
 
   const sortedStats = useMemo(
     () =>
       Object.entries(stats).sort((a, b) =>
-        mode === 'directOnly' ? b[1].trucChinh - a[1].trucChinh : b[1].totalScore - a[1].totalScore,
+        activeMode === 'directOnly'
+          ? b[1].trucChinh - a[1].trucChinh
+          : b[1].totalScore - a[1].totalScore,
       ),
-    [stats, mode],
+    [stats, activeMode],
   );
 
   const maxDirectShifts = useMemo(
@@ -158,7 +179,7 @@ const StatsModal: React.FC<StatsModalProps> = ({
   );
 
   const directCountGroups = useMemo(() => {
-    if (mode !== 'directOnly') return [];
+    if (activeMode !== 'directOnly') return [];
 
     return [
       {
@@ -198,16 +219,52 @@ const StatsModal: React.FC<StatsModalProps> = ({
       onClick={handleClose}
     >
       <div
-        className={`bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full ${mode === 'directOnly' ? 'max-w-5xl' : 'max-w-2xl'} max-h-[85vh] flex flex-col transition-all-app duration-200 ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
+        className={`bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full ${activeMode === 'directOnly' ? 'max-w-5xl' : 'max-w-2xl'} max-h-[85vh] flex flex-col transition-all-app duration-200 ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between p-4 border-b dark:border-slate-700">
-          <div>
-            <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">{title}</h3>
+        <div className="flex items-center justify-between gap-3 p-4 border-b dark:border-slate-700">
+          <div className="min-w-0 flex-1">
+            <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">
+              {displayTitle}
+            </h3>
             <p className="text-xs text-slate-500 mt-1">
               Tháng {currentDate.getMonth() + 1}/{currentDate.getFullYear()}
-              {mode === 'score' && <> (ĐTB: {averageScore.toFixed(1)}đ)</>}
+              {activeMode === 'score' && <> (ĐTB: {averageScore.toFixed(1)}đ)</>}
             </p>
+            {allowModeSwitch && (
+              <div
+                className="mt-2.5 inline-flex rounded-xl border border-slate-200 bg-slate-100 p-0.5 dark:border-slate-700 dark:bg-slate-900"
+                role="tablist"
+                aria-label="Chọn phạm vi thống kê"
+              >
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={activeMode === 'directOnly'}
+                  onClick={() => setActiveMode('directOnly')}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
+                    activeMode === 'directOnly'
+                      ? 'bg-indigo-600 text-white shadow-xs'
+                      : 'text-slate-600 dark:text-slate-300'
+                  }`}
+                >
+                  Khối Ngoại
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={activeMode === 'score'}
+                  onClick={() => setActiveMode('score')}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
+                    activeMode === 'score'
+                      ? 'bg-indigo-600 text-white shadow-xs'
+                      : 'text-slate-600 dark:text-slate-300'
+                  }`}
+                >
+                  Khoa CTCH
+                </button>
+              </div>
+            )}
           </div>
           <button
             onClick={handleClose}
@@ -217,7 +274,7 @@ const StatsModal: React.FC<StatsModalProps> = ({
           </button>
         </div>
 
-        {mode === 'score' && (
+        {activeMode === 'score' && (
           <div className="p-4 bg-amber-50 dark:bg-amber-900/20 text-xs text-amber-700 dark:text-amber-400 border-b dark:border-amber-900/30">
             <span className="font-bold uppercase mr-2">Hệ số điểm:</span>
             Trực chính: {SCORING.TRUC_CHINH}đ | Ứng trực: {SCORING.UNG_TRUC}đ | PK: {SCORING.PK}đ.
@@ -229,7 +286,7 @@ const StatsModal: React.FC<StatsModalProps> = ({
             <div className="px-6 py-4 text-center text-sm text-slate-500 dark:text-slate-400">
               Không có dữ liệu thống kê cho tháng này.
             </div>
-          ) : mode === 'directOnly' ? (
+          ) : activeMode === 'directOnly' ? (
             <div className="grid gap-3 lg:grid-cols-3">
               {directCountGroups.map((group) => (
                 <section
@@ -330,12 +387,12 @@ const StatsModal: React.FC<StatsModalProps> = ({
                         className="px-4 py-4 font-medium text-slate-900 whitespace-nowrap dark:text-white sticky left-0 bg-white dark:bg-slate-800"
                       >
                         {doctor}
-                        {mode === 'score' && isBusy && (
+                        {activeMode === 'score' && isBusy && (
                           <span className="ml-2 px-1.5 py-0.5 bg-red-100 text-red-600 text-[10px] rounded animate-pulse">
                             Quá tải
                           </span>
                         )}
-                        {mode === 'score' && isLight && (
+                        {activeMode === 'score' && isLight && (
                           <span className="ml-2 px-1.5 py-0.5 bg-blue-100 text-blue-600 text-[10px] rounded">
                             Ít việc
                           </span>
@@ -358,7 +415,7 @@ const StatsModal: React.FC<StatsModalProps> = ({
           )}
         </div>
 
-        {mode === 'score' && (
+        {activeMode === 'score' && (
           <div className="p-4 border-t dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex justify-between items-center text-xs">
             <div className="flex gap-4">
               <div className="flex items-center gap-1">

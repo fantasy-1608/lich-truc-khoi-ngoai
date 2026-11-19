@@ -36,6 +36,19 @@ const TAB_CONFIG = [
   },
 ];
 
+const MOBILE_TAB_CONFIG = [
+  {
+    id: View.SCHEDULE,
+    shortLabel: 'Lịch trực',
+    ariaLabel: 'Xem lịch trực và hoạt động khoa',
+  },
+  {
+    id: View.HOLIDAY_SCHEDULE,
+    shortLabel: 'Lễ tết',
+    ariaLabel: 'Xem lịch trực Lễ Tết',
+  },
+];
+
 const Header: React.FC<HeaderProps> = ({
   view,
   onViewChange,
@@ -64,6 +77,26 @@ const Header: React.FC<HeaderProps> = ({
     if (next < 0) return;
     event.preventDefault();
     handleTabChange(TAB_CONFIG[next].id);
+    event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next]?.focus();
+  };
+
+  const handleMobileTabKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
+    const activeId = view === View.DEPARTMENT_SCHEDULE ? View.SCHEDULE : view;
+    const index = MOBILE_TAB_CONFIG.findIndex((tab) => tab.id === activeId);
+    const count = MOBILE_TAB_CONFIG.length;
+    const next =
+      event.key === 'Home'
+        ? 0
+        : event.key === 'End'
+          ? count - 1
+          : event.key === 'ArrowRight'
+            ? (index + 1) % count
+            : event.key === 'ArrowLeft'
+              ? (index + count - 1) % count
+              : -1;
+    if (next < 0) return;
+    event.preventDefault();
+    handleTabChange(MOBILE_TAB_CONFIG[next].id);
     event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next]?.focus();
   };
 
@@ -165,23 +198,32 @@ const Header: React.FC<HeaderProps> = ({
           role="tablist"
           aria-label="Chọn loại lịch"
           className="mobile-bottom-nav sm:hidden"
-          onKeyDown={handleTabKeyDown}
+          style={{
+            gridTemplateColumns: `repeat(${MOBILE_TAB_CONFIG.length}, minmax(0, 1fr))`,
+          }}
+          onKeyDown={handleMobileTabKeyDown}
         >
-          {TAB_CONFIG.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => handleTabChange(tab.id)}
-              role="tab"
-              aria-selected={view === tab.id}
-              tabIndex={view === tab.id ? 0 : -1}
-              aria-label={tab.ariaLabel}
-              className="mobile-bottom-tab"
-            >
-              <CalendarIcon className="h-5 w-5" />
-              <span>{tab.shortLabel}</span>
-            </button>
-          ))}
+          {MOBILE_TAB_CONFIG.map((tab) => {
+            const isSelected =
+              tab.id === View.SCHEDULE
+                ? view === View.SCHEDULE || view === View.DEPARTMENT_SCHEDULE
+                : view === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => handleTabChange(tab.id)}
+                role="tab"
+                aria-selected={isSelected}
+                tabIndex={isSelected ? 0 : -1}
+                aria-label={tab.ariaLabel}
+                className="mobile-bottom-tab"
+              >
+                <CalendarIcon className="h-5 w-5" />
+                <span>{tab.shortLabel}</span>
+              </button>
+            );
+          })}
         </nav>
       )}
     </>

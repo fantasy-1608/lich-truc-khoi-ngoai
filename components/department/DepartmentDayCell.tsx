@@ -168,9 +168,16 @@ const DepartmentDayCell: React.FC<DepartmentDayCellProps> = ({
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h3 className="text-sm font-bold capitalize text-slate-800 dark:text-slate-100">
-              {formattedDate}
-            </h3>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <h3 className="text-sm font-bold capitalize text-slate-800 dark:text-slate-100">
+                {formattedDate}
+              </h3>
+              {day.isToday && (
+                <span className="rounded-full bg-indigo-600 px-2 py-0.5 text-[11px] font-bold text-white dark:bg-indigo-500">
+                  Hôm nay
+                </span>
+              )}
+            </div>
             <div className="mt-2 flex flex-wrap gap-2">
               {day.isWeekend && (
                 <span className="rounded-full bg-indigo-100 px-2.5 py-1 text-xs font-semibold text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-200">

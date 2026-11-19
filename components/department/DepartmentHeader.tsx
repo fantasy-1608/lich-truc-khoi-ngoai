@@ -9,6 +9,7 @@ interface DepartmentHeaderProps {
   currentDate: Date;
   onPrevMonth: () => void;
   onNextMonth: () => void;
+  onToday?: () => void;
   onOpenStats: () => void;
   onExportPDF: () => Promise<void>;
   onExportICS: () => void;
@@ -18,6 +19,7 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({
   currentDate,
   onPrevMonth,
   onNextMonth,
+  onToday,
   onOpenStats,
   onExportPDF,
   onExportICS,
@@ -46,6 +48,11 @@ const DepartmentHeader: React.FC<DepartmentHeaderProps> = ({
           <ArrowRightIcon className="w-6 h-6" />
         </button>
       </div>
+      {onToday && (
+        <button type="button" onClick={onToday} className="today-button">
+          Hôm nay
+        </button>
+      )}
       <div className="command-actions">
         <button
           onClick={onOpenStats}
